@@ -252,7 +252,7 @@
 }
 
 .moment-card {
-    min-height: 218px;
+    height: 250px;
     display: grid;
     grid-template-columns: 1fr;
     background: var(--surface);
@@ -265,10 +265,10 @@
 
 .moment-card.has-cover { grid-template-columns: minmax(180px, 36%) 1fr }
 .moment-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md) }
-.moment-cover { min-height: 218px; overflow: hidden; background: var(--surface-muted) }
-.moment-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s }
+.moment-cover { position: relative; overflow: hidden; background: var(--surface-muted) }
+.moment-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s }
 .moment-card:hover .moment-cover img { transform: scale(1.035) }
-.moment-content { padding: 27px 30px; display: flex; flex-direction: column; min-width: 0 }
+.moment-content { padding: 27px 30px; display: flex; flex-direction: column; min-width: 0; overflow: hidden }
 
 .moment-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 10px }
 
@@ -286,7 +286,16 @@
 .moment-meta em { display: inline-flex; align-items: center; gap: 5px; font-style: normal; color: var(--muted) }
 .moment-meta .locked-tag { padding: 6px 10px; border-radius: 99px; background: var(--surface-muted); color: var(--faint) }
 .moment-card.is-locked .moment-excerpt { color: var(--faint); font-style: italic }
-.moment-content h2 { font: 400 27px var(--serif); margin: 17px 0 10px }
+/* 标题和摘要都截断，保证内容永远塞得进固定高度 */
+.moment-content h2, .moment-excerpt {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+.moment-content h2 { font: 400 27px/1.3 var(--serif); margin: 15px 0 9px }
 .moment-excerpt { font-size: 12px; line-height: 1.8; color: var(--muted) }
 
 .moment-footer {
@@ -467,9 +476,10 @@
     .moment-date { grid-column: 2; text-align: left; padding: 0 0 9px }
     .moment-date strong, .moment-date span, .moment-date small { display: inline; font-size: 10px; margin-right: 4px }
     .timeline-dot { grid-column: 1; grid-row: 1/3; margin: 7px 0 0 1px }
-    .moment-card, .moment-card.has-cover { grid-column: 2; grid-template-columns: 1fr }
-    .moment-cover { height: 210px; min-height: 0 }
+    .moment-card, .moment-card.has-cover { grid-column: 2; grid-template-columns: 1fr; height: auto }
+    .moment-cover { height: 210px }
     .moment-content { padding: 24px }
+    .moment-excerpt { -webkit-line-clamp: 3; line-clamp: 3 }
     .moment-footer { display: block }
     .moment-footer b { display: flex; margin-top: 9px }
 }
