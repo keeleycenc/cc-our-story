@@ -6,48 +6,65 @@
     ViewData["Title"] = "留言";
 }
 <div class="admin-panel">
-    <p class="admin-panel-hint">一共 @Model.Items.TotalCount 条。压下去的留言前台不再显示，但内容还留着。</p>
+    <p class="admin-panel-hint">一共 @Model.Items.TotalCount 条。压下去的留言前台不再显示</p>
 
     @if (Model.Items.Items.Count > 0)
     {
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                <tr><th>来自</th><th>内容</th><th>记录</th><th>时间</th><th></th></tr>
-                </thead>
-                <tbody>
-                @foreach (var comment in Model.Items.Items)
-                {
-                    <tr>
-                        <td>
-                            <span class="title-cell">
-                                @comment.AuthorName
-                                @if (!comment.IsApproved)
+        @* 留言最长可以到 2000 字，用表格的话一条就能把整屏撑满，
+           所以一条一张卡片，正文先折起来，点「展开」才铺开 *@
+        <div class="admin-comment-list">
+            @foreach (var comment in Model.Items.Items)
+            {
+                <article class="admin-comment-item">
+                    <div class="admin-comment-summary">
+                        <div class="admin-comment-head">
+                            <span class="admin-comment-who">@Icon("user-round")@comment.AuthorName</span>
+                            @if (comment.ParentId is not null)
+                            {
+                                <span class="tag">回复</span>
+                            }
+                            @if (!comment.IsApproved)
+                            {
+                                <span class="tag is-hidden">已压下</span>
+                            }
+                        </div>
+
+                        <div class="admin-comment-text" data-clamp>@comment.Content</div>
+                        <button class="admin-comment-more" type="button" data-clamp-toggle hidden>@Icon("chevron-down")<span>展开</span></button>
+
+                        <div class="admin-comment-meta">
+                            <span>
+                                @Icon("camera")
+                                @if (comment.Moment is null)
                                 {
-                                    <span class="tag is-hidden">已压下</span>
+                                    <span>—</span>
+                                }
+                                else
+                                {
+                                    <a href="/moments/@comment.Moment.Slug" target="_blank" rel="noopener">@comment.Moment.Title</a>
                                 }
                             </span>
-                        </td>
-                        <td style="max-width:360px">@comment.Content</td>
-                        <td>@(comment.Moment?.Title ?? "—")</td>
-                        <td>@Model.ToLocal(comment.CreatedAt).ToString("yyyy-MM-dd HH:mm")</td>
-                        <td class="is-actions">
-                            <form method="post" asp-page-handler="Toggle" style="display:inline">
-                                <input type="hidden" name="id" value="@comment.Id">
-                                <input type="hidden" name="approved" value="@((!comment.IsApproved).ToString().ToLowerInvariant())">
-                                <input type="hidden" name="page" value="@Model.Items.Page">
-                                <button class="btn btn-ghost btn-small" type="submit">@Icon(comment.IsApproved ? "eye-off" : "check")</button>
-                            </form>
-                            <form method="post" asp-page-handler="Delete" style="display:inline" data-confirm-title="删除留言" data-confirm="删掉之后找不回来了哦~" data-confirm-ok="删除">
-                                <input type="hidden" name="id" value="@comment.Id">
-                                <input type="hidden" name="page" value="@Model.Items.Page">
-                                <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+                            <span>@Icon("clock")@Model.ToLocal(comment.CreatedAt).ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </div>
+
+                    <div class="admin-comment-actions" aria-label="@comment.AuthorName 这条留言的操作">
+                        <form method="post" asp-page-handler="Toggle">
+                            <input type="hidden" name="id" value="@comment.Id">
+                            <input type="hidden" name="approved" value="@((!comment.IsApproved).ToString().ToLowerInvariant())">
+                            <input type="hidden" name="page" value="@Model.Items.Page">
+                            <button class="btn btn-ghost btn-small" type="submit" title="@(comment.IsApproved ? "压下这条留言" : "把这条留言放出来")">
+                                @Icon(comment.IsApproved ? "eye-off" : "check")<span>@(comment.IsApproved ? "压下" : "放出")</span>
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Delete" data-confirm-title="删除留言" data-confirm="删掉之后找不回来了哦~" data-confirm-ok="删除">
+                            <input type="hidden" name="id" value="@comment.Id">
+                            <input type="hidden" name="page" value="@Model.Items.Page">
+                            <button class="btn btn-danger btn-small" type="submit" title="删除这条留言">@Icon("trash-2")<span>删除</span></button>
+                        </form>
+                    </div>
+                </article>
+            }
         </div>
 
         @if (Model.Items.TotalPages > 1)

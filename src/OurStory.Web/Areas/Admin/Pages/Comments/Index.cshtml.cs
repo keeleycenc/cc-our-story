@@ -40,7 +40,7 @@ public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
     /// </summary>
     public async Task<IActionResult> OnPostToggleAsync(int id, bool approved, CancellationToken cancellationToken) {
         _ = await comments.SetApprovedAsync(id, approved, cancellationToken);
-        TempData["Flash"] = approved ? "这条留言已经放出来了。" : "这条留言先压下去了。";
+        TempData["Flash"] = approved ? "这条留言已放出（可见）" : "这条留言已被压下（不可见）";
         return BackToList();
     }
 

@@ -119,6 +119,27 @@
     });
   });
 
+  /* 留言正文折起来：CSS 里先按四行截断，这里只负责判断有没有被截到 ——
+     没截到就不摆按钮，免得短短一句话下面还挂个没用的「展开」 */
+  document.querySelectorAll('[data-clamp]').forEach((text) => {
+    const toggle = text.parentNode.querySelector('[data-clamp-toggle]');
+    if (!toggle) return;
+
+    if (text.scrollHeight <= text.clientHeight + 2) return;
+
+    const label = toggle.querySelector('span') || toggle;
+    toggle.hidden = false;
+
+    toggle.addEventListener('click', () => {
+      const open = text.classList.toggle('is-open');
+      toggle.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      label.textContent = open ? '收起' : '展开';
+    });
+
+    toggle.setAttribute('aria-expanded', 'false');
+  });
+
   /* 图片占位：OSS 和外链有时要等上好几秒，先摆一块骨架屏把位置占住，
      图到了再淡入；实在拿不到就换成一句提示，不留一块空白 */
   document.querySelectorAll('[data-thumb]').forEach((thumb) => {

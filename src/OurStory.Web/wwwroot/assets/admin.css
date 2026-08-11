@@ -183,7 +183,6 @@ p { margin: 0 }
 .admin-table th { color: var(--faint); font-size: 11px; font-weight: 400; letter-spacing: .05em }
 .admin-table tr:last-child td { border-bottom: 0 }
 .admin-table td.is-actions { white-space: nowrap; text-align: right }
-.admin-table .title-cell { display: flex; align-items: center; gap: 8px }
 
 .admin-moment-list { display: grid; gap: 10px }
 
@@ -218,6 +217,86 @@ p { margin: 0 }
 .admin-moment-meta > span:not(.tag) { display: inline-flex; align-items: center; gap: 5px }
 .admin-moment-actions { display: flex; align-items: center; gap: 6px }
 .admin-moment-actions form { display: inline-flex; margin: 0 }
+
+/* 留言：正文是主角，长度又能到 2000 字，所以单独一套卡片 ——
+   先折成四行，点「展开」才铺开，一屏里能扫过好几条 */
+.admin-comment-list { display: grid; gap: 10px }
+
+.admin-comment-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 20px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--surface-soft);
+    transition: border-color .18s, background-color .18s;
+}
+
+.admin-comment-item:hover { border-color: var(--line-strong); background: var(--surface) }
+.admin-comment-summary { min-width: 0 }
+
+.admin-comment-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px }
+.admin-comment-who { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 700 }
+.admin-comment-who .icon { color: var(--faint) }
+
+.admin-comment-text {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.75;
+    white-space: pre-wrap;      /* 留言里的换行原样保留 */
+    overflow-wrap: anywhere;    /* 一长串不带空格的地址也别把卡片撑开 */
+}
+
+/* 折叠只在有脚本时生效：展开按钮也归它管，没有脚本就老老实实全文显示 */
+:root.has-js .admin-comment-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+}
+
+:root.has-js .admin-comment-text.is-open {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+}
+
+.admin-comment-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--pink-dark);
+    font: 12px var(--sans);
+    cursor: pointer;
+}
+
+.admin-comment-more[hidden] { display: none }
+.admin-comment-more .icon { font-size: 14px; transition: transform .18s }
+.admin-comment-more.is-open .icon { transform: rotate(180deg) }
+
+.admin-comment-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 14px;
+    margin-top: 9px;
+    color: var(--faint);
+    font-size: 11px;
+}
+
+.admin-comment-meta > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0 }
+.admin-comment-meta a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.admin-comment-meta a:hover { color: var(--pink-dark) }
+
+.admin-comment-actions { display: flex; align-items: center; gap: 6px }
+.admin-comment-actions form { display: inline-flex; margin: 0 }
 
 .tag {
     display: inline-flex;
@@ -765,11 +844,11 @@ body.auth-page {
     .admin-who { display: none }
 
     .admin-panel { padding: 20px 16px }
-    .admin-moment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
+    .admin-moment-item, .admin-comment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
 
     /* 操作按钮改成等宽的格子：用 flex 的话每一格都不肯小于自己的内容，
-       「删除」外面还套了层 form，最后三个按钮宽窄不一 */
-    .admin-moment-actions {
+       「删除」外面还套了层 form，最后几个按钮宽窄不一 */
+    .admin-moment-actions, .admin-comment-actions {
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(0, 1fr);
@@ -778,8 +857,8 @@ body.auth-page {
         border-top: 1px solid var(--line);
     }
 
-    .admin-moment-actions form { display: block }
-    .admin-moment-actions .btn { width: 100%; justify-content: center }
+    .admin-moment-actions form, .admin-comment-actions form { display: block }
+    .admin-moment-actions .btn, .admin-comment-actions .btn { width: 100%; justify-content: center }
 }
 
 @media (prefers-reduced-motion: reduce) {
