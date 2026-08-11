@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using OurStory.Core.Configuration;
 using OurStory.Services;
 
 namespace OurStory.Web.Infrastructure;
@@ -10,6 +11,39 @@ namespace OurStory.Web.Infrastructure;
 /// 表示 WebApplicationExtensions
 /// </summary>
 public static class WebApplicationExtensions {
+    /// <summary>
+    /// 在启动日志里交代这次的配置是从哪儿来的
+    /// </summary>
+    /// <remarks>
+    /// 配置文件读坏了只会退回默认值、不会让站点起不来，所以更得说一声：
+    /// 否则「OSS 怎么突然不生效了」这种事只能靠猜
+    /// </remarks>
+    public static void LogConfigurationSource(this WebApplication app, ConfigurationLoadResult result) {
+        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(result);
+
+        switch (result.Source) {
+            case ConfigurationSource.Created:
+                app.Logger.LogInformation("已生成配置文件 {Path}，按需要改完重启即可生效。", result.Path);
+                break;
+            case ConfigurationSource.Migrated:
+                app.Logger.LogWarning(
+                    "已把旧版的 appsettings.json / 环境变量搬进 {Path}，之后改配置认这一份就行，旧的可以删掉了。",
+                    result.Path);
+                break;
+            case ConfigurationSource.Fallback:
+                app.Logger.LogError(
+                    "配置文件 {Path} 读不出来（{Error}），这次先用默认值启动 —— 改回合法的 JSON 再重启。",
+                    result.Path,
+                    result.Error);
+                break;
+            case ConfigurationSource.File:
+            default:
+                app.Logger.LogInformation("站点配置来自 {Path}。", result.Path);
+                break;
+        }
+    }
+
     /// <summary>
     /// 启动时建表 / 升级表结构，并保证两个账号都在
     ///

@@ -30,14 +30,15 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /app ./
 
-# 数据库、附件和数据保护密钥都在 /data 里，只要挂住这一个目录就不会丢东西。
+# 数据库、附件、数据保护密钥和站点配置都在 /data 里，只要挂住这一个目录就不会丢东西。
 # 先在镜像里建好并交给 app 用户，命名卷初始化时会带上这份属主。
 RUN mkdir -p /data && chown -R app:app /data
 USER app
 VOLUME ["/data"]
 
+# 镜像里只留运行参数：端口和数据目录。站点怎么配，看 /data/ourstory.json
 ENV ASPNETCORE_HTTP_PORTS=8080 \
-    OurStory__DataDirectory=/data \
+    OURSTORY_DATA_DIR=/data \
     DOTNET_gcServer=0
 
 EXPOSE 8080

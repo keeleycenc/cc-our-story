@@ -14,7 +14,7 @@ ASP.NET Core + SQLite，单进程、单文件数据库，最低配置 1 核 2G �
 - 后台：写记录、管留言、传图片、改站点设置和账号口令
 - 深浅色两套配色，默认跟随系统，也可以手动固定
 - 图标使用内联的 [Lucide](https://lucide.dev) 子集，不请求任何 CDN
-- 附件默认存本地，配好环境变量可以切到阿里云 OSS，两边目录结构一致
+- 附件默认存本地，后台填好参数就能切到阿里云 OSS，两边目录结构一致
 
 ## 🧩 权限模型
 
@@ -68,7 +68,7 @@ dotnet watch --project src/OurStory.Web
 
 打开 <http://localhost:5080>
 
-改 `.cshtml`、`.cs`、`wwwroot` 下的样式脚本都会立刻生效，不用停掉重开，浏览器还会自己刷新。
+改 `.cshtml`、`.cs`、`wwwroot` 下的样式脚本都会立刻生效，不用停掉重开，浏览器还会自己刷新
 
 只跑一次不改代码的话，用 `dotnet run --project src/OurStory.Web` 就行 ——但它把 Razor 页面编译进了 dll，改完必须重启才看得到
 
@@ -78,17 +78,7 @@ dotnet watch --project src/OurStory.Web
 warn: OurStory.Web.Infrastructure[0]已创建 Boy 账号：登录名 boy，初始口令 xxxxxxxxxxxxxx —— 这串口令只在这里出现一次，登录后请到后台改掉
 ```
 
-不想抄日志的话，启动前先把口令定下来：
-
-```powershell
-$env:OurStory__Seed__BoyPassword = '男方口令'
-$env:OurStory__Seed__GirlPassword = '女方口令'
-dotnet watch --project src/OurStory.Web
-```
-
 然后到 <http://localhost:5080/login> 登录，后台在 <http://localhost:5080/admin>
-
-数据都在 `src/OurStory.Web/App_Data/` 里（数据库、上传的图片、登录密钥）。想推倒重来就把这个目录删掉再启动
 
 ### 方式二：Docker 一键起站
 
@@ -96,35 +86,25 @@ dotnet watch --project src/OurStory.Web
 Copy-Item .env.example .env
 ```
 
-按需改一下 `.env`（尤其是 `BOY_PASSWORD` / `GIRL_PASSWORD`，留空就随机生成），然后：
+`.env` 里只有一个对外端口，按需改一下，然后：
 
 ```bash
 docker compose up -d --build
 ```
 
-打开 <http://localhost:8080>。口令留空的话，从日志里捞：
+打开 <http://localhost:8080>。两个账号的初始口令是随机生成的，从日志里捞：
 
 ```bash
 docker compose logs web
 ```
 
-停掉：
-
-```bash
-docker compose down
-```
-
-**连数据一起删掉**（数据库、图片、密钥全没）：
-
-```bash
-docker compose down -v
-```
+登录后台就能改站点设置，时区、附件存到哪儿也在里面，不用动容器里的文件
 
 ## 🚀 远端部署
 
 ### 方式一：Docker（推荐）
 
-把仓库拉到服务器上，照着 [Docker 一键起站](#方式二docker-一键起站) 做一遍就行。数据在名为 `ourstory_data` 的卷里，`docker compose down` 不会动它
+把仓库拉到服务器上，照着 [Docker 一键起站](#方式二docker-一键起站) 做一遍就行。数据在名为 `ourstory_data` 的卷里
 
 ### 方式二：把发布包拖到目录下
 
@@ -163,16 +143,12 @@ Restart=always
 RestartSec=5
 User=www-data
 Environment=ASPNETCORE_HTTP_PORTS=8080
-Environment=OurStory__Seed__BoyPassword=换成你的
-Environment=OurStory__Seed__GirlPassword=换成她的
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-`WorkingDirectory` 一定要写：`App_Data` 是相对当前工作目录解析的，
-不写的话 systemd 会用 `/`，数据库就跑到根目录去了。
-不想操心这个就把 `OurStory__DataDirectory` 写成绝对路径
+`WorkingDirectory` 一定要写：`App_Data` 是相对当前工作目录解析的，不写的话 systemd 会用 `/`，数据库就跑到根目录去了。不想操心这个就加一行 `Environment=OURSTORY_DATA_DIR=/srv/ourstory-data`，写绝对路径
 
 ### 升级
 
@@ -246,42 +222,6 @@ cd /srv/ourstory && ./OurStory.Web --reset-password boy
 ```
 
 想自己指定就再带一个参数（至少 8 位）：`--new-password '新口令'`。维护命令执行完就退出，**不会**启动站点、不会占端口。`--help` 能看到全部
-
-## ⚙️ 配置
-
-改 `src/OurStory.Web/appsettings.json`，或者用环境变量覆盖（嵌套用双下划线，例如 `OurStory__TimeZone`）
-
-| 键 | 默认值 | 说明 |
-| --- | --- | --- |
-| `OurStory:DataDirectory` | `App_Data` | 数据库、附件、密钥都放这里；相对路径按站点根目录算 |
-| `OurStory:DatabaseFileName` | `ourstory.db` | SQLite 文件名 |
-| `OurStory:TimeZone` | `Asia/Shanghai` | 「今天」「相恋第 N 天」「每日心动上限」都按它算 |
-| `OurStory:VisitorSecret` | 空 | 访客指纹的盐；留空会随机生成并存进数据库 |
-| `OurStory:Seed:BoyUserName` | `boy` | 首次启动创建的账号名 |
-| `OurStory:Seed:BoyPassword` | 空 | 留空则随机生成并打进启动日志 |
-| `OurStory:Seed:GirlUserName` | `girl` | 同上 |
-| `OurStory:Seed:GirlPassword` | 空 | 同上 |
-| `Storage:Driver` | `Local` | `Local` 或 `AliyunOss` |
-| `Storage:Prefix` | `ourstory/public` | object key 前缀，本地和 OSS 共用 |
-| `Storage:MaxFileSize` | `20971520` | 单个附件上限，字节 |
-
-站点名称、两个人的名字头像、在一起的时间、情话、每页条数、留言开关这些，都在后台「站点设置」里改，不用动配置文件
-
-### 附件存到 OSS
-
-不配也能用，附件会落在 `App_Data/uploads/`。要用 OSS 的话，把这五个环境变量配全：
-
-```bash
-OSS_REGION=cn-beijing
-OSS_BUCKET=your-bucket
-OSS_ACCESS_KEY_ID=...
-OSS_ACCESS_KEY_SECRET=...
-OSS_PUBLIC_BASE_URL=https://img.example.com
-```
-
-五项齐了就自动切到 OSS，缺任意一个都会继续用本地目录
-
-本地和 OSS 用的是同一套 object key（`前缀/年/月/随机名.后缀`），所以把 `App_Data/uploads/` 整个传到 Bucket 再切换，已有图片的地址不会变
 
 ## 🗄️ 数据库
 

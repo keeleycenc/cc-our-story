@@ -19,10 +19,12 @@ App_Data/
 *.db-shm
 *.db-wal
 
-# 本地配置
+# 本地配置：站点配置在数据目录里（App_Data/ourstory.json），
+# 根目录这一份是给 compose 往容器里挂载用的
 .env
-appsettings.Local.json
-appsettings.*.Local.json
+ourstory.json
+appsettings.json
+appsettings.*.json
 
 # 其它
 *.log

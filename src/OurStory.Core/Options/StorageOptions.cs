@@ -2,25 +2,12 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using System.Text.Json.Serialization;
+
 namespace OurStory.Core.Options;
 
 /// <summary>
-/// 附件存储方式
-/// </summary>
-public enum StorageDriver {
-    /// <summary>
-    /// 本地
-    /// </summary>
-    Local = 0,
-
-    /// <summary>
-    /// 阿里云 oss
-    /// </summary>
-    AliyunOss = 1
-}
-
-/// <summary>
-/// appsettings.json 里 "Storage" 节点
+/// 配置文件里的 "Storage" 节点
 /// </summary>
 /// <remarks>
 /// 本地和 OSS 用同一套 object key（<c>前缀/年/月/随机名.后缀</c>），
@@ -28,14 +15,12 @@ public enum StorageDriver {
 /// </remarks>
 public class StorageOptions {
     /// <summary>
-    /// 表示 SectionName
+    /// 获取或设置存储方式；留空表示自动：OSS 那几项填全了就走 OSS，否则用本地目录
     /// </summary>
-    public const string SectionName = "Storage";
-
-    /// <summary>
-    /// 获取或设置 Driver
-    /// </summary>
-    public StorageDriver Driver { get; set; } = StorageDriver.Local;
+    /// <remarks>
+    /// 想把参数留在配置文件里但暂时先存本地，就显式写成 <see cref="StorageDriver.Local"/>
+    /// </remarks>
+    public StorageDriver? Driver { get; set; }
 
     /// <summary>
     /// 获取或设置 object key 的前缀，只保留字母、数字、下划线、连字符和斜线
@@ -56,49 +41,16 @@ public class StorageOptions {
     /// 获取或设置执行 Oss 操作
     /// </summary>
     public OssOptions Oss { get; set; } = new();
-}
-
-/// <summary>
-/// 阿里云 OSS 参数。字段名和原来插件用的环境变量一一对应（OSS_REGION、OSS_BUCKET……）
-/// </summary>
-public class OssOptions {
-    /// <summary>
-    /// 获取或设置 Region
-    /// </summary>
-    public string Region { get; set; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Bucket
+    /// 获取真正生效的存储方式
     /// </summary>
-    public string Bucket { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取或设置 AccessKeyId
-    /// </summary>
-    public string AccessKeyId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取或设置 AccessKeySecret
-    /// </summary>
-    public string AccessKeySecret { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取或设置对外访问用的域名，例如 https://img.example.com
-    /// </summary>
-    public string PublicBaseUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取或设置自定义 API 端点；留空时按 Region 拼出 https://oss-&lt;region&gt;.aliyuncs.com
-    /// </summary>
-    public string ApiEndpoint { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取一个值，指示五项必填参数是否都齐了，缺任意一个都会自动退回本地存储
-    /// </summary>
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(Region)
-        && !string.IsNullOrWhiteSpace(Bucket)
-        && !string.IsNullOrWhiteSpace(AccessKeyId)
-        && !string.IsNullOrWhiteSpace(AccessKeySecret)
-        && !string.IsNullOrWhiteSpace(PublicBaseUrl);
+    /// <remarks>
+    /// 选了 OSS 但参数没配全的一律退回本地，免得后台一上传就报错
+    /// </remarks>
+    [JsonIgnore]
+    public StorageDriver EffectiveDriver =>
+        (Driver ?? StorageDriver.AliyunOss) == StorageDriver.AliyunOss && Oss.IsConfigured
+            ? StorageDriver.AliyunOss
+            : StorageDriver.Local;
 }

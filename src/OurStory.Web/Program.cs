@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
-using OurStory.Core.Options;
+using OurStory.Core.Configuration;
 using OurStory.Data;
 using OurStory.Services;
 using OurStory.Services.Storage;
@@ -23,19 +23,21 @@ var maintenance = MaintenanceCommand.Parse(args);
 
 var builder = WebApplication.CreateBuilder(MaintenanceCommand.StripFrom(args));
 
-// 环境变量既支持 OurStory__Seed__BoyPassword 这种嵌套写法，
-// 也支持 OSS_BUCKET 这类扁平写法（和旧部署的 .env 保持一致）
-builder.Configuration.AddOssEnvironmentVariables();
+// 站点配置只有一处来源：数据目录下的 ourstory.json
+var store = ConfigurationStore.Create(builder.Environment.ContentRootPath);
+var loaded = store.Load();
 
-builder.Services.AddOurStory(builder.Configuration, builder.Environment.ContentRootPath);
+// 日志级别也是默认值，跟着代码走
+builder.Logging.AddFilter(
+    "Microsoft.AspNetCore",
+    builder.Environment.IsDevelopment() ? LogLevel.Information : LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
-var dataDirectory = ServiceCollectionExtensions.ResolveDataDirectory(
-    builder.Environment.ContentRootPath,
-    builder.Configuration.GetSection(OurStoryOptions.SectionName)["DataDirectory"] ?? "App_Data");
+builder.Services.AddOurStory(store, loaded.Configuration, store.DataDirectory);
 
 // 密钥落盘，容器重启后登录状态和已解锁的记录都还在
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(dataDirectory, "keys")))
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(store.DataDirectory, "keys")))
     .SetApplicationName("CC.OurStory");
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -79,6 +81,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => {
 });
 
 var app = builder.Build();
+
+app.LogConfigurationSource(loaded);
 
 if (maintenance is not null) {
     return await app.ExecuteAsync(maintenance);

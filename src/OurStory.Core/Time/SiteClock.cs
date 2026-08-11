@@ -2,31 +2,35 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
-using OurStory.Core.Options;
+using OurStory.Core.Configuration;
 
 namespace OurStory.Core.Time;
 
 /// <summary>
-/// 站点时区下的「现在」和「今天」。
+/// 站点时区下的「现在」和「今天」
 ///
 /// 数据库里一律存 UTC，展示和分日统计一律走这里换算。
 /// 服务器换个时区部署，历史数据的归属不会跟着变。
 /// </summary>
-public class SiteClock {
-    private readonly TimeZoneInfo _timeZone;
+public class SiteClock(ActiveConfiguration configuration) {
+    private readonly ActiveConfiguration _configuration = configuration;
+    private string _resolvedId = string.Empty;
+    private TimeZoneInfo _timeZone = TimeZoneInfo.Utc;
 
     /// <summary>
-    /// 执行 SiteClock 操作
+    /// 获取站点时区。后台改完立刻按新的算；解析结果按 id 缓存，不会每次都去翻系统时区表
     /// </summary>
-    public SiteClock(OurStoryOptions options) {
-        ArgumentNullException.ThrowIfNull(options);
-        _timeZone = Resolve(options.TimeZone);
+    public TimeZoneInfo TimeZone {
+        get {
+            var id = _configuration.Site.TimeZone ?? string.Empty;
+            if (!string.Equals(id, _resolvedId, StringComparison.Ordinal)) {
+                _timeZone = Resolve(id);
+                _resolvedId = id;
+            }
+
+            return _timeZone;
+        }
     }
-
-    /// <summary>
-    /// 获取 TimeZone
-    /// </summary>
-    public TimeZoneInfo TimeZone => _timeZone;
 
     /// <summary>
     /// 获取 UtcNow
@@ -47,14 +51,15 @@ public class SiteClock {
     /// 转换Local
     /// </summary>
     public DateTime ToLocal(DateTimeOffset instant) =>
-        TimeZoneInfo.ConvertTime(instant, _timeZone).DateTime;
+        TimeZoneInfo.ConvertTime(instant, TimeZone).DateTime;
 
     /// <summary>
     /// 把一个「站点时区的本地时间」还原成可入库的 UTC 时刻
     /// </summary>
     public DateTimeOffset ToUtc(DateTime local) {
+        var zone = TimeZone;
         var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
-        return new DateTimeOffset(unspecified, _timeZone.GetUtcOffset(unspecified)).ToUniversalTime();
+        return new DateTimeOffset(unspecified, zone.GetUtcOffset(unspecified)).ToUniversalTime();
     }
 
     /// <summary>

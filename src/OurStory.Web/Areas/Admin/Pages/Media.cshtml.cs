@@ -4,8 +4,8 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
 using OurStory.Core.Abstractions;
+using OurStory.Core.Configuration;
 using OurStory.Core.Options;
 using OurStory.Services.Storage;
 
@@ -16,7 +16,7 @@ public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
     StoragePaths paths,
-    IOptions<StorageOptions> storageOptions) : PageModel {
+    ActiveConfiguration configuration) : PageModel {
     private const int MaxListed = 60;
 
     /// <summary>
@@ -27,7 +27,7 @@ public class MediaModel(
     /// <summary>
     /// 获取 IsLocal
     /// </summary>
-    public bool IsLocal => storageOptions.Value.Driver == StorageDriver.Local || !storageOptions.Value.Oss.IsConfigured;
+    public bool IsLocal => configuration.Storage.EffectiveDriver == StorageDriver.Local;
 
     /// <summary>
     /// 获取或设置 Items

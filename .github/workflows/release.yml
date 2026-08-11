@@ -92,10 +92,7 @@ jobs:
             ## 安装
 
             **目标机已经装了 .NET 10 运行时**：下载 `CCOurStory-${{ steps.meta.outputs.version }}-portable.zip`，
-            解压到任意目录，运行 `dotnet OurStory.Web.dll`。
+            解压到任意目录，运行 `dotnet OurStory.Web.dll`
 
             **目标机什么都没装**：下载 `CCOurStory-${{ steps.meta.outputs.version }}-linux-x64.zip`，
-            解压后 `chmod +x OurStory.Web && ./OurStory.Web` 即可。
-
-            两种包都会在自己目录下的 `App_Data/` 里建库。升级时直接覆盖文件，
-            **不要删掉 `App_Data/`** —— 数据库、附件和登录密钥都在里面。
+            解压后 `chmod +x OurStory.Web && ./OurStory.Web` 即可

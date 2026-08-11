@@ -3,9 +3,8 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OurStory.Core.Abstractions;
-using OurStory.Core.Options;
+using OurStory.Core.Configuration;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -16,19 +15,17 @@ namespace OurStory.Services.Storage;
 // 只用到 PUT / DELETE 两个接口，直接按 OSS 的 V1 签名拼请求头，不引入官方 SDK：省一个依赖，也省掉它一长串传递依赖
 public class AliyunOssFileStorage(
     IHttpClientFactory httpClientFactory,
-    IOptions<StorageOptions> options,
+    ActiveConfiguration configuration,
     ILogger<AliyunOssFileStorage> logger) : IFileStorage {
 
     public const string HttpClientName = "aliyun-oss";
-
-    private readonly StorageOptions _options = options.Value;
 
     public string DriverName => "阿里云 OSS";
 
     public async Task<string> SaveAsync(Stream content, string extension, string contentType, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(content);
 
-        var objectKey = ObjectKeyFactory.Create(_options.Prefix, extension, DateTime.Now);
+        var objectKey = ObjectKeyFactory.Create(configuration.Storage.Prefix, extension, DateTime.Now);
 
         using var buffer = new MemoryStream();
         await content.CopyToAsync(buffer, cancellationToken);
@@ -54,7 +51,7 @@ public class AliyunOssFileStorage(
         return await Send(request, cancellationToken);
     }
 
-    public string PublicUrl(string objectKey) => $"{_options.Oss.PublicBaseUrl.TrimEnd('/')}/{LocalFileStorage.EncodeKey(objectKey)}";
+    public string PublicUrl(string objectKey) => $"{configuration.Storage.Oss.PublicBaseUrl.TrimEnd('/')}/{LocalFileStorage.EncodeKey(objectKey)}";
 
     #region 私有方法
 
@@ -80,7 +77,7 @@ public class AliyunOssFileStorage(
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string objectKey, string contentType, Dictionary<string, string> ossHeaders) {
-        var oss = _options.Oss;
+        var oss = configuration.Storage.Oss;
         var date = DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture);
 
         // 签名串的格式和顺序是 OSS 定死的，多一个换行少一个换行都会 403
@@ -107,7 +104,7 @@ public class AliyunOssFileStorage(
     }
 
     private Uri ApiUrl(string objectKey) {
-        var oss = _options.Oss;
+        var oss = configuration.Storage.Oss;
         var endpoint = string.IsNullOrWhiteSpace(oss.ApiEndpoint)
             ? $"https://oss-{oss.Region}.aliyuncs.com"
             : oss.ApiEndpoint;

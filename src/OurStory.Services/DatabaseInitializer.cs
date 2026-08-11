@@ -4,8 +4,8 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OurStory.Core;
+using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
 using OurStory.Core.Options;
 using OurStory.Data;
@@ -36,16 +36,13 @@ public interface IDatabaseInitializer {
 public class DatabaseInitializer(
     OurStoryDbContext db,
     ISettingsService settings,
-    IOptions<OurStoryOptions> options,
+    ActiveConfiguration configuration,
     ILogger<DatabaseInitializer> logger) : IDatabaseInitializer {
-    /// <summary>访客指纹用的盐，存在设置表里，重启后统计不会断。</summary>
+    /// <summary>访客指纹用的盐，存在设置表里，重启后统计不会断</summary>
     public const string VisitorSecretKey = "system.visitorSecret";
 
-    private readonly OurStoryOptions _options = options.Value;
+    private readonly SiteOptions _options = configuration.Site;
 
-    /// <summary>
-    /// 初始化（异步）
-    /// </summary>
     public async Task<IReadOnlyList<SeededAccount>> InitializeAsync(CancellationToken cancellationToken = default) {
         await db.Database.MigrateAsync(cancellationToken);
 

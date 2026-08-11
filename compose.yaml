@@ -7,26 +7,6 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "${HTTP_PORT:-8080}:8080"
-    environment:
-      # 站点时区：「今天」「相恋第 N 天」「每日心动上限」都按它算
-      OurStory__TimeZone: "${SITE_TIMEZONE:-Asia/Shanghai}"
-
-      # 首次启动时创建的两个账号。口令留空会随机生成一串并打进容器日志，
-      # 用 docker compose logs web 就能看到
-      OurStory__Seed__BoyUserName: "${BOY_USERNAME:-boy}"
-      OurStory__Seed__BoyPassword: "${BOY_PASSWORD:-}"
-      OurStory__Seed__GirlUserName: "${GIRL_USERNAME:-girl}"
-      OurStory__Seed__GirlPassword: "${GIRL_PASSWORD:-}"
-
-      # 附件默认存 /data/uploads。下面五项配全了会自动切到 OSS，
-      # 变量名和旧版插件完全一致，老的 .env 可以直接拿过来用
-      OSS_REGION: "${OSS_REGION:-}"
-      OSS_BUCKET: "${OSS_BUCKET:-}"
-      OSS_ACCESS_KEY_ID: "${OSS_ACCESS_KEY_ID:-}"
-      OSS_ACCESS_KEY_SECRET: "${OSS_ACCESS_KEY_SECRET:-}"
-      OSS_PUBLIC_BASE_URL: "${OSS_PUBLIC_BASE_URL:-}"
-      OSS_API_ENDPOINT: "${OSS_API_ENDPOINT:-}"
-      OSS_PREFIX: "${OSS_PREFIX:-ourstory/public}"
     volumes:
       - ourstory_data:/data
     restart: unless-stopped
@@ -39,5 +19,5 @@ services:
       start_period: 20s
 
 volumes:
-  # 数据库、附件、密钥都在这里。删掉它等于清空整个站点
+  # 数据库、附件、密钥和站点配置都在这里。删掉它等于清空整个站点
   ourstory_data:

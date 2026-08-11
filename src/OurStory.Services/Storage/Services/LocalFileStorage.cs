@@ -3,25 +3,22 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OurStory.Core.Abstractions;
-using OurStory.Core.Options;
+using OurStory.Core.Configuration;
 
 namespace OurStory.Services.Storage;
 
 // 本地目录存储。默认落在数据目录下的 uploads/，由静态文件中间件挂到 /uploads
 public class LocalFileStorage(
     StoragePaths paths,
-    IOptions<StorageOptions> options,
+    ActiveConfiguration configuration,
     ILogger<LocalFileStorage> logger) : IFileStorage {
-    private readonly StorageOptions _options = options.Value;
-
     public string DriverName => "本地目录";
 
     public async Task<string> SaveAsync(Stream content, string extension, string contentType, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(content);
 
-        var objectKey = ObjectKeyFactory.Create(_options.Prefix, extension, DateTime.Now);
+        var objectKey = ObjectKeyFactory.Create(configuration.Storage.Prefix, extension, DateTime.Now);
         var path = ResolvePath(objectKey) ?? throw new InvalidOperationException($"生成的附件路径不合法：{objectKey}");
 
         _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);

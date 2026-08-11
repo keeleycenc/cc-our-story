@@ -11,6 +11,13 @@
         new SelectListItem("始终浅色", "light"),
         new SelectListItem("始终深色", "dark")
     };
+
+    var storageDrivers = new[]
+    {
+        new SelectListItem("自动（OSS 填全了就用 OSS）", ""),
+        new SelectListItem("本地目录", "Local"),
+        new SelectListItem("阿里云 OSS", "AliyunOss")
+    };
 }
 <form method="post">
     @if (!string.IsNullOrEmpty(Model.Error))
@@ -32,13 +39,27 @@
             <label class="field">
                 <span>默认配色</span>
                 <select asp-for="Input.ColorMode" asp-items="colorModes"></select>
-                <small>访客在页面右上角还能各自再切，切换结果记在他们自己的浏览器里。</small>
             </label>
             <label class="field">
                 <span>点点滴滴每页条数</span>
                 <input asp-for="Input.MomentsPageSize" type="number" min="1" max="100">
             </label>
+            <label class="field">
+                <span>站点时区</span>
+                <input asp-for="Input.TimeZone" type="text" maxlength="64" placeholder="Asia/Shanghai" list="timezone-options">
+            </label>
         </div>
+        <datalist id="timezone-options">
+            <option value="Asia/Shanghai"></option>
+            <option value="Asia/Hong_Kong"></option>
+            <option value="Asia/Taipei"></option>
+            <option value="Asia/Tokyo"></option>
+            <option value="Asia/Singapore"></option>
+            <option value="Europe/London"></option>
+            <option value="America/New_York"></option>
+            <option value="America/Los_Angeles"></option>
+            <option value="UTC"></option>
+        </datalist>
     </div>
 
     <div class="admin-panel">
@@ -95,6 +116,44 @@
             <textarea asp-for="Input.LoveLetters" rows="8"></textarea>
             <small>一行一句，每次打开首页随机显示一句。全部清空会退回主题自带的那一份。</small>
         </label>
+    </div>
+
+    <div class="admin-panel">
+        <h2>@Icon("image")附件存储</h2>
+        <p class="admin-panel-hint">
+            本地和 OSS 用的是同一套路径规则，把 uploads 整个传上去再切过来，已有图片的地址不会变。
+        </p>
+        <div class="field-grid">
+            <label class="field">
+                <span>存储策略</span>
+                <select asp-for="Input.StorageDriver" asp-items="storageDrivers"></select>
+                <small>当前生效：@Model.EffectiveDriverText</small>
+            </label>
+            <label class="field">
+                <span>OSS Region</span>
+                <input asp-for="Input.OssRegion" type="text" maxlength="64" placeholder="cn-beijing">
+            </label>
+            <label class="field">
+                <span>OSS Bucket</span>
+                <input asp-for="Input.OssBucket" type="text" maxlength="64">
+            </label>
+            <label class="field">
+                <span>AccessKey ID</span>
+                <input asp-for="Input.OssAccessKeyId" type="text" maxlength="128" autocomplete="off">
+            </label>
+            <label class="field">
+                <span>AccessKey Secret</span>
+                <input asp-for="Input.OssAccessKeySecret" type="password" maxlength="128" autocomplete="new-password">
+            </label>
+            <label class="field">
+                <span>对外访问域名</span>
+                <input asp-for="Input.OssPublicBaseUrl" type="text" maxlength="200" placeholder="https://img.example.com">
+            </label>
+            <label class="field">
+                <span>自定义 API 端点</span>
+                <input asp-for="Input.OssApiEndpoint" type="text" maxlength="200" placeholder="留空按 Region 拼">
+            </label>
+        </div>
     </div>
 
     <div class="admin-panel">

@@ -12,5 +12,6 @@ release/
 dist/
 *.user
 .env
+ourstory.json
 README.md
 screenshot.png

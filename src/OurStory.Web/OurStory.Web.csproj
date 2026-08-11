@@ -7,6 +7,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Content Remove="appsettings*.json" />
+		<None Include="appsettings*.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\OurStory.Services\OurStory.Services.csproj" />
 	</ItemGroup>
 
