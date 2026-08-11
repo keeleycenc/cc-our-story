@@ -100,7 +100,7 @@ public class DetailModel(
 
         var who = await visitors.GetAsync(cancellationToken);
 
-        _ = await comments.AddAsync(new CommentSubmission {
+        var created = await comments.AddAsync(new CommentSubmission {
             MomentId = detail.Id,
             ParentId = replyTo > 0 ? replyTo : null,
             AuthorId = isLoggedIn ? User.UserId() : null,
@@ -111,7 +111,8 @@ public class DetailModel(
             VisitorHash = isLoggedIn ? null : who.VisitorHash
         }, cancellationToken);
 
-        return Redirect($"/moments/{slug}#comments");
+        // 直接回到刚写的那一条，不用自己在列表里找
+        return Redirect($"/moments/{slug}#comment-{created.Id}");
     }
 
     private async Task<MomentDetail?> LoadAsync(string slug, CancellationToken cancellationToken) {

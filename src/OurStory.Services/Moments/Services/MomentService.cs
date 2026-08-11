@@ -59,6 +59,9 @@ internal class MomentService(
     public Task<int> CountPublishedAsync(CancellationToken cancellationToken = default) =>
         db.Moments.CountAsync(moment => moment.Status == MomentStatus.Published, cancellationToken);
 
+    public Task<int> CountAsync(CancellationToken cancellationToken = default) =>
+        db.Moments.CountAsync(cancellationToken);
+
     public async Task<MomentDetail?> GetDetailAsync(string slug, MomentViewer viewer, CancellationToken cancellationToken = default) {
         var moment = await Visible(viewer)
             .Include(item => item.Author)
@@ -118,12 +121,16 @@ internal class MomentService(
         return string.Equals(moment.Password, password, StringComparison.Ordinal) ? moment.Id : null;
     }
 
-    public async Task<PagedList<Moment>> ListForAdminAsync(int page, int pageSize, CancellationToken cancellationToken = default) {
+    public async Task<PagedList<Moment>> ListForAdminAsync(int page, int pageSize, int? authorId = null, CancellationToken cancellationToken = default) {
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? 20 : pageSize;
 
-        var total = await db.Moments.CountAsync(cancellationToken);
-        var items = await db.Moments
+        var query = authorId is { } id
+            ? db.Moments.Where(moment => moment.AuthorId == id)
+            : db.Moments;
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
             .OrderByDescending(moment => moment.MomentDate)
             .ThenByDescending(moment => moment.Id)
             .Skip((page - 1) * pageSize)

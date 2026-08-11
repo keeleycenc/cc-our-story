@@ -107,36 +107,63 @@
 
 .post-nav {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
     max-width: 760px;
     margin: 60px auto 0;
 }
 
+/* 整块都是热区：<a> 撑满卡片，两张卡等高 */
 .post-nav-item {
-    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 18px 22px;
     border: 1px solid var(--line);
-    border-radius: 20px;
+    border-radius: 18px;
     background: var(--surface-soft);
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--muted);
+    transition: border-color .2s, background-color .2s, transform .2s, box-shadow .2s;
 }
 
-.post-nav-item > span {
+a.post-nav-item:hover {
+    border-color: var(--pink);
+    background: var(--pink-softer);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.post-nav-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 8px;
     font-size: 10px;
     letter-spacing: .1em;
     color: var(--pink-dark);
 }
 
+.post-nav-label .icon { transition: transform .2s }
+a.post-nav-item:hover .post-nav-label .icon { transform: translateX(-3px) }
+a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px) }
+
+/* 标题最多两行，长标题不会把一边的卡片撑得比另一边高一截 */
+.post-nav-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+}
+
 .post-nav-item.is-next { text-align: right }
-.post-nav-item.is-next > span { justify-content: flex-end }
-.post-nav-item a { color: var(--ink) }
-.post-nav-item a:hover { color: var(--pink-dark) }
+.post-nav-item.is-next .post-nav-label { justify-content: flex-end }
+
+/* 没有上一篇 / 下一篇时不是链接，样子上也别装成能点 */
+.post-nav-item.is-empty { background: none; border-style: dashed }
+.post-nav-item.is-empty .post-nav-label { color: var(--faint) }
+.post-nav-item.is-empty .post-nav-title { font-size: 12px; color: var(--faint) }
 
 .empty-page {
     min-height: 75vh;
@@ -148,7 +175,7 @@
     text-align: center;
 }
 
-.empty-page > .icon { font-size: 55px; color: var(--pink); stroke-width: 1.3 }
+.empty-page > .icon { font-size: 55px; color: var(--pink); stroke-width: 1.3px }
 .empty-page > p { font: 8px Arial; letter-spacing: .25em; color: var(--pink-dark) }
 .empty-page h1 { font: 400 44px var(--serif); margin: 6px 0 24px }
 
@@ -322,7 +349,7 @@
     background: var(--surface-soft);
 }
 
-.moment-empty > .icon { font-size: 42px; color: var(--pink); stroke-width: 1.3 }
+.moment-empty > .icon { font-size: 42px; color: var(--pink); stroke-width: 1.3px }
 .moment-empty h2 { font: 400 27px var(--serif); margin: 14px 0 8px }
 .moment-empty p { font-size: 12px; color: var(--muted); margin: 0 }
 
@@ -357,34 +384,130 @@
 
 .comments-heading h2 .icon, .respond h3 .icon { font-size: 20px; color: var(--pink-dark) }
 
-.comment-list { list-style: none; padding: 0; margin: 0 0 42px }
-.comment-list li { margin: 15px 0; padding: 20px 22px; border-radius: 18px; background: var(--surface-soft); font-size: 13px; line-height: 1.7 }
-.comment-list ol { list-style: none; padding-left: 28px }
-.comment-list .comment-author { display: flex; align-items: center; gap: 10px; font-weight: 700 }
+.comment-list, .comment-replies, .comment-replies-rest { list-style: none; padding: 0; margin: 0 }
+.comment-list { margin-bottom: 42px }
 
-.comment-list .comment-author:before {
-    content: "";
-    flex: none;
-    width: 32px;
-    height: 32px;
+/* 顶层留言之间用一条细线分开，回复靠缩进和左侧引导线区分，不再一层层套卡片 */
+.comment { scroll-margin-top: 100px }
+.comment-list > .comment { padding: 20px 0 }
+.comment-list > .comment:first-child { padding-top: 4px }
+.comment-list > .comment + .comment { border-top: 1px solid var(--line) }
+
+.comment-card { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 13px }
+.comment.is-reply .comment-card { grid-template-columns: 28px minmax(0, 1fr); gap: 10px }
+.comment-main { min-width: 0 }
+
+.comment-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
     border-radius: 50%;
-    background: var(--pink-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23bb526e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5'/%3E%3C/svg%3E") center/15px no-repeat;
+    box-shadow: inset 0 0 0 1px var(--card-ring);
+    color: #fff;
+    font: 400 16px/1 var(--serif);
+    user-select: none;
 }
 
-:root[data-theme="dark"] .comment-list .comment-author:before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0a3b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5'/%3E%3C/svg%3E");
+.comment.is-reply .comment-avatar { width: 28px; height: 28px; font-size: 12px }
+.comment-avatar img { width: 100%; height: 100%; object-fit: cover }
+.comment-avatar[data-tone="owner"] { background: linear-gradient(145deg, var(--pink), #eda58f) }
+.comment-avatar[data-tone="1"] { background: linear-gradient(145deg, #dd8098, #efaf9f) }
+.comment-avatar[data-tone="2"] { background: linear-gradient(145deg, #7893b4, #a6c0d4) }
+.comment-avatar[data-tone="3"] { background: linear-gradient(145deg, #7fae91, #b0cca4) }
+.comment-avatar[data-tone="4"] { background: linear-gradient(145deg, #9d8cc4, #c3aeda) }
+.comment-avatar[data-tone="5"] { background: linear-gradient(145deg, #cd9a6c, #e3bd8f) }
+.comment-avatar[data-tone="6"] { background: linear-gradient(145deg, #c2809b, #dfacba) }
+
+.comment-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 7px }
+.comment-name { font-style: normal; font-size: 12px; font-weight: 700 }
+.comment-name a:hover { color: var(--pink-dark) }
+
+.comment-badge {
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+    font-size: 9px;
+    letter-spacing: .05em;
 }
 
-.comment-list .comment-author span[itemprop="image"] { display: none }
-.comment-list .comment-author cite { font-style: normal }
-.comment-list .comment-meta { margin: 3px 0 11px 42px; font-size: 10px; color: var(--faint) }
-.comment-list .comment-content { margin-left: 42px }
-.comment-list .comment-content p { margin: 0 }
-.comment-list .comment-reply { margin: 9px 0 0 42px; font-size: 10px; color: var(--pink-dark) }
-.comment-pagination ol { display: flex; gap: 8px; list-style: none; padding: 0 }
+.comment-time { font-size: 10px; color: var(--faint) }
+.comment-replyto { display: flex; align-items: center; gap: 5px; margin: 0 0 6px; font-size: 10px; color: var(--faint) }
+.comment-replyto a { color: var(--pink-dark) }
+.comment-replyto a:hover { text-decoration: underline }
 
-.respond { padding: 30px; border-radius: 22px; background: var(--surface-soft); border: 1px solid var(--line) }
-.cancel-comment-reply { float: right; font-size: 10px; color: var(--pink-dark) }
+.comment-content {
+    padding: 11px 15px;
+    border-radius: 4px 15px 15px 15px;
+    background: var(--surface-muted);
+    font-size: 13px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+
+.comment-content p { margin: 0 }
+.comment-content p + p { margin-top: .6em }
+.comment:target > .comment-card > .comment-main > .comment-content { animation: comment-flash 2.6s ease-out }
+
+@keyframes comment-flash {
+    0%, 35% { box-shadow: 0 0 0 2px var(--pink) }
+    100% { box-shadow: 0 0 0 2px transparent }
+}
+
+.comment-actions { display: flex; align-items: center; gap: 4px; margin: 7px 0 0 -8px }
+
+.comment-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 9px;
+    color: var(--muted);
+    font-size: 10px;
+    transition: color .2s, background-color .2s;
+}
+
+.comment-action:hover { color: var(--pink-dark); background: var(--pink-softer) }
+.comment-action .icon { font-size: 12px }
+.comment-action.is-copied { color: var(--pink-dark) }
+
+/* 楼中楼只有这一层缩进，再深的回复也是它的兄弟 */
+.comment-replies { margin: 12px 0 0 18px; padding-left: 20px; border-left: 1px solid var(--line) }
+.comment-replies > .comment { padding: 10px 0 }
+.comment-replies > .comment:first-child { padding-top: 2px }
+
+.comment-more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 0;
+    color: var(--pink-dark);
+    font-size: 11px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.comment-more summary:hover { text-decoration: underline }
+.comment-more summary .icon { font-size: 13px; transition: transform .2s }
+.comment-more[open] summary .icon { transform: rotate(180deg) }
+.comment-more .more-close, .comment-more[open] .more-open { display: none }
+.comment-more[open] .more-close { display: inline }
+
+.respond { padding: 30px; border-radius: 22px; background: var(--surface-soft); border: 1px solid var(--line); scroll-margin-top: 100px }
+.respond-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px }
+.respond-head h3 { margin-bottom: 20px }
+
+/* 回复某条留言时表单会被搬到那条留言下面，这里收一收留白 */
+.respond.is-inline { margin: 12px 0 2px; padding: 18px 20px; border-radius: 16px; background: var(--surface) }
+.respond.is-inline h3 { font-size: 18px; margin-bottom: 14px }
+.respond.is-inline .comment-submit-row small { display: none }
+
+.cancel-comment-reply { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--pink-dark) }
+.cancel-comment-reply[hidden] { display: none }
+.cancel-comment-reply:hover { text-decoration: underline }
 .comment-form label { display: block }
 .comment-form label > span { display: block; margin: 0 0 7px; font-size: 10px; color: var(--muted) }
 
@@ -409,6 +532,13 @@
 .comment-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
 .comment-identity { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin: 0 0 16px }
 .comment-identity a { color: var(--pink-dark) }
+
+.comment-identity.is-error {
+    padding: 10px 13px;
+    border-radius: 12px;
+    background: var(--danger-soft);
+    color: var(--danger);
+}
 .comment-submit-row { display: flex; justify-content: space-between; align-items: center; gap: 16px }
 .comment-submit-row small { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; color: var(--faint) }
 
@@ -466,7 +596,7 @@
 @media (max-width: 800px) {
     .post-nav { grid-template-columns: 1fr }
     .post-nav-item.is-next { text-align: left }
-    .post-nav-item.is-next > span { justify-content: flex-start }
+    .post-nav-item.is-next .post-nav-label { justify-content: flex-start }
     .comment-fields { grid-template-columns: 1fr }
     .comment-submit-row { align-items: stretch; flex-direction: column }
     .comment-form button { width: 100%; justify-content: center }
@@ -488,4 +618,10 @@
     .article-body form.protected { padding: 28px 20px }
     .article-body form.protected > p:last-child { grid-template-columns: 1fr }
     .article-body form.protected input.submit { width: 100% }
+    .respond { padding: 22px 18px }
+    .respond.is-inline { padding: 16px }
+    /* 屏幕窄的时候缩进要省着用，不然回复只剩下一条竖着的字 */
+    .comment-card { grid-template-columns: 34px minmax(0, 1fr); gap: 10px }
+    .comment-avatar { width: 34px; height: 34px; font-size: 14px }
+    .comment-replies { margin-left: 6px; padding-left: 14px }
 }

@@ -65,9 +65,8 @@ public class IndexModel(
     public async Task OnGetAsync(CancellationToken cancellationToken) {
         Site = await settingsService.GetAsync(cancellationToken);
 
-        var page = await moments.ListForAdminAsync(1, 6, cancellationToken);
-        Recent = page.Items;
-        TotalCount = page.TotalCount;
+        Recent = (await moments.ListForAdminAsync(1, 6, User.UserId(), cancellationToken)).Items;
+        TotalCount = await moments.CountAsync(cancellationToken);
         PublishedCount = await moments.CountPublishedAsync(cancellationToken);
         CommentCount = await comments.CountAsync(cancellationToken);
 

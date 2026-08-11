@@ -1,6 +1,6 @@
 @model CommentsViewModel
 @{
-    // 回复的时候只是给表单挂一个 parentId，不需要 JS
+    // 没有 JS 时回复就是给表单挂一个 parentId 再跳回来；有 JS 时表单直接搬到那条留言下面
     var isReplying = Model.ReplyTo > 0;
     var canWrite = Model.AllowComment && (Model.IsLoggedIn || Model.AllowGuestComments);
 }
@@ -23,15 +23,14 @@
     @if (canWrite)
     {
         <div id="respond" class="respond">
-            @if (isReplying)
-            {
-                <div class="cancel-comment-reply"><a href="@($"/moments/{Model.Slug}#respond")">取消回复</a></div>
-            }
-            <h3 id="response">@Icon("pen-line")@(isReplying ? "回复这条留言" : "写下想说的话")</h3>
+            <div class="respond-head">
+                <h3 id="response">@Icon("pen-line")<span data-respond-title>@(isReplying ? "回复这条留言" : "写下想说的话")</span></h3>
+                <a class="cancel-comment-reply" href="@($"/moments/{Model.Slug}#respond")"@(isReplying ? null : Html.Raw(" hidden"))>@Icon("x")取消回复</a>
+            </div>
 
             @if (!string.IsNullOrEmpty(Model.Error))
             {
-                <p class="comment-identity">@Icon("circle-alert")@Model.Error</p>
+                <p class="comment-identity is-error">@Icon("circle-alert")@Model.Error</p>
             }
 
             <form method="post" asp-page-handler="Comment" id="comment-form" class="comment-form" role="form">

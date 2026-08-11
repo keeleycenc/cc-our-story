@@ -32,7 +32,8 @@ public class IndexModel(IMomentService moments, SiteClock clock) : PageModel {
     /// 处理 GET 请求
     /// </summary>
     public async Task OnGetAsync(CancellationToken cancellationToken) {
-        Items = await moments.ListForAdminAsync(PageNumber, PageSize, cancellationToken);
+        // 这一页管的是全站的记录，两个人的都列出来
+        Items = await moments.ListForAdminAsync(PageNumber, PageSize, cancellationToken: cancellationToken);
     }
 
     /// <summary>

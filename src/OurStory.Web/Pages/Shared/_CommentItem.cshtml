@@ -1,28 +1,82 @@
 @model CommentItemModel
 @{
     var comment = Model.Comment;
+    var tone = comment.IsOwner ? "owner" : comment.AvatarTone.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var stamp = comment.CreatedAt.ToString("yyyy-MM-dd HH:mm");
+    // 回复挤在楼中楼里，年份就不重复了，完整时间挂在 title 上
+    var shown = Model.IsReply ? comment.CreatedAt.ToString("MM-dd HH:mm") : stamp;
+    var replies = comment.Replies;
+    var folded = replies.Count > CommentItemModel.ReplyPreview + 1 ? replies.Count - CommentItemModel.ReplyPreview : 0;
 }
-<li id="comment-@comment.Id" class="comment-body">
-    <div class="comment-author">
-        @if (!string.IsNullOrWhiteSpace(comment.AuthorUrl))
-        {
-            <cite class="fn"><a href="@comment.AuthorUrl" rel="nofollow noopener" target="_blank">@comment.AuthorName</a></cite>
-        }
-        else
-        {
-            <cite class="fn">@comment.AuthorName</cite>
-        }
-    </div>
-    <div class="comment-meta"><a href="#comment-@comment.Id">@comment.CreatedAt.ToString("yyyy-MM-dd HH:mm")</a></div>
-    <div class="comment-content">@Html.Raw(comment.ContentHtml)</div>
-    <div class="comment-reply"><a href="@($"/moments/{Model.Slug}?replyTo={comment.Id}#respond")">回复</a></div>
-
-    @if (comment.Replies.Count > 0)
-    {
-        <ol class="comment-children">
-            @foreach (var reply in comment.Replies)
+<li id="comment-@comment.Id" class="comment@(Model.IsReply ? " is-reply" : "")">
+    <div class="comment-card">
+        <div class="comment-avatar" data-tone="@tone">
+            @if (!string.IsNullOrWhiteSpace(comment.AvatarUrl))
             {
-                <partial name="_CommentItem" model="@(new CommentItemModel(reply, Model.Slug))" />
+                <img src="@comment.AvatarUrl" alt="" loading="lazy" decoding="async">
+            }
+            else
+            {
+                <span aria-hidden="true">@comment.Initial</span>
+            }
+        </div>
+        <div class="comment-main">
+            <p class="comment-head">
+                @if (!string.IsNullOrWhiteSpace(comment.AuthorUrl))
+                {
+                    <cite class="comment-name"><a href="@comment.AuthorUrl" rel="nofollow noopener" target="_blank">@comment.AuthorName</a></cite>
+                }
+                else
+                {
+                    <cite class="comment-name">@comment.AuthorName</cite>
+                }
+                @if (comment.IsAuthor)
+                {
+                    <span class="comment-badge">作者</span>
+                }
+                <time class="comment-time" datetime="@comment.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")" title="@stamp">@shown</time>
+            </p>
+
+            @if (comment.ReplyToName is not null)
+            {
+                <p class="comment-replyto">@Icon("corner-down-right")回复 <a href="#comment-@comment.ReplyToId">@("@" + comment.ReplyToName)</a></p>
+            }
+
+            <div class="comment-content">@Html.Raw(comment.ContentHtml)</div>
+
+            <p class="comment-actions">
+                <a class="comment-action" href="@($"/moments/{Model.Slug}?replyTo={comment.Id}#respond")"
+                   aria-label="回复 @comment.AuthorName" data-reply-to="@comment.Id" data-reply-name="@comment.AuthorName">@Icon("reply")回复</a>
+                <a class="comment-action" href="#comment-@comment.Id" aria-label="@comment.AuthorName 这条留言的链接" data-comment-link>@Icon("link")<span>链接</span></a>
+            </p>
+        </div>
+    </div>
+
+    @if (!Model.IsReply && replies.Count > 0)
+    {
+        <ol class="comment-replies">
+            @foreach (var reply in folded > 0 ? replies.Take(CommentItemModel.ReplyPreview) : replies)
+            {
+                <partial name="_CommentItem" model="@(new CommentItemModel(reply, Model.Slug, true))" />
+            }
+
+            @if (folded > 0)
+            {
+                <li class="comment-more-row">
+                    <details class="comment-more">
+                        <summary>
+                            <span class="more-open">展开 @folded 条回复</span>
+                            <span class="more-close">收起回复</span>
+                            @Icon("chevron-down")
+                        </summary>
+                        <ol class="comment-replies-rest">
+                            @foreach (var reply in replies.Skip(CommentItemModel.ReplyPreview))
+                            {
+                                <partial name="_CommentItem" model="@(new CommentItemModel(reply, Model.Slug, true))" />
+                            }
+                        </ol>
+                    </details>
+                </li>
             }
         </ol>
     }

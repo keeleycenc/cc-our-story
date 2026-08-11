@@ -109,6 +109,13 @@ public class SiteSettings {
         UserRole.Girl => GirlName,
         _ => "路过的朋友"
     };
+
+    /// <summary>某个身份在页面上的头像，没设置就是空串。</summary>
+    public string RoleAvatar(UserRole role) => role switch {
+        UserRole.Boy => BoyAvatar,
+        UserRole.Girl => GirlAvatar,
+        _ => string.Empty
+    };
 }
 
 /// <summary>设置表里用到的键名，改名会丢历史设置，所以集中放在这里。</summary>

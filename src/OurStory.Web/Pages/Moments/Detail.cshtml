@@ -48,28 +48,35 @@
     </article>
 
     <nav class="post-nav" aria-label="上一篇 / 下一篇">
-        <div class="post-nav-item">
-            <span>@Icon("arrow-left")更早的一篇</span>
-            @if (detail.Previous is not null)
-            {
-                <a href="@detail.Previous.Url">@detail.Previous.Title</a>
-            }
-            else
-            {
-                <span>已经是最早的记录了</span>
-            }
-        </div>
-        <div class="post-nav-item is-next">
-            <span>更新的一篇@(Icon("arrow-right"))</span>
-            @if (detail.Next is not null)
-            {
-                <a href="@detail.Next.Url">@detail.Next.Title</a>
-            }
-            else
-            {
-                <span>已经是最新的记录了</span>
-            }
-        </div>
+        @if (detail.Previous is not null)
+        {
+            <a class="post-nav-item" href="@detail.Previous.Url" rel="prev">
+                <span class="post-nav-label">@Icon("arrow-left")更早的一篇</span>
+                <span class="post-nav-title">@detail.Previous.Title</span>
+            </a>
+        }
+        else
+        {
+            <div class="post-nav-item is-empty">
+                <span class="post-nav-label">@Icon("arrow-left")更早的一篇</span>
+                <span class="post-nav-title">已经是最早的记录了</span>
+            </div>
+        }
+
+        @if (detail.Next is not null)
+        {
+            <a class="post-nav-item is-next" href="@detail.Next.Url" rel="next">
+                <span class="post-nav-label">更新的一篇@(Icon("arrow-right"))</span>
+                <span class="post-nav-title">@detail.Next.Title</span>
+            </a>
+        }
+        else
+        {
+            <div class="post-nav-item is-next is-empty">
+                <span class="post-nav-label">更新的一篇@(Icon("arrow-right"))</span>
+                <span class="post-nav-title">已经是最新的记录了</span>
+            </div>
+        }
     </nav>
 
     <partial name="_Comments" model="Model.Comments" />

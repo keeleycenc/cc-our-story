@@ -57,10 +57,16 @@ public class CommentsViewModel {
     public string? Error { get; init; }
 }
 
-/// <summary>留言列表里的一条，回复靠它递归渲染</summary>
+/// <summary>留言列表里的一条。楼中楼只有两层，所以这个局部视图最多再套一层自己</summary>
 /// <param name="Comment">这条留言</param>
 /// <param name="Slug">所属记录的短名，用来拼「回复」的地址</param>
-public record CommentItemModel(CommentNode Comment, string Slug);
+/// <param name="IsReply">是不是挂在别人下面的回复，决定头像大小和缩进</param>
+public record CommentItemModel(CommentNode Comment, string Slug, bool IsReply = false) {
+    /// <summary>
+    /// 回复超过这个条数就折叠
+    /// </summary>
+    public const int ReplyPreview = 3;
+}
 
 /// <summary>独立的提示页（404 以外的异常，以及密码错误的回执）</summary>
 /// <param name="Code">HTTP 状态码</param>

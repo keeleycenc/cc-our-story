@@ -67,16 +67,25 @@ public interface IMomentService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 异步执行后台分页获取全部回忆记录
+    /// 异步执行后台分页获取回忆记录
     /// </summary>
     /// <param name="page">页码，从 1 开始</param>
     /// <param name="pageSize">每页数量</param>
+    /// <param name="authorId">只要这个人发的；传 null 表示不限作者</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>异步操作任务结果，后台回忆分页列表</returns>
     Task<PagedList<Moment>> ListForAdminAsync(
         int page,
         int pageSize,
+        int? authorId = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 异步获取回忆总数，含草稿
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>异步操作任务结果，回忆总数量</returns>
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 异步根据编号获取回忆实体

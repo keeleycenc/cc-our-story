@@ -17,6 +17,12 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
     public async Task<IReadOnlyList<CommentNode>> GetTreeAsync(int momentId, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
 
+        // 「作者」角标只给写这篇记录的那一位，另一半过来留言也是普通身份
+        var authorId = await db.Moments
+            .Where(moment => moment.Id == momentId)
+            .Select(moment => (int?)moment.AuthorId)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var comments = await db.Comments
             .Where(comment => comment.MomentId == momentId && comment.IsApproved)
             .OrderBy(comment => comment.CreatedAt)
@@ -24,25 +30,28 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var nodes = comments.ToDictionary(
-            comment => comment.Id,
-            comment => new CommentNode {
-                Id = comment.Id,
-                AuthorName = DisplayName(comment, site),
-                AuthorUrl = comment.AuthorUrl,
-                ContentHtml = ToHtml(comment.Content),
-                CreatedAt = clock.ToLocal(comment.CreatedAt),
-                IsOwner = comment.AuthorId is not null
-            });
+        var nodes = comments.ToDictionary(comment => comment.Id, comment => ToNode(comment, site, authorId));
+
+        // 父留言被删掉的孤儿回复不算数，当顶层显示，不让它凭空消失
+        var parents = comments
+            .Where(comment => comment.ParentId is { } parentId && nodes.ContainsKey(parentId))
+            .ToDictionary(comment => comment.Id, comment => comment.ParentId!.Value);
 
         var roots = new List<CommentNode>();
         foreach (var comment in comments) {
             var node = nodes[comment.Id];
-            // 父留言被删掉的孤儿回复直接当顶层显示，不让它凭空消失
-            if (comment.ParentId is { } parentId && nodes.TryGetValue(parentId, out var parent)) {
-                parent.Replies.Add(node);
-            } else {
+            if (!parents.TryGetValue(comment.Id, out var parentId)) {
                 roots.Add(node);
+                continue;
+            }
+
+            // 楼中楼只留两层：孙辈以下全部拍到顶层留言下面，缩进不再加深，
+            // 谁回谁交给「回复 @某人」说明
+            var rootId = RootOf(comment.Id, parents);
+            nodes[rootId].Replies.Add(node);
+            if (parentId != rootId) {
+                node.ReplyToId = parentId;
+                node.ReplyToName = nodes[parentId].AuthorName;
             }
         }
 
@@ -118,6 +127,43 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
     }
 
     #region 私有方法
+
+    private CommentNode ToNode(Comment comment, SiteSettings site, int? momentAuthorId) {
+        var name = DisplayName(comment, site);
+        return new CommentNode {
+            Id = comment.Id,
+            AuthorName = name,
+            AuthorUrl = comment.AuthorUrl,
+            ContentHtml = ToHtml(comment.Content),
+            CreatedAt = clock.ToLocal(comment.CreatedAt),
+            IsOwner = comment.AuthorId is not null,
+            IsAuthor = comment.AuthorId is { } id && id == momentAuthorId,
+            AvatarUrl = comment.Author is null ? string.Empty : site.RoleAvatar(comment.Author.Role),
+            AvatarTone = Tone(name)
+        };
+    }
+
+    /// <summary>沿着父链一直往上，找到这条回复属于哪条顶层留言。</summary>
+    private static int RootOf(int id, Dictionary<int, int> parents) {
+        // 数据里理论上不会出现环，真出了也只是走一圈就停下，不至于把页面转死
+        var walked = new HashSet<int>();
+        var current = id;
+        while (walked.Add(current) && parents.TryGetValue(current, out var parentId)) {
+            current = parentId;
+        }
+
+        return current;
+    }
+
+    /// <summary>按称呼算一个稳定的配色编号，改用随机数会导致同一个人每次刷新换个颜色。</summary>
+    private static int Tone(string name) {
+        var sum = 0;
+        foreach (var character in name) {
+            sum = ((sum * 31) + character) & 0xFFFF;
+        }
+
+        return (sum % 6) + 1;
+    }
 
     private static string ToHtml(string text) {
         if (string.IsNullOrWhiteSpace(text)) {
