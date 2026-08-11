@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Keeleycenc.
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
+
 using Microsoft.AspNetCore.Html;
 using System.Text;
 using System.Text.Encodings.Web;

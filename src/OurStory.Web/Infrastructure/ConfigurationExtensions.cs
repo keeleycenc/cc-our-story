@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Keeleycenc.
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
+
 using OurStory.Core.Options;
 
 namespace OurStory.Web.Infrastructure;

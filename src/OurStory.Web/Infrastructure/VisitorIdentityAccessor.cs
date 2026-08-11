@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Keeleycenc.
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
-using OurStory.Core;
+
 using OurStory.Services;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Settings;
@@ -11,7 +11,7 @@ using System.Text;
 namespace OurStory.Web.Infrastructure;
 
 /// <summary>
-/// 判断「这次请求是谁发来的」。
+/// 判断「这次请求是谁发来的」
 ///
 /// 登录了就是男主或女主，身份完全由服务端的票据决定，前端改不了；
 /// 没登录的一律是访客，用一串哈希区分不同的人 —— 存的不是原始 IP，

@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <RootNamespace>OurStory.Web</RootNamespace>
-    <Description>ASP.NET Core 站点</Description>
-    <UserSecretsId>ourstory-web</UserSecretsId>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RootNamespace>OurStory.Web</RootNamespace>
+		<Description>ASP.NET Core 站点</Description>
+		<UserSecretsId>ourstory-web</UserSecretsId>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\OurStory.Services\OurStory.Services.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\OurStory.Services\OurStory.Services.csproj" />
+	</ItemGroup>
 
 </Project>

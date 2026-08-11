@@ -193,31 +193,6 @@ chmod +x /srv/ourstory/OurStory.Web                             # 自带运行�
 systemctl start ourstory
 ```
 
-三件容易踩的事：
-
-1. **先停再覆盖**。进程跑着的时候 `unzip -o` 会去写正在执行的文件，自带运行时的包会直接报 `Text file busy`，framework-dependent 的包则可能把内存里映射着的 dll 写坏，站点当场崩
-2. **别删 `App_Data/`**。数据库、上传的图片、登录密钥全在里面 ——密钥没了的话所有人的登录状态和「已解锁的记录」都会失效。`unzip -o` 只覆盖同名文件，不会碰它
-3. **`appsettings.json` 会被包里的那份盖掉**。所以站点配置不要写在它里面，一律用环境变量（systemd 的 `Environment=`，或 Docker 的 `environment:`）
-
-表结构的变化会在启动时自动迁移，不需要手动跑任何命令。备份就是整个 `App_Data/` 目录，**要在进程停掉之后再拷** —— SQLite 开着 WAL，跑着的时候拷出来的可能是个不完整的库
-
-### 想要不中断 + 能回滚
-
-小站点停几秒无所谓，但如果想更稳一点，用两个目录加一个软链接：
-
-```bash
-# 新版本解压到带版本号的目录
-unzip -q CCOurStory-v1.0.1-linux-x64.zip -d /srv/ourstory/releases/v1.0.1
-ln -sfn /srv/ourstory/shared/App_Data /srv/ourstory/releases/v1.0.1/App_Data
-chmod +x /srv/ourstory/releases/v1.0.1/OurStory.Web
-
-# 切过去
-ln -sfn /srv/ourstory/releases/v1.0.1 /srv/ourstory/current
-systemctl restart ourstory
-```
-
-`ourstory.service` 里把 `WorkingDirectory` 和 `ExecStart` 指到 `/srv/ourstory/current`。出问题就把软链接指回上一个版本再 restart，几秒钟的事。数据统一放在 `shared/App_Data`，跟版本目录解耦
-
 ### 放在 Nginx 后面
 
 ```nginx

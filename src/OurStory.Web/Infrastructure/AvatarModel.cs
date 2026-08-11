@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Keeleycenc.
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
+
 namespace OurStory.Web.Infrastructure;
 
 /// <summary>头像局部视图的参数。</summary>

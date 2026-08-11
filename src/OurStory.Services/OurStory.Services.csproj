@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <RootNamespace>OurStory.Services</RootNamespace>
-    <Description>业务服务层：站点设置、账号、点点滴滴、留言、心动统计与附件存储</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RootNamespace>OurStory.Services</RootNamespace>
+		<Description>业务服务层：站点设置、账号、点点滴滴、留言、心动统计与附件存储</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Markdig" Version="$(MarkdigVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVersion)" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Markdig" Version="$(MarkdigVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVersion)" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\OurStory.Data\OurStory.Data.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\OurStory.Data\OurStory.Data.csproj" />
+	</ItemGroup>
 
 </Project>

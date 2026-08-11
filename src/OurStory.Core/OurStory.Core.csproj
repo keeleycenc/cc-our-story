@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <RootNamespace>OurStory.Core</RootNamespace>
-    <Description>CC Our Story 的领域模型、设置契约与通用工具，不依赖任何存储或 Web 框架</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RootNamespace>OurStory.Core</RootNamespace>
+		<Description>CC Our Story 的领域模型、设置契约与通用工具，不依赖任何存储或 Web 框架</Description>
+	</PropertyGroup>
 
 </Project>

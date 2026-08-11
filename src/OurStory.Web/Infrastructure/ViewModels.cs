@@ -1,11 +1,14 @@
 // Copyright (c) 2026 Keeleycenc.
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
+
 using OurStory.Services.Comments;
 
 namespace OurStory.Web.Infrastructure;
 
-/// <summary>详情页下半截「留言」那一段需要的全部东西。</summary>
+/// <summary>
+/// 详情页下半截「留言」那一段需要的全部东西
+/// </summary>
 public class CommentsViewModel {
     /// <summary>
     /// 获取或设置 Slug
@@ -54,14 +57,14 @@ public class CommentsViewModel {
     public string? Error { get; init; }
 }
 
-/// <summary>留言列表里的一条，回复靠它递归渲染。</summary>
-/// <param name="Comment">这条留言。</param>
-/// <param name="Slug">所属记录的短名，用来拼「回复」的地址。</param>
+/// <summary>留言列表里的一条，回复靠它递归渲染</summary>
+/// <param name="Comment">这条留言</param>
+/// <param name="Slug">所属记录的短名，用来拼「回复」的地址</param>
 public record CommentItemModel(CommentNode Comment, string Slug);
 
-/// <summary>独立的提示页（404 以外的异常，以及密码错误的回执）。</summary>
-/// <param name="Code">HTTP 状态码。</param>
-/// <param name="Message">给人看的一句话。</param>
+/// <summary>独立的提示页（404 以外的异常，以及密码错误的回执）</summary>
+/// <param name="Code">HTTP 状态码</param>
+/// <param name="Message">给人看的一句话</param>
 public record ExceptionDocumentModel(int Code, string Message) {
     /// <summary>
     /// 获取 Title

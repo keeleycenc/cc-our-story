@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <RootNamespace>OurStory.Data</RootNamespace>
-    <Description>基于 EF Core + SQLite 的持久化层：DbContext、映射、迁移与首次初始化</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RootNamespace>OurStory.Data</RootNamespace>
+		<Description>基于 EF Core + SQLite 的持久化层：DbContext、映射、迁移与首次初始化</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <!-- 直接锁定原生 SQLite 绑定版本，避免传递引用带进有漏洞的旧版 -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="$(SQLitePCLRawVersion)" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<!-- 直接锁定原生 SQLite 绑定版本，避免传递引用带进有漏洞的旧版 -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="$(SQLitePCLRawVersion)" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\OurStory.Core\OurStory.Core.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\OurStory.Core\OurStory.Core.csproj" />
+	</ItemGroup>
 
 </Project>
