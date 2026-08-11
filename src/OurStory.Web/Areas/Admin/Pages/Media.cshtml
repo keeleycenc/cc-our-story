@@ -42,7 +42,10 @@
             @foreach (var item in Model.Items)
             {
                 <figure class="media-item">
-                    <a href="@item.Url" target="_blank" rel="noopener"><img src="@item.Url" alt="@item.Name" loading="lazy"></a>
+                    <a class="media-thumb" href="@item.Url" target="_blank" rel="noopener" data-thumb>
+                        <img src="@item.Url" alt="@item.Name" loading="lazy" decoding="async">
+                        <span class="media-thumb-failed">@Icon("circle-alert")<span>图片加载失败</span></span>
+                    </a>
                     <figcaption>
                         <span class="media-name" title="@item.Name">@item.Name</span>
                         <span class="media-foot">

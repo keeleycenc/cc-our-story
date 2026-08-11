@@ -39,7 +39,9 @@
 				if (mode !== 'light' && mode !== 'dark') {
 					mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 				}
+
 				document.documentElement.dataset.theme = mode;
+				document.documentElement.classList.add('has-js');
 			}());
 	</script>
 </head>

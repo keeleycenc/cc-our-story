@@ -279,6 +279,24 @@ p { margin: 0 }
 
 .field textarea { resize: vertical; min-height: 110px }
 
+/* iOS 给日期时间控件配了一套自带外观：宽度按内容撑开、文字还居中，
+   窄屏里能直接顶出卡片右边。关掉外观，宽度就老实跟着 100% 走了。 */
+.field input[type="datetime-local"],
+.field input[type="date"],
+.field input[type="time"],
+.field input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 40px;
+    text-align: left;
+}
+
+/* 栅格里的每一格都允许被压缩，否则某一项撑不下就把整行推宽 */
+.field-grid > .field { min-width: 0 }
+
 /* 选文件：浏览器自带的那个按钮太出戏，连按钮带框一起改成站点的样子 */
 .field input[type="file"] {
     width: 100%;
@@ -351,8 +369,14 @@ p { margin: 0 }
 .btn-ghost { background: transparent; border-color: var(--line-strong); color: var(--ink) }
 .btn-ghost:hover { background: var(--surface-muted); border-color: var(--pink); color: var(--pink-dark) }
 
-.btn-danger { background: transparent; border-color: var(--line-strong); color: var(--muted) }
-.btn-danger:hover { background: var(--pink-soft); border-color: var(--pink); color: var(--pink-dark) }
+/* 删除是不可逆的，按钮平时就用红色说清楚，别等到点下去才提醒 */
+.btn-danger { background: transparent; border-color: var(--line-strong); color: var(--danger) }
+.btn-danger .icon { color: var(--danger) }
+.btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger-strong) }
+.btn-danger:hover .icon { color: var(--danger-strong) }
+
+.btn-solid-danger { background: var(--danger); border-color: var(--danger); color: var(--danger-ink) }
+.btn-solid-danger:hover { background: var(--danger-strong); border-color: var(--danger-strong); color: var(--danger-ink) }
 
 .btn-small { padding: 6px 11px; font-size: 12px; border-radius: 10px }
 
@@ -398,8 +422,58 @@ p { margin: 0 }
 }
 
 .media-item:hover { border-color: var(--line-strong); box-shadow: var(--shadow-sm) }
-.media-item > a { display: block; background: var(--surface-muted) }
-.media-item img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover }
+
+/* 缩略图先按 4:3 占好位置，图片再慢也不会把下面的文字顶来顶去 */
+.media-thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--surface-muted);
+}
+
+/* 骨架屏：一道浅色的光扫过去，说明它在加载而不是坏了。
+   淡入和骨架屏都挂在 .has-js 下，脚本没跑起来时退回成直接显示图片 */
+:root.has-js .media-thumb:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, var(--surface-muted) 32%, var(--skeleton-sheen) 50%, var(--surface-muted) 68%);
+    background-size: 220% 100%;
+    animation: skeleton-sweep 1.4s linear infinite;
+}
+
+:root.has-js .media-thumb.is-ready:before,
+:root.has-js .media-thumb.is-failed:before { content: none }
+
+.media-thumb img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+:root.has-js .media-thumb img { opacity: 0; transition: opacity .3s ease }
+:root.has-js .media-thumb.is-ready img { opacity: 1 }
+.media-thumb.is-failed img { display: none }
+
+.media-thumb-failed {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: var(--faint);
+    font-size: 11px;
+}
+
+.media-thumb.is-failed .media-thumb-failed { display: flex }
+.media-thumb-failed .icon { font-size: 20px }
+
+@keyframes skeleton-sweep { from { background-position: 140% 0 } to { background-position: -40% 0 } }
 
 .media-item figcaption { display: grid; gap: 3px; padding: 10px 12px 11px }
 
@@ -518,14 +592,56 @@ body.auth-page {
 .auth-card button:hover { background: var(--pink-dark); color: #fff }
 .auth-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 22px; color: var(--muted); font-size: 12px }
 
-/* 13. 手机导航 ----------------------------------------------------------- */
+/* 13. 确认框 ------------------------------------------------------------- */
+.admin-dialog { display: none }
+.admin-dialog.is-open { display: block; position: fixed; inset: 0; z-index: 50 }
+
+.admin-dialog-mask { position: absolute; inset: 0; background: var(--scrim); animation: sheet-fade .18s ease }
+
+.admin-dialog-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(380px, calc(100vw - 32px));
+    padding: 28px 26px 22px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    transform: translate(-50%, -50%);
+    animation: dialog-pop .2s cubic-bezier(.32, .72, 0, 1);
+}
+
+.admin-dialog-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 15px;
+    border-radius: 15px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 21px;
+}
+
+.admin-dialog-title { font: 400 19px var(--serif) }
+.admin-dialog-text { margin-top: 9px; color: var(--muted); font-size: 13px; line-height: 1.8 }
+.admin-dialog-text[hidden] { display: none }
+
+.admin-dialog-actions { display: flex; gap: 10px; margin-top: 22px }
+.admin-dialog-actions .btn { flex: 1; justify-content: center }
+
+@keyframes dialog-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96) } }
+
+/* 14. 手机导航 ----------------------------------------------------------- */
 /* 顶栏、底栏、更多面板都只服务窄屏，宽屏下整块不参与布局，PC 仍旧是左侧栏。 */
 .admin-bar, .admin-tabs, .admin-sheet { display: none }
 
 @keyframes sheet-fade { from { opacity: 0 } }
 @keyframes sheet-rise { from { transform: translateY(100%) } }
 
-/* 14. 响应式 ------------------------------------------------------------- */
+/* 15. 响应式 ------------------------------------------------------------- */
 @media (max-width: 1000px) {
     .editor-layout { grid-template-columns: minmax(0, 1fr) }
 }
@@ -650,13 +766,26 @@ body.auth-page {
 
     .admin-panel { padding: 20px 16px }
     .admin-moment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
-    .admin-moment-actions { padding-top: 12px; border-top: 1px solid var(--line) }
-    .admin-moment-actions .btn { flex: 1; justify-content: center }
-    .admin-moment-actions form { display: flex; flex: 1 }
-    .admin-moment-actions form .btn { width: 100% }
+
+    /* 操作按钮改成等宽的格子：用 flex 的话每一格都不肯小于自己的内容，
+       「删除」外面还套了层 form，最后三个按钮宽窄不一 */
+    .admin-moment-actions {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+    }
+
+    .admin-moment-actions form { display: block }
+    .admin-moment-actions .btn { width: 100%; justify-content: center }
 }
 
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important }
-    .admin-sheet-mask, .admin-sheet-card { animation: none !important }
+    .admin-sheet-mask, .admin-sheet-card, .admin-dialog-mask, .admin-dialog-card { animation: none !important }
+
+    /* 骨架屏不扫光，留一块素色占位就够了 */
+    :root.has-js .media-thumb:before { background: var(--surface-muted); animation: none !important }
 }

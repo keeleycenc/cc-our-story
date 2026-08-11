@@ -159,7 +159,12 @@ public class EditModel(IMomentService moments, SiteClock clock) : PageModel {
         /// <summary>
         /// 获取或设置 MomentDate
         /// </summary>
+        /// <remarks>
+        /// datetime-local 默认 step 是 60 秒，标签助手却会带秒和毫秒渲染出来，
+        /// 浏览器判定成无效值，非得手动改一下时间才肯提交。这里把格式钉到分钟。
+        /// </remarks>
         [DataType(DataType.DateTime)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
         public DateTime MomentDate { get; set; } = DateTime.Now;
 
         /// <summary>

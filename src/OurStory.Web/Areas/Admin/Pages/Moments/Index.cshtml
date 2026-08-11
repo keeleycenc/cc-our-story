@@ -44,7 +44,7 @@
 					<div class="admin-moment-actions" aria-label="@moment.Title 的操作">
 						<a class="btn btn-ghost btn-small" href="/moments/@moment.Slug" target="_blank" rel="noopener" title="查看文章">@Icon("eye")<span>查看</span></a>
 						<a class="btn btn-ghost btn-small" href="/admin/moments/edit/@moment.Id" title="编辑文章">@Icon("pen-line")<span>编辑</span></a>
-						<form method="post" asp-page-handler="Delete" data-confirm="删掉「@moment.Title」？留言也会一起没掉。">
+						<form method="post" asp-page-handler="Delete" data-confirm-title="删除点点滴滴" data-confirm="这条记录下面的留言会一并删除，删掉之后找不回来了哦~" data-confirm-ok="删除">
 							<input type="hidden" name="id" value="@moment.Id">
 							<input type="hidden" name="page" value="@Model.Items.Page">
 							<button class="btn btn-danger btn-small" type="submit" title="删除文章">@Icon("trash-2")<span>删除</span></button>

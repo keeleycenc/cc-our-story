@@ -38,7 +38,7 @@
                                 <input type="hidden" name="page" value="@Model.Items.Page">
                                 <button class="btn btn-ghost btn-small" type="submit">@Icon(comment.IsApproved ? "eye-off" : "check")</button>
                             </form>
-                            <form method="post" asp-page-handler="Delete" style="display:inline" data-confirm="删掉这条留言？">
+                            <form method="post" asp-page-handler="Delete" style="display:inline" data-confirm-title="删除留言" data-confirm="删掉之后找不回来了哦~" data-confirm-ok="删除">
                                 <input type="hidden" name="id" value="@comment.Id">
                                 <input type="hidden" name="page" value="@Model.Items.Page">
                                 <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")</button>

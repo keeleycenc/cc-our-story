@@ -31,11 +31,110 @@
     });
   }
 
-  /* 删除类操作二次确认，误点一下不至于直接没了 */
-  document.querySelectorAll('form[data-confirm]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
-      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+  const confirmDialog = (function () {
+    let host = null;
+    let titleNode = null;
+    let textNode = null;
+    let okButton = null;
+    let settle = null;
+    let opener = null;
+
+    const close = (answer) => {
+      if (!host || !host.classList.contains('is-open')) return;
+      host.classList.remove('is-open');
+      document.body.classList.remove('sheet-open');
+
+      const done = settle;
+      settle = null;
+      if (opener && document.contains(opener)) opener.focus();
+      opener = null;
+      if (done) done(answer);
+    };
+
+    const build = () => {
+      host = document.createElement('div');
+      host.className = 'admin-dialog';
+      host.innerHTML =
+        '<div class="admin-dialog-mask" data-dialog-cancel></div>' +
+        '<div class="admin-dialog-card" role="alertdialog" aria-modal="true"' +
+        ' aria-labelledby="admin-dialog-title" aria-describedby="admin-dialog-text">' +
+        '<span class="admin-dialog-icon"><svg class="icon" aria-hidden="true"><use href="#i-trash-2"></use></svg></span>' +
+        '<h2 class="admin-dialog-title" id="admin-dialog-title"></h2>' +
+        '<p class="admin-dialog-text" id="admin-dialog-text"></p>' +
+        '<div class="admin-dialog-actions">' +
+        '<button class="btn btn-ghost" type="button" data-dialog-cancel>再想想</button>' +
+        '<button class="btn btn-solid-danger" type="button" data-dialog-ok></button>' +
+        '</div></div>';
+
+      document.body.appendChild(host);
+
+      titleNode = host.querySelector('.admin-dialog-title');
+      textNode = host.querySelector('.admin-dialog-text');
+      okButton = host.querySelector('[data-dialog-ok]');
+
+      host.querySelectorAll('[data-dialog-cancel]').forEach((node) => {
+        node.addEventListener('click', () => close(false));
+      });
+      okButton.addEventListener('click', () => close(true));
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') close(false);
+      });
+    };
+
+    return (options) => new Promise((done) => {
+      if (!host) build();
+
+      // 上一张还开着就当作放弃，避免两次询问叠在一起
+      close(false);
+
+      titleNode.textContent = options.title || '确定要删掉吗？';
+      textNode.textContent = options.text || '';
+      textNode.hidden = !options.text;
+      okButton.textContent = options.ok || '删掉';
+
+      settle = done;
+      opener = document.activeElement;
+      host.classList.add('is-open');
+      document.body.classList.add('sheet-open');
+      okButton.focus();
     });
+  }());
+
+  document.querySelectorAll('form[data-confirm], form[data-confirm-title]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (form.dataset.confirmed === 'yes') return;
+
+      event.preventDefault();
+      confirmDialog({
+        title: form.dataset.confirmTitle,
+        text: form.dataset.confirm,
+        ok: form.dataset.confirmOk
+      }).then((yes) => {
+        if (!yes) return;
+        form.dataset.confirmed = 'yes';
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      });
+    });
+  });
+
+  /* 图片占位：OSS 和外链有时要等上好几秒，先摆一块骨架屏把位置占住，
+     图到了再淡入；实在拿不到就换成一句提示，不留一块空白 */
+  document.querySelectorAll('[data-thumb]').forEach((thumb) => {
+    const image = thumb.querySelector('img');
+    if (!image) return;
+
+    const mark = (state) => thumb.classList.add(state);
+
+    // 脚本跑起来时图可能已经在缓存里了，这种情况下 load 不会再触发
+    if (image.complete) {
+      mark(image.naturalWidth > 0 ? 'is-ready' : 'is-failed');
+      return;
+    }
+
+    image.addEventListener('load', () => mark('is-ready'));
+    image.addEventListener('error', () => mark('is-failed'));
   });
 
   /* 图片库里的「复制链接」：文件名那一行放不下完整地址，靠这个按钮取 */

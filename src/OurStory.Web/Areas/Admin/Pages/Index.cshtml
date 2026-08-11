@@ -50,18 +50,16 @@
 
     @if (Model.Recent.Count > 0)
     {
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                <tr><th>标题</th><th>日期</th><th>状态</th><th></th></tr>
-                </thead>
-                <tbody>
-                @foreach (var moment in Model.Recent)
-                {
-                    <tr>
-                        <td><a href="/admin/moments/edit/@moment.Id">@moment.Title</a></td>
-                        <td>@Model.ToLocal(moment.MomentDate).ToString("yyyy-MM-dd")</td>
-                        <td>
+        <div class="admin-moment-list">
+            @foreach (var moment in Model.Recent)
+            {
+                <article class="admin-moment-item">
+                    <div class="admin-moment-summary">
+                        <div class="admin-moment-title">
+                            <a href="/admin/moments/edit/@moment.Id">@moment.Title</a>
+                        </div>
+                        <div class="admin-moment-meta">
+                            <span>@Icon("calendar-days")@Model.ToLocal(moment.MomentDate).ToString("yyyy-MM-dd")</span>
                             @if (moment.Status == MomentStatus.Draft)
                             {
                                 <span class="tag is-draft">草稿</span>
@@ -74,12 +72,14 @@
                             {
                                 <span class="tag is-locked">@Icon("lock")上锁</span>
                             }
-                        </td>
-                        <td class="is-actions"><a class="btn btn-ghost btn-small" href="/moments/@moment.Slug" target="_blank" rel="noopener">@Icon("eye")看看</a></td>
-                    </tr>
-                }
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                    <div class="admin-moment-actions" aria-label="@moment.Title 的操作">
+                        <a class="btn btn-ghost btn-small" href="/moments/@moment.Slug" target="_blank" rel="noopener" title="查看文章">@Icon("eye")<span>看看</span></a>
+                        <a class="btn btn-ghost btn-small" href="/admin/moments/edit/@moment.Id" title="编辑文章">@Icon("pen-line")<span>编辑</span></a>
+                    </div>
+                </article>
+            }
         </div>
     }
     else

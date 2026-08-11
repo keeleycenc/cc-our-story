@@ -240,7 +240,9 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         /// <summary>
         /// 获取或设置恋爱开始时间
         /// </summary>
+        /// <remarks>格式钉到分钟的原因见 <c>Moments/Edit.cshtml.cs</c> 里的 MomentDate。</remarks>
         [DataType(DataType.DateTime)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
         public DateTime LoveStartedAt { get; set; }
 
         /// <summary>

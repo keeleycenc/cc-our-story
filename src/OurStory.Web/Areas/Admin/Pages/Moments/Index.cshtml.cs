@@ -40,8 +40,10 @@ public class IndexModel(IMomentService moments, SiteClock clock) : PageModel {
     /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken) {
         _ = await moments.DeleteAsync(id, cancellationToken);
+
         TempData["Flash"] = "这条记录已经删掉了。";
-        return RedirectToPage(new { page = PageNumber });
+
+        return Redirect($"/admin/moments?page={PageNumber}");
     }
 
     /// <summary>

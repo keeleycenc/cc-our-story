@@ -41,7 +41,7 @@ public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
     public async Task<IActionResult> OnPostToggleAsync(int id, bool approved, CancellationToken cancellationToken) {
         _ = await comments.SetApprovedAsync(id, approved, cancellationToken);
         TempData["Flash"] = approved ? "这条留言已经放出来了。" : "这条留言先压下去了。";
-        return RedirectToPage(new { page = PageNumber });
+        return BackToList();
     }
 
     /// <summary>
@@ -50,11 +50,20 @@ public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken) {
         _ = await comments.DeleteAsync(id, cancellationToken);
         TempData["Flash"] = "留言已经删掉了。";
-        return RedirectToPage(new { page = PageNumber });
+        return BackToList();
     }
 
     /// <summary>
     /// 转换Local
     /// </summary>
     public DateTime ToLocal(DateTimeOffset instant) => clock.ToLocal(instant);
+
+    /// <summary>
+    /// 操作完回到原来那一页
+    /// </summary>
+    /// <remarks>
+    /// 不能用 RedirectToPage(new { page = ... })：page 是 Razor Pages 的保留路由键，
+    /// 会被当成「要跳去哪个页面」，结果是一句 No page named '' 的 500
+    /// </remarks>
+    private RedirectResult BackToList() => Redirect($"/admin/comments?page={PageNumber}");
 }
