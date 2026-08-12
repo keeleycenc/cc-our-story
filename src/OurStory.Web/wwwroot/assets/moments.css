@@ -585,11 +585,11 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
 }
 
 .article-body form.protected .word { margin: 0 0 20px; font: 400 21px var(--serif); color: var(--ink) }
-.article-body form.protected > p:last-child { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin: 0 }
+.article-body form.protected > p:last-of-type { display: grid; grid-template-columns: 1fr; gap: 16px; margin: 0 }
 .article-body form.protected input { height: 46px; border: 1px solid var(--line-strong); border-radius: 13px; outline: none }
 .article-body form.protected input.text { width: 100%; min-width: 0; padding: 0 15px; background: var(--surface); color: var(--ink) }
 .article-body form.protected input.text:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
-.article-body form.protected input.submit { border: 0; padding: 0 20px; background: var(--ink); color: var(--paper); cursor: pointer }
+.article-body form.protected input.submit { min-width: 160px; justify-self: center; border: 0; padding: 0 24px; background: var(--ink); color: var(--paper); cursor: pointer }
 .article-body form.protected input.submit:hover { background: var(--pink-dark); color: #fff }
 .article-body form.protected input.submit:disabled { cursor: wait; opacity: .65 }
 
@@ -616,7 +616,7 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
 
 @media (max-width: 520px) {
     .article-body form.protected { padding: 28px 20px }
-    .article-body form.protected > p:last-child { grid-template-columns: 1fr }
+    .article-body form.protected > p:last-of-type { grid-template-columns: 1fr }
     .article-body form.protected input.submit { width: 100% }
     .respond { padding: 22px 18px }
     .respond.is-inline { padding: 16px }
