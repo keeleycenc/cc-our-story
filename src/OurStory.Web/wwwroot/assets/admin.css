@@ -172,6 +172,24 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-panel > h2 .icon { font-size: 17px; color: var(--pink-dark) }
 .admin-panel-hint { margin: -10px 0 18px; color: var(--faint); font-size: 12px }
 
+.admin-vow {
+    max-width: 880px;
+    margin: 42px auto 0;
+    padding: 30px 24px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    text-align: center;
+}
+
+.admin-vow > .icon {
+    color: var(--pink-dark);
+    font-size: 19px;
+    opacity: .5;
+}
+
+.admin-vow p { margin-top: 12px; color: var(--muted); font: 400 15px/1.95 var(--serif); letter-spacing: .01em }
+.admin-vow footer { margin-top: 8px; color: var(--muted); font-size: 11px; letter-spacing: .06em }
+
 .stat-grid {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
