@@ -1,6 +1,7 @@
 @page "/"
 @model IndexModel
 @inject System.Text.Encodings.Web.HtmlEncoder Encoder
+@inject CoverThumbnails Thumbs
 @{
     ViewData["ActiveNav"] = "home";
     ViewData["Bundle"] = "home";
@@ -142,10 +143,11 @@
                     @foreach (var moment in Model.LatestMoments)
                     {
                         <a class="recent-card" href="@moment.Url">
-                            <span class="recent-cover">
+                            @* 没有封面的那格摆的是图标，不用骨架，也就不挂 data-cover *@
+                            <span class="recent-cover"@(moment.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                                 @if (moment.CoverUrl.Length > 0)
                                 {
-                                    <img src="@moment.CoverUrl" alt="@moment.Title" loading="lazy" decoding="async">
+                                    <img src="@Thumbs.For(moment.CoverUrl)" alt="@moment.Title" loading="lazy" decoding="async">
                                 }
                                 else
                                 {

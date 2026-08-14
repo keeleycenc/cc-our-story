@@ -1,5 +1,6 @@
 @page "/moments"
 @model OurStory.Web.Pages.Moments.IndexModel
+@inject CoverThumbnails Thumbs
 @{
     ViewData["ActiveNav"] = "moments";
     ViewData["Bundle"] = "moments";
@@ -48,7 +49,8 @@
                     <a class="moment-card@(moment.CoverUrl.Length > 0 ? " has-cover" : "")@(moment.IsLocked ? " is-locked" : "")" href="@moment.Url">
                         @if (moment.CoverUrl.Length > 0)
                         {
-                            <span class="moment-cover"><img src="@moment.CoverUrl" alt="@moment.Title" loading="lazy" decoding="async"></span>
+                            @* 封面框最宽三百来像素，挂的是压好的小图，原图留给正文 *@
+                            <span class="moment-cover" data-cover><img src="@Thumbs.For(moment.CoverUrl)" alt="@moment.Title" loading="lazy" decoding="async"></span>
                         }
                         <div class="moment-content">
                             <span class="moment-meta">

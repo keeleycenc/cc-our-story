@@ -43,8 +43,8 @@ public sealed class ThumbnailServiceTests : IDisposable {
         Assert.True(File.Exists(thumb));
 
         var info = await Image.IdentifyAsync(thumb!);
-        Assert.Equal(480, info.Width);
-        Assert.Equal(360, info.Height);
+        Assert.Equal(720, info.Width);
+        Assert.Equal(540, info.Height);
     }
 
     /// <summary>缩略图要比原图小得多，否则这一趟就白做了。</summary>

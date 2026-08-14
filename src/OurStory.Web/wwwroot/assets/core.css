@@ -314,10 +314,39 @@ img { max-width: 100%; display: block }
     .modal-card { padding: 38px 24px 28px }
 }
 
+/* 封面加载：点点滴滴、纪念日和首页的封面共用这一套。
+   图没到之前先摆一块骨架屏把位置占住，到了再淡入 ——
+   免得半张图先画上去、下一帧又被换掉，滚动时那一下最容易看出卡。
+   整套都挂在 .has-js 下，没有脚本时图片直接显示 */
+:root.has-js [data-cover] { position: relative; background: var(--surface-muted) }
+
+:root.has-js [data-cover]:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(100deg, var(--surface-muted) 32%, var(--skeleton-sheen) 50%, var(--surface-muted) 68%);
+    background-size: 220% 100%;
+    animation: cover-sweep 1.4s linear infinite;
+}
+
+/* 图到了（或者确实坏了）就把骨架撤掉，别让那道光一直扫着白费重绘 */
+:root.has-js [data-cover].is-ready:before,
+:root.has-js [data-cover].is-failed:before { content: none }
+
+:root.has-js [data-cover] img { opacity: 0; transition: opacity .32s ease }
+:root.has-js [data-cover].is-ready img { opacity: 1 }
+:root.has-js [data-cover].is-failed img { display: none }
+
+@keyframes cover-sweep { from { background-position: 140% 0 } to { background-position: -40% 0 } }
+
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto }
     .celebration-particle { display: none }
     .celebration-banner { animation: none; opacity: 1; transform: translate(-50%, 0) }
     .will-reveal { opacity: 1; transform: none }
     * { transition: none !important }
+
+    /* 骨架不扫光，留一块素色占位就够了 */
+    :root.has-js [data-cover]:before { background: var(--surface-muted); animation: none !important }
 }

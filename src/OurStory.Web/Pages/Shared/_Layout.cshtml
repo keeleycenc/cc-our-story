@@ -39,6 +39,10 @@
             root.dataset.theme = mode === 'auto'
                 ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                 : mode;
+
+            // 封面的骨架屏和淡入都要靠脚本收尾，没有脚本时它们一律不生效，
+            // 图片老老实实直接显示
+            root.classList.add('has-js');
         }());
     </script>
 </head>

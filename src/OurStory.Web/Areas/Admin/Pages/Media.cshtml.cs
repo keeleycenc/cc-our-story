@@ -20,7 +20,7 @@ namespace OurStory.Web.Areas.Admin.Pages;
 public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
-    IThumbnailService thumbnails,
+    CoverThumbnails thumbnails,
     StoragePaths paths,
     ActiveConfiguration configuration,
     IMarkdownRenderer markdown) : PageModel {
@@ -109,26 +109,6 @@ public class MediaModel(
     }
 
     /// <summary>
-    /// 图片库里的每一格都走这里取图，第一次访问时现压一张缩略图并缓存下来
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async Task<IActionResult> OnGetThumbAsync(string? key, CancellationToken cancellationToken) {
-        if (string.IsNullOrWhiteSpace(key) || !ObjectKeyFactory.IsSafe(key)) {
-            return NotFound();
-        }
-
-        var path = await thumbnails.EnsureAsync(key, cancellationToken);
-        if (path is null) {
-            return Redirect(storage.PublicUrl(key));
-        }
-
-        Response.Headers.CacheControl = "private, max-age=604800";
-        return PhysicalFile(path, "image/webp");
-    }
-
-    /// <summary>
     /// 使用与前台正文一致的规则生成 Markdown 预览
     /// </summary>
     public IActionResult OnPostPreview(string? content) =>
@@ -157,13 +137,8 @@ public class MediaModel(
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
             .Select(file => {
-                // 相对路径就是这张图的 object key，原图地址和缩略图地址都从它拼
-                var key = Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/');
-                return new MediaItem(
-                    storage.PublicUrl(key),
-                    $"/admin/media?handler=Thumb&key={Uri.EscapeDataString(key)}",
-                    file.Name,
-                    file.Length);
+                var url = storage.PublicUrl(Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/'));
+                return new MediaItem(url, thumbnails.For(url), file.Name, file.Length);
             })
             .ToList();
 

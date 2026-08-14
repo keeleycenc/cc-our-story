@@ -1,5 +1,6 @@
 @page "/anniversaries"
 @model OurStory.Web.Pages.Anniversaries.IndexModel
+@inject CoverThumbnails Thumbs
 @{
     ViewData["Title"] = "纪念日";
     ViewData["ActiveNav"] = "anniversaries";
@@ -65,7 +66,7 @@
                         <a class="memory-today-card kind-@item.Kind.ToString().ToLowerInvariant()@(item.CoverUrl.Length > 0 ? " has-cover" : "")" href="@item.Url">
                             @if (item.CoverUrl.Length > 0)
                             {
-                                <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                                <span class="anniversary-thumb" data-cover><img src="@Thumbs.For(item.CoverUrl)" alt="" loading="lazy" decoding="async"></span>
                             }
                             <span class="memory-today-copy">
                                 <span class="memory-today-row">
@@ -147,7 +148,7 @@
                                 <div class="timeline-rail" aria-hidden="true"><i></i><span></span></div>
                                 @if (item.CoverUrl.Length > 0)
                                 {
-                                    <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                                    <span class="anniversary-thumb" data-cover><img src="@Thumbs.For(item.CoverUrl)" alt="" loading="lazy" decoding="async"></span>
                                 }
                                 <div class="timeline-copy">
                                     <div class="timeline-title-row">
@@ -203,7 +204,7 @@
                                 </time>
                                 @if (item.CoverUrl.Length > 0)
                                 {
-                                    <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                                    <span class="anniversary-thumb" data-cover><img src="@Thumbs.For(item.CoverUrl)" alt="" loading="lazy" decoding="async"></span>
                                 }
                                 <div>
                                     <div class="upcoming-title-row">

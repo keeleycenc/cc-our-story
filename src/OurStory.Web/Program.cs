@@ -68,6 +68,7 @@ builder.Services.Configure<WebEncoderOptions>(options =>
     options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 
 builder.Services.AddSingleton<AssetVersionProvider>();
+builder.Services.AddSingleton<CoverThumbnails>();
 builder.Services.AddScoped<HeartbeatTokenService>();
 builder.Services.AddScoped<VisitorIdentityAccessor>();
 builder.Services.AddScoped<MomentUnlockStore>();
@@ -113,6 +114,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapHeartbeatEndpoints();
+app.MapThumbnailEndpoints();
 
 // 存活探针：容器和反代拿它判断站点还活着。只探数据库连不连得上，
 // 不查任何业务数据，也不渲染页面
