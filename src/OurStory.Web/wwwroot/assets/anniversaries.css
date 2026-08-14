@@ -75,24 +75,42 @@
 .memory-page-header .manage-anniversary:hover { border-color: var(--memory-accent); background: var(--memory-accent-soft); color: var(--memory-accent) }
 
 /* 今天：整页唯一一处用强调色铺底的地方，好让「就是今天」一眼被认出来。 */
-.memory-today {
+.memory-today { width: min(1180px, 100%); margin: 0 auto }
+
+.memory-today-panel {
     position: relative;
-    width: min(1180px, 100%);
-    margin: 0 auto 16px;
     padding: 26px 30px 28px;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--memory-accent) 32%, var(--memory-line));
+    border: 1px solid color-mix(in srgb, var(--memory-accent) 18%, var(--memory-line));
     border-radius: 20px;
     background:
-        radial-gradient(circle at 88% -25%, color-mix(in srgb, var(--memory-accent) 22%, transparent), transparent 55%),
-        linear-gradient(135deg, color-mix(in srgb, var(--memory-accent) 10%, var(--memory-surface)), var(--memory-surface) 62%);
-    box-shadow: 0 20px 50px color-mix(in srgb, var(--memory-accent) 13%, transparent);
+        radial-gradient(circle at 88% -25%, color-mix(in srgb, var(--memory-accent) 14%, transparent), transparent 55%),
+        linear-gradient(135deg, color-mix(in srgb, var(--memory-accent) 6%, var(--memory-surface)), var(--memory-surface) 62%);
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--memory-accent) 9%, transparent);
 }
 
-.memory-today > header p { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--memory-accent); font: 700 10px Arial, sans-serif; letter-spacing: .2em }
+.memory-today-panel > header p { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--memory-accent); font: 700 10px Arial, sans-serif; letter-spacing: .2em }
 .memory-today-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--memory-accent); animation: memory-pulse 2.4s ease-out infinite }
-.memory-today > header h2 { margin: 0; color: var(--memory-ink); font: 400 clamp(26px, 3.4vw, 36px)/1.15 var(--serif); letter-spacing: -.03em }
-.memory-today > header > span { display: block; margin-top: 9px; color: var(--memory-muted); font-size: 12px }
+.memory-today-panel > header h2 { margin: 0; color: var(--memory-ink); font: 400 clamp(26px, 3.4vw, 36px)/1.15 var(--serif); letter-spacing: -.03em }
+.memory-today-panel > header > span { display: block; margin-top: 9px; color: var(--memory-muted); font-size: 12px }
+
+/* 一条两端淡出的细线加中间一颗点，把「今天」和下面的常规内容断开。 */
+.memory-today-divider {
+    height: 1px;
+    margin: 34px 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, transparent, var(--memory-line-strong) 20%, var(--memory-line-strong) 80%, transparent);
+}
+
+.memory-today-divider i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--memory-accent) 60%, transparent);
+    box-shadow: 0 0 0 6px var(--memory-bg);
+}
 
 .memory-today-list { display: grid; gap: 12px; margin-top: 20px }
 
@@ -506,7 +524,8 @@
 @media (max-width: 700px) {
     .memory-page { padding-right: 15px; padding-left: 15px }
     .memory-page-header { margin-bottom: 48px; padding-top: 120px }
-    .memory-today { padding: 22px 18px 24px; border-radius: 18px }
+    .memory-today-panel { padding: 22px 18px 24px; border-radius: 18px }
+    .memory-today-divider { margin: 26px 0 24px }
     .memory-today-card { padding: 14px; gap: 12px; grid-template-columns: minmax(0, 1fr) 30px }
     .memory-today-card.has-cover { grid-template-columns: 54px minmax(0, 1fr) 30px }
     .memory-today-card .anniversary-thumb { width: 54px; height: 54px; border-radius: 11px }
