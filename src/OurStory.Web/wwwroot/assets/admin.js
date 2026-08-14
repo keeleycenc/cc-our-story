@@ -375,12 +375,46 @@
     return { uploaded: uploaded, failure: failure, summary: summary };
   };
 
+  /* 选了哪几张：浏览器自带的那句「7 个文件」等于什么都没说。
+     名字排成一行小标签，长名字交给 CSS 截断，多出来的收成「等 N 张」 */
+  const sizeText = (bytes) => bytes < 1024 * 1024
+    ? (bytes / 1024).toFixed(0) + ' KB'
+    : (bytes / 1024 / 1024).toFixed(1) + ' MB';
+
+  const describePick = (summary, files) => {
+    if (!summary) return;
+
+    summary.textContent = '';
+    summary.hidden = files.length === 0;
+    if (files.length === 0) return;
+
+    const shown = files.slice(0, 3);
+    const total = files.reduce((sum, file) => sum + file.size, 0);
+
+    shown.forEach((file) => {
+      const chip = document.createElement('li');
+      chip.textContent = file.name;
+      chip.title = file.name;
+      summary.appendChild(chip);
+    });
+
+    const rest = document.createElement('li');
+    rest.className = 'is-more';
+    rest.textContent = files.length > shown.length
+      ? '…等 ' + files.length + ' 张 · ' + sizeText(total)
+      : '共 ' + sizeText(total);
+    summary.appendChild(rest);
+  };
+
   /* 图片库的上传表单：接管提交，改成带进度的逐张上传，传完再刷新列表 */
   document.querySelectorAll('form[data-media-upload]').forEach((form) => {
     const input = form.querySelector('[data-media-files]');
     const host = form.querySelector('[data-upload-progress]');
+    const summary = form.querySelector('[data-file-summary]');
     const submit = form.querySelector('button[type="submit"]');
     if (!input) return;
+
+    input.addEventListener('change', () => describePick(summary, Array.from(input.files || [])));
 
     form.addEventListener('submit', async (event) => {
       const files = Array.from(input.files || []);
@@ -392,6 +426,7 @@
       const result = await uploadAll(files, host);
 
       input.value = '';
+      describePick(summary, []);
       if (submit) submit.disabled = false;
 
       // 全传上去了就刷新，新图会排在「最近上传」的最前面；

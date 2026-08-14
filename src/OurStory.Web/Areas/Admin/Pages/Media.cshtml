@@ -19,6 +19,8 @@
         <label class="field">
             <span>选择图片</span>
             <input type="file" name="files" accept="image/*" multiple required data-media-files>
+            @* 浏览器自己只会说一句「7 个文件」，到底选中了哪几张得我们自己列 *@
+            <ul class="file-picked" data-file-summary hidden></ul>
         </label>
 
         <partial name="_UploadProgress" />
@@ -47,8 +49,9 @@
             @foreach (var item in Model.Items.Items)
             {
                 <figure class="media-item">
+                    @* 格子里挂的是压好的小图，点开才去拿原图 *@
                     <a class="media-thumb" href="@item.Url" target="_blank" rel="noopener" data-thumb>
-                        <img src="@item.Url" alt="@item.Name" loading="lazy" decoding="async">
+                        <img src="@item.ThumbUrl" alt="@item.Name" width="480" height="360" loading="lazy" decoding="async">
                         <span class="media-thumb-failed">@Icon("circle-alert")<span>图片加载失败</span></span>
                     </a>
                     <figcaption>

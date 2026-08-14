@@ -40,11 +40,13 @@ public static class ServiceCollectionExtensions {
         _ = services.AddSingleton(new ActiveConfiguration(store, configuration));
 
         var uploadsRoot = Path.Combine(dataDirectory, "uploads");
+        var thumbnailsRoot = Path.Combine(dataDirectory, "thumbs");
 
         _ = Directory.CreateDirectory(dataDirectory);
         _ = Directory.CreateDirectory(uploadsRoot);
+        _ = Directory.CreateDirectory(thumbnailsRoot);
 
-        _ = services.AddSingleton(new StoragePaths(uploadsRoot, "/uploads"));
+        _ = services.AddSingleton(new StoragePaths(uploadsRoot, thumbnailsRoot, "/uploads"));
         _ = services.AddSingleton<SiteClock>();
 
         var databasePath = Path.Combine(dataDirectory, configuration.Site.DatabaseFileName);
@@ -69,6 +71,7 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
         _ = services.AddSingleton<IMarkdownRenderer, MarkdownRenderer>();
         _ = services.AddScoped<IAttachmentService, AttachmentService>();
+        _ = services.AddSingleton<IThumbnailService, ThumbnailService>();
 
         return services;
     }

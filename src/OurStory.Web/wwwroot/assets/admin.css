@@ -806,6 +806,32 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .upload-drop:hover { border-color: var(--pink); color: var(--pink-dark) }
 .upload-drop input { display: none }
 
+/* 选中的文件：名字排成一行小标签，长名字截断，多出来的收成「等 N 张」 */
+.file-picked {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 9px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.file-picked[hidden] { display: none }
+
+.file-picked li {
+    max-width: 210px;
+    overflow: hidden;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-picked li.is-more { background: var(--pink-soft); color: var(--pink-dark) }
+
 /* 上传进度：一批图片走一条，传完停一下再收起来 */
 .upload-progress { margin-top: 13px }
 .upload-progress[hidden] { display: none }
@@ -831,6 +857,9 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 /* 11. 图片库 ------------------------------------------------------------- */
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px }
 
+/* 列表里挂的是原图：一张长截图能有三千多万像素，浏览器解出来就是上百 MB 的位图，
+   一页摆二十张能吃掉近 1 GB，滚动时来回丢弃再重解码，页面就卡住了。
+   离屏的这些先别渲染 —— 顺带也把离屏动图的帧动画停下来 */
 .media-item {
     display: flex;
     flex-direction: column;
@@ -839,6 +868,8 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     border-radius: 15px;
     overflow: hidden;
     background: var(--surface);
+    content-visibility: auto;
+    contain-intrinsic-size: auto 208px;
     transition: border-color .18s, box-shadow .18s;
 }
 

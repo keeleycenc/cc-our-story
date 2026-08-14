@@ -20,6 +20,7 @@ namespace OurStory.Web.Areas.Admin.Pages;
 public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
+    IThumbnailService thumbnails,
     StoragePaths paths,
     ActiveConfiguration configuration,
     IMarkdownRenderer markdown) : PageModel {
@@ -91,6 +92,9 @@ public class MediaModel(
     /// <summary>
     /// 编辑器里的「插图」按钮走这里，返回 JSON 给前端直接插进正文
     /// </summary>
+    /// <param name="file"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<IActionResult> OnPostUploadAsync(IFormFile? file, CancellationToken cancellationToken) {
         if (file is null || file.Length == 0) {
             return new JsonResult(new { ok = false, error = "还没有选文件。" }) { StatusCode = StatusCodes.Status400BadRequest };
@@ -102,6 +106,26 @@ public class MediaModel(
         return result.Success
             ? new JsonResult(new { ok = true, url = result.Url })
             : new JsonResult(new { ok = false, error = result.Error }) { StatusCode = StatusCodes.Status400BadRequest };
+    }
+
+    /// <summary>
+    /// 图片库里的每一格都走这里取图，第一次访问时现压一张缩略图并缓存下来
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<IActionResult> OnGetThumbAsync(string? key, CancellationToken cancellationToken) {
+        if (string.IsNullOrWhiteSpace(key) || !ObjectKeyFactory.IsSafe(key)) {
+            return NotFound();
+        }
+
+        var path = await thumbnails.EnsureAsync(key, cancellationToken);
+        if (path is null) {
+            return Redirect(storage.PublicUrl(key));
+        }
+
+        Response.Headers.CacheControl = "private, max-age=604800";
+        return PhysicalFile(path, "image/webp");
     }
 
     /// <summary>
@@ -132,20 +156,26 @@ public class MediaModel(
         var items = files
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
-            .Select(file => new MediaItem(
-                storage.PublicUrl(Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/')),
-                file.Name,
-                file.Length))
+            .Select(file => {
+                // 相对路径就是这张图的 object key，原图地址和缩略图地址都从它拼
+                var key = Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/');
+                return new MediaItem(
+                    storage.PublicUrl(key),
+                    $"/admin/media?handler=Thumb&key={Uri.EscapeDataString(key)}",
+                    file.Name,
+                    file.Length);
+            })
             .ToList();
 
         return new PagedList<MediaItem>(items, page, PageSize, files.Count);
     }
 
     /// <summary>图片库里的一张图</summary>
-    /// <param name="Url">对外地址</param>
+    /// <param name="Url">原图的对外地址</param>
+    /// <param name="ThumbUrl">列表里用的缩略图地址</param>
     /// <param name="Name">文件名</param>
     /// <param name="Size">字节数</param>
-    public record MediaItem(string Url, string Name, long Size) {
+    public record MediaItem(string Url, string ThumbUrl, string Name, long Size) {
         /// <summary>
         /// 获取 SizeText
         /// </summary>
