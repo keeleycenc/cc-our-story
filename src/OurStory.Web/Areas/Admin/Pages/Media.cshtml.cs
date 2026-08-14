@@ -6,20 +6,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core.Abstractions;
 using OurStory.Core.Configuration;
+using OurStory.Core.Models;
 using OurStory.Core.Options;
 using OurStory.Services.Moments;
 using OurStory.Services.Storage;
+using OurStory.Web.Infrastructure;
 
 namespace OurStory.Web.Areas.Admin.Pages;
 
-/// <summary>后台里贴图用的小图片库。</summary>
+/// <summary>
+/// 后台里贴图用的小图片库
+/// </summary>
 public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
     StoragePaths paths,
     ActiveConfiguration configuration,
     IMarkdownRenderer markdown) : PageModel {
-    private const int MaxListed = 60;
+    private const int PageSize = 10;
 
     /// <summary>
     /// 获取 DriverName
@@ -34,7 +38,7 @@ public class MediaModel(
     /// <summary>
     /// 获取或设置 Items
     /// </summary>
-    public IReadOnlyList<MediaItem> Items { get; private set; } = [];
+    public PagedList<MediaItem> Items { get; private set; } = PagedList<MediaItem>.Empty(PageSize);
 
     /// <summary>
     /// 获取或设置 Error
@@ -45,7 +49,7 @@ public class MediaModel(
     /// 处理 GET 请求
     /// </summary>
     public void OnGet() {
-        Items = IsLocal ? ListLocalFiles() : [];
+        Items = IsLocal ? ListLocalFiles(Request.PageNumber()) : PagedList<MediaItem>.Empty(PageSize);
     }
 
     /// <summary>
@@ -90,30 +94,40 @@ public class MediaModel(
         new JsonResult(new { ok = true, html = markdown.ToHtml(content) });
 
     /// <summary>
-    /// 本地存储时列出最近上传的图片。
+    /// 本地存储时按页列出上传过的图片，新的排在前面。
     ///
     /// OSS 要额外调列举接口，而且真正需要翻旧图的场景很少，
     /// 所以那种情况下这一页只负责上传。
     /// </summary>
-    private List<MediaItem> ListLocalFiles() {
+    private PagedList<MediaItem> ListLocalFiles(int page) {
         if (!Directory.Exists(paths.UploadsRoot)) {
-            return [];
+            return PagedList<MediaItem>.Empty(PageSize);
         }
 
-        return [.. new DirectoryInfo(paths.UploadsRoot)
+        var files = new DirectoryInfo(paths.UploadsRoot)
             .EnumerateFiles("*", SearchOption.AllDirectories)
             .OrderByDescending(file => file.LastWriteTimeUtc)
-            .Take(MaxListed)
+            .ToList();
+
+        var lastPage = Math.Max(1, (files.Count + PageSize - 1) / PageSize);
+        page = Math.Min(page, lastPage);
+
+        var items = files
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
             .Select(file => new MediaItem(
                 storage.PublicUrl(Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/')),
                 file.Name,
-                file.Length))];
+                file.Length))
+            .ToList();
+
+        return new PagedList<MediaItem>(items, page, PageSize, files.Count);
     }
 
-    /// <summary>图片库里的一张图。</summary>
-    /// <param name="Url">对外地址。</param>
-    /// <param name="Name">文件名。</param>
-    /// <param name="Size">字节数。</param>
+    /// <summary>图片库里的一张图</summary>
+    /// <param name="Url">对外地址</param>
+    /// <param name="Name">文件名</param>
+    /// <param name="Size">字节数</param>
     public record MediaItem(string Url, string Name, long Size) {
         /// <summary>
         /// 获取 SizeText

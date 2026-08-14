@@ -4,6 +4,7 @@
     ViewData["ActiveMenu"] = "media";
     ViewData["Eyebrow"] = "MEDIA";
     ViewData["Title"] = "图片";
+    var pager = new PaginationModel(Model.Items.Page, Model.Items.TotalPages, "/admin/media");
 }
 @if (!string.IsNullOrEmpty(Model.Error))
 {
@@ -32,14 +33,15 @@
     {
         <p class="admin-empty">附件存在 OSS 上，这里不列清单，去 Bucket 里看就好。</p>
     }
-    else if (Model.Items.Count == 0)
+    else if (Model.Items.Items.Count == 0)
     {
         <p class="admin-empty">还没有上传过图片。</p>
     }
     else
     {
+        <p class="admin-panel-hint">一共 @Model.Items.TotalCount 张图片。</p>
         <div class="media-grid">
-            @foreach (var item in Model.Items)
+            @foreach (var item in Model.Items.Items)
             {
                 <figure class="media-item">
                     <a class="media-thumb" href="@item.Url" target="_blank" rel="noopener" data-thumb>
@@ -56,5 +58,7 @@
                 </figure>
             }
         </div>
+
+        <partial name="_Pagination" model="pager" />
     }
 </div>

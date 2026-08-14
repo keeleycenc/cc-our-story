@@ -5,22 +5,19 @@
 	var active = ViewData["ActiveMenu"] as string ?? string.Empty;
 	var flash = TempData["Flash"] as string;
 
-	// OnTabBar 决定这一项会不会出现在手机底栏里。底栏最多留五格，
-	// 以后再加功能就保持 false，让它落进「更多」那张卡片，底栏不会越挤越窄。
-	var menu = new (string Key, string Url, string Icon, string Label, bool OnTabBar)[]
+	// Quick 决定这一项会不会摆到手机顶栏上。总览固定在第一格，后面跟两个常用管理入口。
+	var menu = new (string Key, string Url, string Icon, string Label, bool Quick)[]
 	{
 		("dashboard", "/admin", "layout-dashboard", "总览", true),
 		("moments", "/admin/moments", "camera", "点点滴滴", true),
 		("anniversaries", "/admin/anniversaries", "calendar-heart", "纪念日", true),
-		("comments", "/admin/comments", "message-circle-heart", "留言", true),
-		("media", "/admin/media", "image", "图片", true),
+		("comments", "/admin/comments", "message-circle-heart", "留言", false),
+		("media", "/admin/media", "image", "图片", false),
 		("settings", "/admin/settings", "settings", "站点设置", false),
 		("account", "/admin/account", "key-round", "账号", false)
 	};
 
-	var tabs = menu.Where(item => item.OnTabBar).Take(4).ToArray();
-	var rest = menu.Except(tabs).ToArray();
-	var moreActive = rest.Any(item => item.Key == active);
+	var quick = menu.Where(item => item.Quick).Take(3).ToArray();
 }
 <!doctype html>
 <html lang="zh-CN">
@@ -49,10 +46,19 @@
 <body class="admin">
 	@Sprite()
 
-	@* 手机上的顶栏：固定在最上面，只放站名和配色开关，页面标题交给下面的 .admin-top *@
+	@* 手机上的顶栏：站名、总览与两个常用入口、配色开关和「更多」。
+	   手机浏览器自己的地址栏就占着屏幕底部，所以导航全部收到顶上，别再占一条底栏。
+	   它是 body 这根竖排里的第一格，不用 fixed，中间的内容区才是那个会滚的元素 *@
 	<header class="admin-bar">
 		<a class="admin-logo" href="/"><span>CC</span> Our Story</a>
-		<button class="admin-theme" type="button" data-theme-toggle aria-label="切换配色">@Icon("sun", "icon-sun")@Icon("moon-star", "icon-moon")</button>
+		<nav class="admin-bar-nav" aria-label="常用入口">
+			@foreach (var item in quick)
+			{
+				<a href="@item.Url" class="@(active == item.Key ? "is-active" : null)" title="@item.Label" aria-label="@item.Label">@Icon(item.Icon)</a>
+			}
+			<button class="admin-theme" type="button" data-theme-toggle aria-label="切换配色">@Icon("sun", "icon-sun")@Icon("moon-star", "icon-moon")</button>
+			<button class="admin-more" type="button" data-sheet-open aria-controls="admin-more" aria-expanded="false" aria-label="更多">@Icon("ellipsis")</button>
+		</nav>
 	</header>
 
 	<div class="admin-shell">
@@ -94,22 +100,18 @@
 		</main>
 	</div>
 
-	@* 手机上的底栏：四个常用页面加一个「更多」，位置固定，不跟着内容滚 *@
-	<nav class="admin-tabs" aria-label="后台导航">
-		@foreach (var item in tabs)
-		{
-			<a href="@item.Url" class="@(active == item.Key ? "is-active" : null)">@Icon(item.Icon)<span>@item.Label</span></a>
-		}
-		<button type="button" class="@(moreActive ? "is-active" : null)" data-sheet-open aria-controls="admin-more" aria-expanded="false">@Icon("ellipsis")<span>更多</span></button>
-	</nav>
+	@* 会滚的是中间的内容区，不是整页，所以这个按钮由脚本去滚 .admin-main *@
+	<button class="admin-to-top" type="button" aria-label="回到顶部" title="回到顶部" hidden>@Icon("arrow-up")</button>
 
+	@* 「更多」：从底部推上来的一张卡片，整份导航都在里面，
+	   顶栏放不下的入口不用去别处找 *@
 	<div class="admin-sheet" id="admin-more" data-sheet>
 		<div class="admin-sheet-mask" data-sheet-close></div>
-		<div class="admin-sheet-card" role="dialog" aria-modal="true" aria-label="更多">
+		<div class="admin-sheet-card" role="dialog" aria-modal="true" aria-label="后台导航">
 			<div class="admin-sheet-handle"></div>
 			<p class="admin-sheet-who">@Icon("user-round")<span>@site.RoleName(User.Role())</span></p>
 			<div class="admin-sheet-links">
-				@foreach (var item in rest)
+				@foreach (var item in menu)
 				{
 					<a href="@item.Url" class="@(active == item.Key ? "is-active" : null)">@Icon(item.Icon)<span>@item.Label</span></a>
 				}

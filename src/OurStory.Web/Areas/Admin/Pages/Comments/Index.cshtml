@@ -4,6 +4,7 @@
     ViewData["ActiveMenu"] = "comments";
     ViewData["Eyebrow"] = "COMMENTS";
     ViewData["Title"] = "留言";
+    var pager = new PaginationModel(Model.Items.Page, Model.Items.TotalPages, "/admin/comments");
 }
 <div class="admin-panel">
     <p class="admin-panel-hint">一共 @Model.Items.TotalCount 条。压下去的留言前台不再显示</p>
@@ -67,22 +68,7 @@
             }
         </div>
 
-        @if (Model.Items.TotalPages > 1)
-        {
-            <div class="admin-pagination">
-                @for (var number = 1; number <= Model.Items.TotalPages; number++)
-                {
-                    if (number == Model.Items.Page)
-                    {
-                        <span class="current">@number</span>
-                    }
-                    else
-                    {
-                        <a href="/admin/comments?page=@number">@number</a>
-                    }
-                }
-            </div>
-        }
+        <partial name="_Pagination" model="pager" />
     }
     else
     {

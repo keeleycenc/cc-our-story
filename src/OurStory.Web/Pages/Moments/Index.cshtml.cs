@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
@@ -23,8 +22,8 @@ public class IndexModel(
     /// <summary>
     /// 获取或设置 PageNumber
     /// </summary>
-    [BindProperty(SupportsGet = true, Name = "page")]
-    public int PageNumber { get; set; } = 1;
+    /// <remarks>页码由 <see cref="PageNumbers.PageNumber"/> 从查询串里取，不走模型绑定。</remarks>
+    public int PageNumber { get; private set; } = 1;
 
     /// <summary>
     /// 执行 Site 操作
@@ -49,6 +48,7 @@ public class IndexModel(
     /// </summary>
     public async Task OnGetAsync(CancellationToken cancellationToken) {
         Site = await settingsService.GetAsync(cancellationToken);
+        PageNumber = Request.PageNumber();
 
         var viewer = new MomentViewer(User.IsOwner(), unlockStore.UnlockedIds());
         Items = await moments.GetPageAsync(PageNumber, viewer, cancellationToken);

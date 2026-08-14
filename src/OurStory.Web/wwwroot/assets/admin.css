@@ -50,14 +50,23 @@ p { margin: 0 }
     overflow: hidden;
 }
 
+/* 滚动条细一点、轨道透明，别在内容右边糊出一条灰带，看着像多占了一列；
+   gutter 常驻，内容不会因为滚动条时有时无而左右横跳 */
 .admin-main {
+    position: relative;
     min-width: 0;
     height: 100%;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 30px 34px 60px;
     background: var(--surface-soft);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
 }
+
+/* 会滚的一直是 .admin-main：弹层盖上来的时候，别让底下的内容跟着滚 */
+body.admin.sheet-open .admin-main { overflow: hidden }
 
 /* 正文限宽：宽屏下不让表格和表单被拉成一整行，行长稳定，看着也不飘 */
 .admin-canvas { max-width: 1120px; margin: 0 auto }
@@ -72,6 +81,8 @@ p { margin: 0 }
     padding: 26px 18px;
     border-right: 1px solid var(--line);
     background: var(--surface);
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
 }
 
 .admin-logo { font: 400 19px var(--serif); letter-spacing: .02em }
@@ -161,7 +172,14 @@ p { margin: 0 }
 .admin-panel > h2 .icon { font-size: 17px; color: var(--pink-dark) }
 .admin-panel-hint { margin: -10px 0 18px; color: var(--faint); font-size: 12px }
 
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 22px }
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.stat-grid > .stat-card { grid-column: span 12 }
 
 .stat-card {
     padding: 20px 22px;
@@ -312,12 +330,28 @@ p { margin: 0 }
 .tag.is-draft { background: var(--card-gold); color: var(--ink) }
 .tag.is-locked { background: var(--pink-soft); color: var(--pink-dark) }
 .tag.is-hidden { background: var(--surface-muted); color: var(--faint) }
+.tag.is-today { background: var(--ink); color: var(--paper) }
 
 .admin-empty { padding: 40px 0; text-align: center; color: var(--faint); font-size: 13px }
 
-.admin-pagination { display: flex; justify-content: center; gap: 8px; margin-top: 22px }
+/* 翻页条：和前台共用 _Pagination 这一份局部视图，
+   当前页的底色要给到 li 里的 span，挂在 li 上会被里面的方块盖掉 */
+.page-navigator { margin-top: 22px }
 
-.admin-pagination a, .admin-pagination span {
+.page-navigator ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-navigator li { display: flex }
+
+.page-navigator a,
+.page-navigator .current > span {
     display: grid;
     place-items: center;
     min-width: 34px;
@@ -326,9 +360,54 @@ p { margin: 0 }
     border-radius: 11px;
     background: var(--surface-muted);
     font-size: 12px;
+    transition: background-color .18s, color .18s;
 }
 
-.admin-pagination .current { background: var(--ink); color: var(--paper) }
+.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
+.page-navigator .current > span { background: var(--ink); color: var(--paper) }
+
+/* 省略号只是个记号，不给方块也不给指针 */
+.page-navigator .gap {
+    align-items: center;
+    padding: 0 2px;
+    color: var(--faint);
+    font-size: 12px;
+    user-select: none;
+}
+
+/* 窄屏才用得上的那两个省略号，宽屏下页码是连着的 */
+.page-navigator .gap-narrow { display: none }
+
+/* 窄屏收起「首页 / 尾页」和外圈两个页码，首尾页码本身留着 */
+@media (max-width: 600px) {
+    .page-navigator .edge, .page-navigator .far { display: none }
+    .page-navigator .gap-narrow { display: flex }
+    .page-navigator ol { gap: 6px }
+    .page-navigator a, .page-navigator .current > span { min-width: 32px; padding: 0 8px }
+}
+
+/* 回到顶部：浮在内容区右下角，滚开一段才出现 */
+.admin-to-top {
+    position: fixed;
+    right: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
+    z-index: 25;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--pink-dark);
+    font-size: 18px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: transform .2s, border-color .18s;
+}
+
+.admin-to-top[hidden] { display: none }
+.admin-to-top:hover { border-color: var(--pink); transform: translateY(-3px) }
 
 /* 8. 表单 ---------------------------------------------------------------- */
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px }
@@ -790,95 +869,106 @@ body.auth-page {
 @keyframes dialog-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96) } }
 
 /* 14. 手机导航 ----------------------------------------------------------- */
-/* 顶栏、底栏、更多面板都只服务窄屏，宽屏下整块不参与布局，PC 仍旧是左侧栏。 */
-.admin-bar, .admin-tabs, .admin-sheet { display: none }
+/* 顶栏和「更多」面板都只服务窄屏，宽屏下整块不参与布局，PC 仍旧是左侧栏。 */
+.admin-bar, .admin-sheet { display: none }
 
 @keyframes sheet-fade { from { opacity: 0 } }
 @keyframes sheet-rise { from { transform: translateY(100%) } }
 
 /* 15. 响应式 ------------------------------------------------------------- */
+/* 窄屏：两张一行，落单的一张占满。 */
+@media (max-width: 849px) {
+    .stat-grid > .stat-card { grid-column: span 6 }
+    .stat-grid > .stat-card:nth-child(odd):last-child { grid-column: span 12 }
+}
+
+/* 中屏：三张一行；末行剩一张占满，剩两张各占一半。 */
+@media (min-width: 850px) and (max-width: 981px) {
+    .stat-grid > .stat-card { grid-column: span 4 }
+    .stat-grid > .stat-card:nth-child(3n+1):last-child { grid-column: span 12 }
+
+    .stat-grid > .stat-card:nth-child(3n+1):nth-last-child(2),
+    .stat-grid > .stat-card:nth-child(3n+2):last-child { grid-column: span 6 }
+}
+
+/* 宽屏：四张一行；末行无论剩一、二还是三张，都会均匀铺满。 */
+@media (min-width: 982px) {
+    .stat-grid > .stat-card { grid-column: span 3 }
+    .stat-grid > .stat-card:nth-child(4n+1):last-child { grid-column: span 12 }
+
+    .stat-grid > .stat-card:nth-child(4n+1):nth-last-child(2),
+    .stat-grid > .stat-card:nth-child(4n+2):last-child { grid-column: span 6 }
+
+    .stat-grid > .stat-card:nth-child(4n+1):nth-last-child(3),
+    .stat-grid > .stat-card:nth-child(4n+2):nth-last-child(2),
+    .stat-grid > .stat-card:nth-child(4n+3):last-child { grid-column: span 4 }
+}
+
 @media (max-width: 1000px) {
     .editor-layout { grid-template-columns: minmax(0, 1fr) }
     .editor-body > .admin-panel { min-height: 620px }
 }
 
 @media (max-width: 760px) {
-    body.admin { height: auto; overflow: auto }
-    body.admin.sheet-open { overflow: hidden }
+    /* 顶栏一格、内容一格的竖排。整页不滚，只有中间的 .admin-main 滚，
+       滚动条就老实待在内容区里，不会画到固定的顶栏上去 */
+    body.admin {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
 
-    .admin-shell { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 100vh; overflow: visible }
+    /* flex-basis 给 0，高度就完全由剩下的空间说了算，是个确定值；
+       行再钉成 minmax(0, 1fr)，内容再长也撑不开这一格，只会在里面滚 */
+    .admin-shell {
+        flex: 1 1 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        height: auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
     .admin-side { display: none }
-    .admin-main { height: auto; overflow: visible; padding: 70px 15px calc(80px + env(safe-area-inset-bottom)) }
+    .admin-main { height: 100%; padding: 20px 15px calc(28px + env(safe-area-inset-bottom)) }
 
-    /* 顶栏：站名加配色开关，其它交给页面自己 */
+    /* 顶栏：站名、总览与两个常用入口、配色开关和「更多」。
+       手机上底部是浏览器地址栏的地盘，导航一律走顶上，不再单开一条底栏 */
     .admin-bar {
-        position: fixed;
+        flex: none;
         z-index: 30;
-        top: 0;
-        right: 0;
-        left: 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
         height: 54px;
-        padding: 0 15px;
+        padding: 0 12px 0 15px;
         border-bottom: 1px solid var(--line);
         background: var(--surface);
     }
 
-    .admin-bar .admin-logo { font-size: 17px }
-    .admin-bar .admin-theme { width: 32px; height: 32px; font-size: 14px }
+    .admin-bar .admin-logo { font-size: 17px; white-space: nowrap }
+    .admin-bar-nav { display: flex; align-items: center; gap: 6px }
 
-    /* 底栏：四个常用页面加一个「更多」，格子等宽 */
-    .admin-tabs {
-        position: fixed;
-        z-index: 30;
-        right: 0;
-        bottom: 0;
-        left: 0;
+    .admin-bar-nav a, .admin-bar .admin-theme, .admin-more {
         display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 1fr;
-        padding-bottom: env(safe-area-inset-bottom);
-        border-top: 1px solid var(--line);
-        background: var(--surface);
-    }
-
-    .admin-tabs a, .admin-tabs button {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        height: 56px;
-        padding: 0 2px;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: none;
         border: 0;
+        border-radius: 11px;
         background: none;
         color: var(--muted);
-        font: 10px/1.2 var(--sans);
+        font-size: 17px;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
     }
 
-    .admin-tabs a:before, .admin-tabs button:before {
-        content: "";
-        position: absolute;
-        top: 7px;
-        width: 46px;
-        height: 26px;
-        border-radius: 999px;
-        transition: background-color .18s;
-    }
+    .admin-bar-nav a.is-active { background: var(--pink-soft); color: var(--pink-dark) }
+    .admin-more { background: var(--surface-muted); color: var(--ink) }
 
-    .admin-tabs .icon { position: relative; font-size: 19px }
-    .admin-tabs span { position: relative }
-    .admin-tabs .is-active { color: var(--pink-dark) }
-    .admin-tabs .is-active span { font-weight: 700 }
-    .admin-tabs .is-active:before { background: var(--pink-soft) }
-
-    /* 更多：从底部推上来的一张卡片，装不常用的入口 */
+    /* 更多：从底部推上来的一张卡片，整份导航都在里面 */
     .admin-sheet.is-open { display: block; position: fixed; inset: 0; z-index: 40 }
 
     .admin-sheet-mask { position: absolute; inset: 0; background: rgba(0, 0, 0, .42); animation: sheet-fade .2s ease }
@@ -888,6 +978,9 @@ body.auth-page {
         right: 0;
         bottom: 0;
         left: 0;
+        /* 整份导航都收在这里，屏幕矮的时候让卡片自己滚，别顶出可视区 */
+        max-height: 86dvh;
+        overflow-y: auto;
         padding: 9px 15px calc(18px + env(safe-area-inset-bottom));
         border-radius: 22px 22px 0 0;
         background: var(--surface);
@@ -942,6 +1035,13 @@ body.auth-page {
 
     .admin-moment-actions form, .admin-comment-actions form { display: block }
     .admin-moment-actions .btn, .admin-comment-actions .btn { width: 100%; justify-content: center }
+}
+
+/* 三个快捷入口在最窄的手机上也要和站名、配色及更多按钮共处一行。 */
+@media (max-width: 360px) {
+    .admin-bar { gap: 6px; padding-right: 8px; padding-left: 10px }
+    .admin-bar-nav { gap: 4px }
+    .admin-bar-nav a, .admin-bar .admin-theme, .admin-more { width: 32px; height: 32px }
 }
 
 @media (prefers-reduced-motion: reduce) {

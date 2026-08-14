@@ -7,6 +7,7 @@
 	ViewData["Title"] = "点点滴滴";
 
 	var site = await SettingsService.GetAsync();
+	var pager = new PaginationModel(Model.Items.Page, Model.Items.TotalPages, "/admin/moments");
 }
 <div class="admin-panel">
 	<div class="admin-toolbar">
@@ -54,22 +55,7 @@
 			}
 		</div>
 
-		@if (Model.Items.TotalPages > 1)
-		{
-			<div class="admin-pagination">
-				@for (var number = 1; number <= Model.Items.TotalPages; number++)
-				{
-					if (number == Model.Items.Page)
-					{
-						<span class="current">@number</span>
-					}
-					else
-					{
-						<a href="/admin/moments?page=@number">@number</a>
-					}
-				}
-			</div>
-		}
+		<partial name="_Pagination" model="pager" />
 	}
 	else
 	{

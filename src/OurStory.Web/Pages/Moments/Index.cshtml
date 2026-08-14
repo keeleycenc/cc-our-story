@@ -6,6 +6,7 @@
     ViewData["Title"] = "点点滴滴";
 
     string? lastYear = null;
+    var pager = new PaginationModel(Model.Items.Page, Model.Items.TotalPages, "/moments");
 }
 <main class="content-page moments-page" id="main">
     <header class="page-heading moments-heading">
@@ -49,7 +50,7 @@
                         {
                             <span class="moment-cover"><img src="@moment.CoverUrl" alt="@moment.Title" loading="lazy" decoding="async"></span>
                         }
-                        <span class="moment-content">
+                        <div class="moment-content">
                             <span class="moment-meta">
                                 <i>@Icon("heart")@moment.Mood</i>
                                 @if (moment.Location.Length > 0)
@@ -68,14 +69,12 @@
                             <h2>@moment.Title</h2>
                             <span class="moment-excerpt">@moment.Excerpt</span>
                             <span class="moment-footer"><span>@Icon("user-round")由 @moment.AuthorName 记录</span><b>@(moment.IsLocked ? "输入密码打开" : "查看这段回忆")@Icon("arrow-right")</b></span>
-                        </span>
+                        </div>
                     </a>
                 </article>
             }
         </div>
-        <div class="pagination">
-            <partial name="_Pagination" model="@(new PaginationModel(Model.Items.Page, Model.Items.TotalPages, "/moments"))" />
-        </div>
+        <partial name="_Pagination" model="pager" />
     }
     else
     {

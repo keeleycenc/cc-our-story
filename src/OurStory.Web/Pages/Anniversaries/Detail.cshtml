@@ -24,7 +24,7 @@
             </div>
             <time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">@item.OriginalDate.ToString("yyyy 年 MM 月 dd 日")</time>
             <h1>@item.Title</h1>
-            <p>@(item.IsToday ? "就是今天" : item.NextDate is null ? "一次被好好收藏的日子" : $"下一次还有 {item.DaysUntil} 天")</p>
+            <p>@(item.IsToday ? "就在今天" : item.NextDate is null ? "一次被好好收藏的日子" : $"下一次还有 {item.DaysUntil} 天")</p>
         </header>
 
         @if (item.CoverUrl.Length > 0 && !item.NoteHtml.Contains(item.CoverUrl, StringComparison.Ordinal))

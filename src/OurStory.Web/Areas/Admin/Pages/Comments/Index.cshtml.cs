@@ -8,6 +8,7 @@ using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Services.Comments;
+using OurStory.Web.Infrastructure;
 
 namespace OurStory.Web.Areas.Admin.Pages.Comments;
 
@@ -15,12 +16,13 @@ namespace OurStory.Web.Areas.Admin.Pages.Comments;
 /// 表示 IndexModel
 /// </summary>
 public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
-    private const int PageSize = 25;
+    private const int PageSize = 10;
 
     /// <summary>
     /// 获取或设置 PageNumber
     /// </summary>
-    [BindProperty(SupportsGet = true, Name = "page")]
+    /// <remarks>GET 的页码由 <see cref="PageNumbers.PageNumber"/> 从查询串里取，这里只接表单里的隐藏字段。</remarks>
+    [BindProperty(Name = "page")]
     public int PageNumber { get; set; } = 1;
 
     /// <summary>
@@ -31,13 +33,20 @@ public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
     /// <summary>
     /// 处理 GET 请求
     /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task OnGetAsync(CancellationToken cancellationToken) {
+        PageNumber = Request.PageNumber();
         Items = await comments.ListForAdminAsync(PageNumber, PageSize, cancellationToken);
     }
 
     /// <summary>
     /// 处理 ToggleAsync(int, bool, CancellationToken) 的 POST 请求
     /// </summary>
+    /// <param name="id"></param>
+    /// <param name="approved"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<IActionResult> OnPostToggleAsync(int id, bool approved, CancellationToken cancellationToken) {
         _ = await comments.SetApprovedAsync(id, approved, cancellationToken);
         TempData["Flash"] = approved ? "这条留言已放出（可见）" : "这条留言已被压下（不可见）";
@@ -47,6 +56,9 @@ public class IndexModel(ICommentService comments, SiteClock clock) : PageModel {
     /// <summary>
     /// 处理 DeleteAsync(int, CancellationToken) 的 POST 请求
     /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken) {
         _ = await comments.DeleteAsync(id, cancellationToken);
         TempData["Flash"] = "留言已经删掉了。";

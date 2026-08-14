@@ -1,29 +1,59 @@
 @model PaginationModel
-@*
-    翻页条，结构和原主题一致：一个 ol，当前页那一项挂 .current。
-    只有一页时整块不渲染。
-*@
 @if (Model.TotalPages > 1)
 {
-    <ol class="page-navigator">
-        @if (Model.Page > 1)
-        {
-            <li><a href="@Model.UrlFor(Model.Page - 1)" aria-label="上一页">@Icon("chevron-left", null, "上一页")</a></li>
-        }
-        @foreach (var number in Model.VisiblePages())
-        {
-            if (number == Model.Page)
+    <nav class="page-navigator" aria-label="翻页">
+        <ol>
+            @if (Model.HasPrevious)
             {
-                <li class="current"><span aria-current="page">@number</span></li>
+                <li class="edge"><a href="@Model.UrlFor(1)">首页</a></li>
+                <li><a href="@Model.UrlFor(Model.Page - 1)" aria-label="上一页">@Icon("chevron-left", null, "上一页")</a></li>
+            }
+
+            @if (Model.Page == 1)
+            {
+                <li class="current"><span aria-current="page">1</span></li>
             }
             else
             {
-                <li><a href="@Model.UrlFor(number)">@number</a></li>
+                <li><a href="@Model.UrlFor(1)">1</a></li>
             }
-        }
-        @if (Model.Page < Model.TotalPages)
-        {
-            <li><a href="@Model.UrlFor(Model.Page + 1)" aria-label="下一页">@Icon("chevron-right", null, "下一页")</a></li>
-        }
-    </ol>
+
+            @if (Model.LeadingGap != PageGap.None)
+            {
+                <li class="gap @(Model.LeadingGap == PageGap.NarrowOnly ? "gap-narrow" : null)" aria-hidden="true">…</li>
+            }
+
+            @foreach (var (number, far) in Model.WindowPages())
+            {
+                if (number == Model.Page)
+                {
+                    <li class="current"><span aria-current="page">@number</span></li>
+                }
+                else
+                {
+                    <li class="@(far ? "far" : null)"><a href="@Model.UrlFor(number)">@number</a></li>
+                }
+            }
+
+            @if (Model.TrailingGap != PageGap.None)
+            {
+                <li class="gap @(Model.TrailingGap == PageGap.NarrowOnly ? "gap-narrow" : null)" aria-hidden="true">…</li>
+            }
+
+            @if (Model.Page == Model.TotalPages)
+            {
+                <li class="current"><span aria-current="page">@Model.TotalPages</span></li>
+            }
+            else
+            {
+                <li><a href="@Model.UrlFor(Model.TotalPages)">@Model.TotalPages</a></li>
+            }
+
+            @if (Model.HasNext)
+            {
+                <li><a href="@Model.UrlFor(Model.Page + 1)" aria-label="下一页">@Icon("chevron-right", null, "下一页")</a></li>
+                <li class="edge"><a href="@Model.UrlFor(Model.TotalPages)">尾页</a></li>
+            }
+        </ol>
+    </nav>
 }

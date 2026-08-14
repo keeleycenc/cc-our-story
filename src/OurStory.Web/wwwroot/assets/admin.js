@@ -2,7 +2,7 @@
   'use strict';
 
   /* 配色切换：和前台共用 localStorage 里的那一项，两边保持一致
-     手机顶栏和 PC 顶栏各有一个开关，两个都要接上 */
+     手机顶栏和 PC 页头各有一个开关，两个都要接上 */
   const root = document.documentElement;
   document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
     toggle.addEventListener('click', () => {
@@ -12,7 +12,7 @@
     });
   });
 
-  /* 手机底栏的「更多」：把不常用的入口收进一张从底部推上来的卡片 */
+  /* 手机顶栏的「更多」：整份导航收在一张从底部推上来的卡片里 */
   const sheet = document.querySelector('[data-sheet]');
   if (sheet) {
     const openers = document.querySelectorAll('[data-sheet-open]');
@@ -28,6 +28,22 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && sheet.classList.contains('is-open')) setSheet(false);
+    });
+  }
+
+  /* 回到顶部：后台滚的是中间那块内容区，不是整个页面，
+     所以监听和滚动都得冲着 .admin-main 去，window.scrollTo 在这儿没用 */
+  const canvas = document.querySelector('.admin-main');
+  const toTop = document.querySelector('.admin-to-top');
+  if (canvas && toTop) {
+    const onScroll = () => { toTop.hidden = canvas.scrollTop < 400; };
+
+    onScroll();
+    canvas.addEventListener('scroll', onScroll, { passive: true });
+
+    toTop.addEventListener('click', () => {
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      canvas.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' });
     });
   }
 

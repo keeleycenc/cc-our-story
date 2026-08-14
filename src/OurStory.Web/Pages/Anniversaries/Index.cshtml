@@ -111,7 +111,7 @@
             @if (next is not null)
             {
                 <strong>@next.NextDate!.Value.ToString("MM.dd")</strong>
-                <small>@(next.IsToday ? "就是今天" : $"距离还有 {next.DaysUntil} 天")</small>
+                <small>@(next.IsToday ? "就在今天" : $"距离还有 {next.DaysUntil} 天")</small>
             }
             else
             {

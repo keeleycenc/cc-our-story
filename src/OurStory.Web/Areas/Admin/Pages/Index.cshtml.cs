@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
+using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Moments;
@@ -20,6 +21,7 @@ namespace OurStory.Web.Areas.Admin.Pages;
 public class IndexModel(
     ISettingsService settingsService,
     IMomentService moments,
+    IAnniversaryService anniversaries,
     ICommentService comments,
     IHeartbeatService heartbeats,
     VisitorIdentityAccessor visitors,
@@ -45,6 +47,11 @@ public class IndexModel(
     public int CommentCount { get; private set; }
 
     /// <summary>
+    /// 获取或设置纪念日数量
+    /// </summary>
+    public int AnniversaryCount { get; private set; }
+
+    /// <summary>
     /// 执行 Heartbeat 操作
     /// </summary>
     public HeartbeatSummary Heartbeat { get; private set; } = new();
@@ -68,6 +75,7 @@ public class IndexModel(
         Recent = (await moments.ListForAdminAsync(1, 6, User.UserId(), cancellationToken)).Items;
         TotalCount = await moments.CountAsync(cancellationToken);
         PublishedCount = await moments.CountPublishedAsync(cancellationToken);
+        AnniversaryCount = await anniversaries.CountForViewerAsync(true, cancellationToken);
         CommentCount = await comments.CountAsync(cancellationToken);
 
         Heartbeat = await heartbeats.GetSummaryAsync(await visitors.GetAsync(cancellationToken), cancellationToken);
