@@ -28,7 +28,7 @@ public class MomentEditPageTests {
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/admin/moments", redirect.Url);
-        Assert.Equal("记录已经保存好了。", page.TempData["Flash"]);
+        Assert.Equal("记录已经保存好了，快去看看吧。", page.TempData["Flash"]);
     }
 
     /// <summary>更新成功后也返回列表，避免误以为下一次保存是新建。</summary>

@@ -97,7 +97,7 @@ public class EditModel(IMomentService moments, SiteClock clock) : PageModel {
         if (id is null) {
             var authorId = User.UserId() ?? 0;
             _ = await moments.CreateAsync(model, authorId, cancellationToken);
-            TempData["Flash"] = "记录已经保存好了。快去看看吧";
+            TempData["Flash"] = "记录已经保存好了，快去看看吧。";
             return Redirect("/admin/moments");
         }
 
