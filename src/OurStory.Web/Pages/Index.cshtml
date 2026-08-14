@@ -116,7 +116,10 @@
                 else
                 {
                     <button class="feature-card @feature.Tone" type="button" data-feature="@feature.Title" data-feature-icon="@feature.Icon">
-                        <span class="card-top"><span class="feature-icon">@Icon(feature.Icon)</span><small>@number</small></span>
+                        <span class="card-top">
+                            <span class="feature-icon">@Icon(feature.Icon)</span>
+                            <span class="card-meta"><small>@number</small><span class="feature-status">未开放</span></span>
+                        </span>
                         <h3>@feature.Title</h3>
                         <p>@feature.Description</p>
                         <span class="card-bottom"><span>@feature.Hint</span>@Icon("arrow-right", "card-arrow")</span>

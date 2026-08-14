@@ -88,11 +88,6 @@
 }
 
 /* 全站滚动条：视口和后台独立滚动区域使用同一套外观。 */
-* {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
 *::-webkit-scrollbar { width: 10px; height: 10px }
 *::-webkit-scrollbar-track { background: var(--scrollbar-track) }
 

@@ -408,6 +408,7 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     box-shadow: inset 0 0 0 1px var(--card-ring);
     color: #fff;
     font: 400 16px/1 var(--serif);
+    -webkit-user-select: none;
     user-select: none;
 }
 

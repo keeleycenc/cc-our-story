@@ -71,12 +71,13 @@ img { max-width: 100%; display: block }
     right: 0;
     z-index: 20;
     height: 74px;
-    transition: background-color .3s, box-shadow .3s, backdrop-filter .3s;
+    transition: background-color .3s, box-shadow .3s, -webkit-backdrop-filter .3s, backdrop-filter .3s;
 }
 
 .site-nav.is-scrolled {
     background: var(--nav-bg);
     box-shadow: 0 1px 0 var(--line);
+    -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
 }
 
@@ -121,6 +122,7 @@ img { max-width: 100%; display: block }
     border-radius: 99px;
     background: var(--nav-bg);
     box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
 }
 
@@ -159,6 +161,7 @@ img { max-width: 100%; display: block }
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     transition: color .2s, border-color .2s;
 }
@@ -221,6 +224,7 @@ img { max-width: 100%; display: block }
     place-items: center;
     padding: 20px;
     background: var(--scrim);
+    -webkit-backdrop-filter: blur(9px);
     backdrop-filter: blur(9px);
 }
 

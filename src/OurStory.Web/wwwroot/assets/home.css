@@ -309,6 +309,7 @@ button.heart.is-capped > .icon { animation: none }
     border: 1px solid var(--card-ring);
     border-radius: 25px;
     background: var(--nav-bg);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow-sm);
 }
@@ -351,6 +352,7 @@ button.heart.is-capped > .icon { animation: none }
     font: 400 17px/1.45 var(--serif);
     letter-spacing: .04em;
     box-shadow: 0 24px 70px rgba(29, 18, 34, .35), inset 0 0 28px rgba(239, 145, 168, .18);
+    -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
     transform: translate(-50%, calc(-100% - 28px));
     opacity: 0;
@@ -456,6 +458,22 @@ button.heart.is-capped > .icon { animation: none }
 .feature-card.gold { background: var(--card-gold) }
 
 .card-top, .card-bottom { display: flex; justify-content: space-between; align-items: center }
+.card-meta { display: flex; align-items: center; gap: 10px }
+
+.feature-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 21px;
+    padding: 0 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    line-height: 1;
+    background: var(--card-chip);
+    color: var(--muted);
+}
 
 .feature-icon {
     width: 42px;
