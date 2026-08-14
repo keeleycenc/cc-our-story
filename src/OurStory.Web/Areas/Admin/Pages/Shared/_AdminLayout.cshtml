@@ -83,6 +83,12 @@
 					<div>
 						<p>@ViewData["Eyebrow"]</p>
 						<h1>@ViewData["Title"]</h1>
+						@* 「返回列表」跟着标题走：编辑页的表单底部只留保存和预览，
+						   要退出去的时候眼睛不用先扫到页尾 *@
+						@if (ViewData["BackUrl"] is string backUrl)
+						{
+							<a class="admin-back" href="@backUrl">@Icon("arrow-left")@(ViewData["BackText"] as string ?? "返回列表")</a>
+						}
 					</div>
 					<div class="admin-who">
 						@Icon("user-round")<span>@site.RoleName(User.Role())</span>

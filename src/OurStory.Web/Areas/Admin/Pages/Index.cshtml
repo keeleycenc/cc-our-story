@@ -92,6 +92,54 @@
     }
 </div>
 
+@* 纪念日按「下一次在什么时候」排好，总览只提醒还会再来的那几个，
+   过去的一次性日子留在纪念日页面里回看就好 *@
+<div class="admin-panel">
+    <div class="admin-toolbar">
+        <h2 style="margin:0">@Icon("calendar-heart") 接下来的日子</h2>
+        <a class="btn btn-small" href="/admin/anniversaries/edit">@Icon("plus")添加</a>
+    </div>
+
+    @if (Model.Upcoming.Count > 0)
+    {
+        <div class="admin-day-list">
+            @foreach (var item in Model.Upcoming)
+            {
+                <a class="admin-day-item @(item.IsToday ? "is-today" : null)" href="/admin/anniversaries/edit/@item.Id">
+                    <span class="admin-day-mark">@Icon(AnniversaryKinds.Icon(item.Kind))</span>
+                    <span class="admin-day-summary">
+                        <span class="admin-day-title">
+                            <span>@item.Title</span>
+                            @if (item.IsPrivate)
+                            {
+                                <span class="tag is-draft">@Icon("lock")私密</span>
+                            }
+                        </span>
+                        <span class="admin-day-meta">
+                            <span>@Icon("calendar-days")@item.NextDate!.Value.ToString("yyyy-MM-dd")</span>
+                            <span>@AnniversaryKinds.Name(item.Kind)</span>
+                            @if (item.RepeatYearly && item.Years > 0)
+                            {
+                                <span>第 @item.Years 年</span>
+                            }
+                        </span>
+                    </span>
+                    <span class="admin-day-count">@(item.IsToday ? "就在今天" : $"还有 {item.DaysUntil} 天")</span>
+                </a>
+            }
+        </div>
+
+        @if (Model.AnniversaryCount > Model.Upcoming.Count)
+        {
+            <a class="admin-day-more" href="/admin/anniversaries">@Icon("arrow-right")看看全部 @Model.AnniversaryCount 个纪念日</a>
+        }
+    }
+    else
+    {
+        <p class="admin-empty">还没有记下要等的日子，去添加一个吧。</p>
+    }
+</div>
+
 <blockquote class="admin-vow">
     @Icon("quote")
     <p>既然选择了彼此，就请记得，未来不只有鲜花、浪漫和快乐。你将与TA一起经历父母老去与离世的悲伤、面对生活突如其来的危机，一起熬过疾病、低谷和挫折，也一起承担岁月赋予人生的种种考验。</p>

@@ -15,7 +15,7 @@ namespace OurStory.Web.Areas.Admin.Pages.Anniversaries;
 /// 纪念日后台列表
 /// </summary>
 public class IndexModel(IAnniversaryService anniversaries) : PageModel {
-    private const int PageSize = 10;
+    private const int PageSize = PageNumbers.AdminPageSize;
 
     /// <summary>
     /// 获取当前这一页的纪念日

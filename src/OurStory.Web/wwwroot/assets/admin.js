@@ -250,6 +250,156 @@
     });
   });
 
+  /* 日期／时间选择器：值和弹出的那张日历仍旧交给原生控件，
+     这里只补两件浏览器没做好的事 —— 一个自己画的日历按钮，
+     和一个把日期跳到今天的快捷。两个按钮都是先藏着、确认能用了才亮出来 */
+  const pad = (value) => String(value).padStart(2, '0');
+
+  const localStamp = (withTime) => {
+    const now = new Date();
+    const day = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    return withTime ? day + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes()) : day;
+  };
+
+  document.querySelectorAll('[data-date-field]').forEach((field) => {
+    const input = field.querySelector('[data-date-input]');
+    if (!input) return;
+
+    const open = field.querySelector('[data-date-open]');
+    const now = field.querySelector('[data-date-now]');
+
+    // showPicker 不是哪儿都有；调不动就别摆按钮，把浏览器自带的日历图标留着
+    if (open && typeof input.showPicker === 'function') {
+      field.classList.add('has-picker');
+      open.hidden = false;
+      open.addEventListener('click', () => {
+        try { input.showPicker(); } catch (error) { input.focus(); }
+      });
+    }
+
+    if (now) {
+      now.hidden = false;
+      now.addEventListener('click', () => {
+        input.value = localStamp(input.type === 'datetime-local');
+        // 离开保护和其它监听都盯着这两个事件，改完得说一声
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
+  });
+
+  /* 上传：图片库和正文插图共用这一套。
+     一次能选好几张，但仍旧一张一张地传 —— 服务端一次只收一张，
+     而且这样进度是准的，坏了也知道是坏在第几张 */
+  const antiforgery = () => document.querySelector('input[name="__RequestVerificationToken"]');
+
+  const uploadOne = (file, onProgress) => new Promise((resolve) => {
+    const request = new XMLHttpRequest();
+    const body = new FormData();
+    const verification = antiforgery();
+
+    body.append('file', file);
+    if (verification) body.append('__RequestVerificationToken', verification.value);
+
+    request.open('POST', '/admin/media?handler=Upload');
+    request.responseType = 'json';
+
+    // 传大图时这个事件一直在报进度，进度条走的就是它
+    if (request.upload) {
+      request.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) onProgress(event.loaded / event.total);
+      });
+    }
+
+    request.addEventListener('load', () => {
+      const data = request.response || {};
+      resolve(data.ok ? { ok: true, url: data.url } : { ok: false, error: data.error || '上传失败。' });
+    });
+
+    request.addEventListener('error', () => resolve({ ok: false, error: '网络开了个小差，稍后再试。' }));
+    request.send(body);
+  });
+
+  /* 进度条：整批算一个百分比，第几张单独用文字说 */
+  const progressBoard = (host) => {
+    const bar = host && host.querySelector('[data-upload-bar]');
+    const text = host && host.querySelector('[data-upload-text]');
+
+    return {
+      start() { if (host) host.hidden = false; },
+      set(ratio, label) {
+        if (bar) bar.style.width = Math.round(Math.min(1, Math.max(0, ratio)) * 100) + '%';
+        if (text) text.textContent = label;
+      },
+      stop(label) {
+        if (bar) bar.style.width = '100%';
+        if (text) text.textContent = label;
+        if (!host) return;
+        // 传完了把条子留一小会儿，让人看见它确实走到了头
+        setTimeout(() => { host.hidden = true; if (bar) bar.style.width = '0%'; }, 1200);
+      }
+    };
+  };
+
+  /* 挨个上传，每传完一张就回调一次，最后给出这一批的结果 */
+  const uploadAll = async (files, host, onDone) => {
+    const board = progressBoard(host);
+    const total = files.length;
+    let uploaded = 0;
+    let failure = null;
+
+    board.start();
+
+    for (let index = 0; index < total; index++) {
+      const step = (fraction) => board.set(
+        (index + fraction) / total,
+        total > 1 ? '正在上传第 ' + (index + 1) + ' / ' + total + ' 张…' : '正在上传…'
+      );
+
+      step(0);
+      const result = await uploadOne(files[index], step);
+
+      if (result.ok) {
+        uploaded++;
+        if (onDone) onDone(result.url, files[index]);
+      } else if (!failure) {
+        failure = result.error;
+      }
+    }
+
+    const summary = failure
+      ? (uploaded > 0 ? '已上传 ' + uploaded + ' 张，其余上传失败：' + failure : failure)
+      : (total > 1 ? uploaded + ' 已上传多张图片。' : '图片已上传。');
+
+    board.stop(summary);
+    return { uploaded: uploaded, failure: failure, summary: summary };
+  };
+
+  /* 图片库的上传表单：接管提交，改成带进度的逐张上传，传完再刷新列表 */
+  document.querySelectorAll('form[data-media-upload]').forEach((form) => {
+    const input = form.querySelector('[data-media-files]');
+    const host = form.querySelector('[data-upload-progress]');
+    const submit = form.querySelector('button[type="submit"]');
+    if (!input) return;
+
+    form.addEventListener('submit', async (event) => {
+      const files = Array.from(input.files || []);
+      if (files.length === 0) return;
+
+      event.preventDefault();
+      if (submit) submit.disabled = true;
+
+      const result = await uploadAll(files, host);
+
+      input.value = '';
+      if (submit) submit.disabled = false;
+
+      // 全传上去了就刷新，新图会排在「最近上传」的最前面；
+      // 有失败的就停在这儿，把原因留在屏幕上
+      if (!result.failure) setTimeout(() => window.location.reload(), 700);
+    });
+  });
+
   /* 点点滴滴和纪念日共用同一套 Markdown、预览和插图行为。 */
   document.querySelectorAll('[data-markdown-composer]').forEach((composer) => {
     const editor = composer.querySelector('[data-markdown-editor]');
@@ -258,13 +408,13 @@
     const editButton = composer.querySelector('[data-markdown-edit]');
     const previewButton = composer.querySelector('[data-markdown-preview-button]');
     const uploadInput = composer.querySelector('[data-markdown-upload]');
+    const progressHost = composer.querySelector('[data-upload-progress]');
     const status = composer.querySelector('[data-markdown-status]');
     const cover = composer.querySelector('.markdown-cover-field input');
     let renderedValue = null;
 
     if (!editor || !editorPane || !previewPane) return;
 
-    const token = () => document.querySelector('input[name="__RequestVerificationToken"]');
     const setMode = (previewing) => {
       editorPane.hidden = previewing;
       previewPane.hidden = !previewing;
@@ -287,7 +437,7 @@
 
       const body = new FormData();
       body.append('content', editor.value);
-      const verification = token();
+      const verification = antiforgery();
       if (verification) body.append('__RequestVerificationToken', verification.value);
       status.textContent = '正在生成预览…';
 
@@ -296,7 +446,7 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error('preview failed');
 
-        previewPane.innerHTML = data.html || '<p class="markdown-preview-empty">写下一些内容后，在这里查看最终排版。</p>';
+        previewPane.innerHTML = data.html || '<p class="markdown-preview-empty">填写内容后，在此预览最终排版</p>';
         renderedValue = editor.value;
         setMode(true);
         status.textContent = '预览已更新。';
@@ -306,39 +456,38 @@
     });
 
     if (!uploadInput) return;
+
+    // 每传好一张就立刻插进正文，光标跟着往后走，几张图的先后顺序和选的时候一致
+    const insert = (url) => {
+      const snippet = '\n![图片](' + url + ')\n';
+      const at = editor.selectionStart || editor.value.length;
+
+      editor.value = editor.value.slice(0, at) + snippet + editor.value.slice(at);
+      editor.selectionStart = editor.selectionEnd = at + snippet.length;
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      if (cover && !cover.value) cover.value = url;
+    };
+
     uploadInput.addEventListener('change', async () => {
-      const file = uploadInput.files && uploadInput.files[0];
-      if (!file) return;
+      const files = Array.from(uploadInput.files || []);
+      if (files.length === 0) return;
 
-      const body = new FormData();
-      body.append('file', file);
-      const verification = token();
-      if (verification) body.append('__RequestVerificationToken', verification.value);
-      status.textContent = '正在上传…';
+      setMode(false);
+      status.textContent = '';
 
-      try {
-        const response = await fetch('/admin/media?handler=Upload', { method: 'POST', body: body });
-        const data = await response.json();
-        if (!response.ok || !data.ok) {
-          status.textContent = data.error || '上传失败。';
-          return;
-        }
+      const result = await uploadAll(files, progressHost, insert);
 
-        const snippet = '\n![图片](' + data.url + ')\n';
-        const at = editor.selectionStart || editor.value.length;
-        editor.value = editor.value.slice(0, at) + snippet + editor.value.slice(at);
-        editor.selectionStart = editor.selectionEnd = at + snippet.length;
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
-        if (cover && !cover.value) cover.value = data.url;
+      if (result.uploaded > 0) {
         renderedValue = null;
-        setMode(false);
         editor.focus();
-        status.textContent = '图片已插入正文。';
-      } catch (error) {
-        status.textContent = '网络开了个小差，稍后再试。';
-      } finally {
-        uploadInput.value = '';
       }
+
+      // 进度条那行说的是传得怎么样，这里说的是正文里发生了什么，两句话不重样
+      status.textContent = result.failure
+        ? result.summary
+        : (result.uploaded > 1 ? result.uploaded + ' 张图片都插进正文了。' : '图片已插入正文。');
+
+      uploadInput.value = '';
     });
   });
 }());

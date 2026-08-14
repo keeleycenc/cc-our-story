@@ -16,7 +16,7 @@ namespace OurStory.Web.Areas.Admin.Pages.Moments;
 /// 表示 IndexModel
 /// </summary>
 public class IndexModel(IMomentService moments, SiteClock clock) : PageModel {
-    private const int PageSize = 10;
+    private const int PageSize = PageNumbers.AdminPageSize;
 
     /// <summary>
     /// 获取或设置 PageNumber

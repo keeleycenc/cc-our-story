@@ -89,10 +89,10 @@
                 <span>女主个性短句</span>
                 <input asp-for="Input.GirlSentence" type="text" maxlength="60">
             </label>
-            <label class="field">
-                <span>在一起的时间</span>
-                <input asp-for="Input.LoveStartedAt" type="datetime-local">
-            </label>
+            <partial name="_DateField" model="@(DateFieldModel.Moment(
+                "Input.LoveStartedAt",
+                "在一起的时间",
+                Model.Input.LoveStartedAt))" />
             <label class="field">
                 <span>每天最多记多少次心动</span>
                 <input asp-for="Input.HeartbeatDailyLimit" type="number" min="1" max="9999">

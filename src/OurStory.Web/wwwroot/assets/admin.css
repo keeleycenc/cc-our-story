@@ -118,6 +118,20 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-top p { color: var(--pink-dark); font: 700 8px Arial; letter-spacing: .25em; margin-bottom: 7px }
 .admin-top h1 { font: 400 26px var(--serif) }
 
+/* 编辑页的返回链接：挂在标题下面，和页头一起停在一屏的左上角 */
+.admin-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 12px;
+    transition: color .18s;
+}
+
+.admin-back .icon { font-size: 14px }
+.admin-back:hover { color: var(--pink-dark) }
+
 .admin-who { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px }
 
 .admin-theme {
@@ -253,6 +267,76 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-moment-meta > span:not(.tag) { display: inline-flex; align-items: center; gap: 5px }
 .admin-moment-actions { display: flex; align-items: center; gap: 6px }
 .admin-moment-actions form { display: inline-flex; margin: 0 }
+
+/* 总览上的纪念日：整行都是通往编辑页的链接，
+   右边那格是这一条真正想说的话 —— 还有多少天 */
+.admin-day-list { display: grid; gap: 10px }
+
+.admin-day-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--surface-soft);
+    transition: border-color .18s, background-color .18s;
+}
+
+.admin-day-item:hover { border-color: var(--pink); background: var(--surface); color: inherit }
+
+/* 今天就是这一天：整张卡片提起来说，不用去找那个小标签 */
+.admin-day-item.is-today { border-color: var(--pink); background: var(--pink-soft) }
+
+.admin-day-mark {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--pink-dark);
+    font-size: 17px;
+}
+
+.admin-day-summary { display: block; min-width: 0 }
+.admin-day-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px }
+.admin-day-title > span:not(.tag) { overflow: hidden; font: 400 15px var(--serif); text-overflow: ellipsis; white-space: nowrap }
+
+.admin-day-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px 13px;
+    margin-top: 5px;
+    color: var(--faint);
+    font-size: 11px;
+}
+
+.admin-day-meta > span { display: inline-flex; align-items: center; gap: 5px }
+
+.admin-day-count {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.admin-day-item.is-today .admin-day-count { background: var(--ink); color: var(--paper) }
+
+.admin-day-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.admin-day-more:hover { color: var(--pink-dark) }
 
 /* 留言：正文是主角，长度又能到 2000 字，所以单独一套卡片 ——
    先折成四行，点「展开」才铺开，一屏里能扫过好几条 */
@@ -473,9 +557,82 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     text-align: left;
 }
 
-:root[data-theme="light"] .field input[type="date"] { color-scheme: light }
-:root[data-theme="dark"] .field input[type="date"] { color-scheme: dark }
-.field input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
+/* 弹出来的那张日历跟着站点配色走，深色模式下别闪一张白纸出来 */
+:root[data-theme="light"] .field input[type="date"],
+:root[data-theme="light"] .field input[type="datetime-local"] { color-scheme: light }
+
+:root[data-theme="dark"] .field input[type="date"],
+:root[data-theme="dark"] .field input[type="datetime-local"] { color-scheme: dark }
+
+.field input[type="date"]::-webkit-calendar-picker-indicator,
+.field input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
+
+/* 日期／时间选择器：全站共用 _DateField 这一份，外框自己画，
+   里面仍是原生控件，手机上照样能调出系统的滚轮 */
+.date-field > label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px }
+.date-field > small { display: block; margin-top: 6px; color: var(--faint); font-size: 11px }
+
+.date-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--surface);
+    transition: border-color .18s, box-shadow .18s;
+}
+
+.date-control:focus-within { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+
+/* 输入框自己不再画边框，边框归外面那层壳，两者叠起来才是一个控件 */
+.field.date-field .date-control input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 10px 0 10px 13px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.field.date-field .date-control input:focus { box-shadow: none }
+
+/* 有了自己的日历按钮，浏览器自带的那个图标就收起来，免得并排出现两个 */
+.date-control.has-picker input::-webkit-calendar-picker-indicator { display: none }
+
+.date-control-open {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color .18s, color .18s;
+}
+
+.date-control-open:hover { background: var(--surface-muted); color: var(--pink-dark) }
+
+.date-control-now {
+    flex: none;
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font: 11px var(--sans);
+    cursor: pointer;
+    transition: border-color .18s, color .18s;
+}
+
+.date-control-now:hover { border-color: var(--pink); color: var(--pink-dark) }
+.date-control-open[hidden], .date-control-now[hidden] { display: none }
 
 /* 栅格里的每一格都允许被压缩，否则某一项撑不下就把整行推宽 */
 .field-grid > .field { min-width: 0 }
@@ -569,14 +726,6 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-empty-state > .icon { color: var(--pink-dark); font-size: 32px }
 .admin-empty-state h2 { margin-top: 13px; color: var(--ink); font: 400 20px var(--serif) }
 .admin-empty-state p { margin-top: 5px; font-size: 12px }
-.anniversary-editor { max-width: 760px }
-.anniversary-editor .admin-panel > h2 { display: flex; align-items: center; gap: 8px }
-.anniversary-editor .admin-panel-hint { font-size: 12px }
-.anniversary-editor .field > span { font-size: 13px }
-.anniversary-editor .field input,
-.anniversary-editor .field select,
-.anniversary-editor .field textarea { font-size: 14px }
-.anniversary-editor .field input[type="date"] { min-height: 44px }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
 .anniversary-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px }
 .anniversary-options .field-check { align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft) }
@@ -656,6 +805,28 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .upload-drop:hover { border-color: var(--pink); color: var(--pink-dark) }
 .upload-drop input { display: none }
+
+/* 上传进度：一批图片走一条，传完停一下再收起来 */
+.upload-progress { margin-top: 13px }
+.upload-progress[hidden] { display: none }
+
+.upload-progress-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--surface-muted);
+}
+
+.upload-progress-track > span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--pink-dark);
+    transition: width .18s ease;
+}
+
+.upload-progress-text { margin-top: 7px; color: var(--faint); font-size: 11px }
 
 /* 11. 图片库 ------------------------------------------------------------- */
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px }
@@ -1039,6 +1210,10 @@ body.auth-page {
     .markdown-composer-foot { align-items: flex-start; flex-direction: column }
     .markdown-editor-pane, .markdown-preview-pane { min-height: 380px }
     .admin-moment-item, .admin-comment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
+
+    /* 窄屏放不下三格，「还有多少天」落到标题下面，仍旧和标题左对齐 */
+    .admin-day-item { grid-template-columns: auto minmax(0, 1fr); row-gap: 11px }
+    .admin-day-count { grid-column: 2; justify-self: start }
 
     /* 操作按钮改成等宽的格子：用 flex 的话每一格都不肯小于自己的内容，
        「删除」外面还套了层 form，最后几个按钮宽窄不一 */

@@ -4,6 +4,7 @@
     ViewData["ActiveMenu"] = "moments";
     ViewData["Eyebrow"] = Model.IsNew ? "NEW MOMENT" : "EDIT MOMENT";
     ViewData["Title"] = Model.IsNew ? "写一条记录" : "编辑记录";
+    ViewData["BackUrl"] = "/admin/moments";
 }
 <form method="post" data-dirty-guard>
     @if (!ViewData.ModelState.IsValid)
@@ -39,11 +40,11 @@
                     <select asp-for="Input.Status" asp-items="Html.GetEnumSelectList<MomentStatus>()"></select>
                 </label>
 
-                <label class="field">
-                    <span>发生日期</span>
-                    <input asp-for="Input.MomentDate" type="date">
-                    <small>可以补记很久以前的事，时间轴按它排。</small>
-                </label>
+                <partial name="_DateField" model="@(DateFieldModel.Date(
+                    "Input.MomentDate",
+                    "发生日期",
+                    Model.Input.MomentDate,
+                    hint: "可以补记很久以前的事，时间轴按它排。"))" />
 
                 <label class="field-check">
                     <input asp-for="Input.AllowComment" type="checkbox">
@@ -52,7 +53,6 @@
 
                 <div class="form-actions">
                     <button class="btn" type="submit">@Icon("save")保存</button>
-                    <a class="btn btn-ghost" href="/admin/moments">返回列表</a>
                     @if (!Model.IsNew && Model.Slug is not null)
                     {
                         <a class="btn btn-ghost" href="/moments/@Model.Slug" target="_blank" rel="noopener">@Icon("eye")预览</a>

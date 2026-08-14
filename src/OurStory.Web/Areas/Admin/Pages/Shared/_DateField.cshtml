@@ -1,0 +1,21 @@
+@model DateFieldModel
+@* 全站统一的日期／时间选择器：原生控件负责取值和手机上的滚轮，
+   外面这层壳负责长相 —— 日历按钮和「今天／此刻」由脚本接管，没有脚本时
+   退回成浏览器自带的那个控件，照样能选。 *@
+<div class="field date-field">
+    <label for="@Model.Id">@Model.Label</label>
+    <div class="date-control" data-date-field>
+        <input id="@Model.Id"
+               name="@Model.FieldName"
+               type="@Model.InputType"
+               value="@Model.Value"
+               required="@Model.Required"
+               data-date-input>
+        <button class="date-control-open" type="button" tabindex="-1" aria-hidden="true" data-date-open hidden>@Icon("calendar-days")</button>
+        <button class="date-control-now" type="button" data-date-now hidden>@Model.NowLabel</button>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Hint))
+    {
+        <small>@Model.Hint</small>
+    }
+</div>

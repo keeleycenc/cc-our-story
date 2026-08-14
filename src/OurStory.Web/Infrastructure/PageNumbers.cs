@@ -14,6 +14,11 @@ public static class PageNumbers {
     public const string Key = "page";
 
     /// <summary>
+    /// 后台各个列表每页的条数
+    /// </summary>
+    public const int AdminPageSize = 20;
+
+    /// <summary>
     /// 从查询串里取当前页码，取不到或不合法时当作第一页
     /// </summary>
     /// <param name="request"></param>

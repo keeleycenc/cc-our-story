@@ -18,10 +18,12 @@
     <div class="markdown-composer-foot">
         <label class="upload-drop">
             @Icon("upload")<span>上传图片并插入正文</span>
-            <input type="file" accept="image/*" data-markdown-upload>
+            <input type="file" accept="image/*" multiple data-markdown-upload>
         </label>
         <small data-markdown-status></small>
     </div>
+
+    <partial name="_UploadProgress" />
 
     <label class="field markdown-cover-field">
         <span>封面图</span>

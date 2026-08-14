@@ -4,6 +4,7 @@
     ViewData["ActiveMenu"] = "anniversaries";
     ViewData["Eyebrow"] = Model.IsNew ? "NEW ANNIVERSARY" : "EDIT ANNIVERSARY";
     ViewData["Title"] = Model.IsNew ? "添加纪念日" : "编辑纪念日";
+    ViewData["BackUrl"] = "/admin/anniversaries";
 }
 <form method="post" data-dirty-guard>
     @if (!ViewData.ModelState.IsValid)
@@ -36,10 +37,11 @@
                 <h2>@Icon("calendar-heart")@(Model.IsNew ? "添加纪念日" : "编辑纪念日")</h2>
                 <p class="admin-panel-hint">记录值得回看的日期和故事</p>
 
-                <label class="field">
-                    <span>日期</span>
-                    <input asp-for="Input.AnniversaryDate" type="date" required>
-                </label>
+                <partial name="_DateField" model="@(DateFieldModel.Date(
+                    "Input.AnniversaryDate",
+                    "日期",
+                    Model.Input.AnniversaryDate,
+                    required: true))" />
                 <label class="field">
                     <span>分类</span>
                     <select asp-for="Input.Kind">
@@ -70,7 +72,6 @@
 
                 <div class="form-actions">
                     <button class="btn" type="submit">@Icon("save")保存纪念日</button>
-                    <a class="btn btn-ghost" href="/admin/anniversaries">返回列表</a>
                 </div>
             </div>
 
