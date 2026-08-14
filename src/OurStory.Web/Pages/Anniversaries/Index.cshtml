@@ -1,0 +1,227 @@
+@page "/anniversaries"
+@model OurStory.Web.Pages.Anniversaries.IndexModel
+@{
+    ViewData["Title"] = "纪念日";
+    ViewData["ActiveNav"] = "anniversaries";
+    ViewData["Bundle"] = "anniversaries";
+
+    const int pageSize = 10;
+    var timelineItems = Model.Items
+        .OrderByDescending(item => item.OriginalDate)
+        .ThenByDescending(item => item.Id)
+        .ToArray();
+    var upcomingItems = Model.Items
+        .Where(item => item.RepeatYearly && !item.IsArchived)
+        .OrderBy(item => item.DaysUntil)
+        .ThenBy(item => item.Title)
+        .ToArray();
+    var next = Model.Items
+        .Where(item => !item.IsArchived && item.NextDate is not null)
+        .OrderBy(item => item.NextDate)
+        .FirstOrDefault();
+    var calendarItems = Model.Items.Select(item => new {
+        id = item.Id,
+        title = item.Title,
+        url = item.Url,
+        originalDate = item.OriginalDate.ToString("yyyy-MM-dd"),
+        kind = item.Kind.ToString().ToLowerInvariant(),
+        kindName = IndexModel.KindName(item.Kind),
+        repeatYearly = item.RepeatYearly,
+        isPrivate = item.IsPrivate,
+        authorName = item.AuthorName
+    }).ToArray();
+}
+<main id="main" class="memory-page">
+    <header class="page-heading memory-page-header">
+        <p>OUR ANNIVERSARIES</p>
+        <h1>纪念日</h1>
+        <span>一些日子经过以后，仍然值得被重新看见。</span>
+        @if (User.IsOwner())
+        {
+            <a class="manage-anniversary" href="/admin/anniversaries">@Icon("pen-line")管理纪念日</a>
+        }
+    </header>
+
+    <section class="memory-overview" aria-labelledby="overview-title">
+        <h2 id="overview-title" class="sr-only">纪念日总览</h2>
+        <article class="overview-card overview-total">
+            <span>全部回忆</span>
+            <strong>@Model.Items.Count</strong>
+            <small>个被记住的日子</small>
+        </article>
+        <article class="overview-card overview-next">
+            <span>下一次日子</span>
+            @if (next is not null)
+            {
+                <strong>@next.NextDate!.Value.ToString("MM.dd")</strong>
+                <small>@(next.IsToday ? "就是今天" : $"距离还有 {next.DaysUntil} 天")</small>
+            }
+            else
+            {
+                <strong>—</strong>
+                <small>暂时没有即将到来的日期</small>
+            }
+        </article>
+        <article class="overview-card overview-repeat">
+            <span>年度提醒</span>
+            <strong>@upcomingItems.Length</strong>
+            <small>个每年都会重逢的日期</small>
+        </article>
+    </section>
+
+    <div class="memory-columns">
+        <section class="memory-section timeline-section" aria-labelledby="timeline-title">
+            <header class="memory-section-header">
+                <div>
+                    <p>TIMELINE</p>
+                    <h2 id="timeline-title">时间轴</h2>
+                </div>
+                <span>共 @timelineItems.Length 个回忆</span>
+            </header>
+
+            @if (timelineItems.Length > 0)
+            {
+                <div class="lazy-scroll timeline-scroll" data-lazy-list="timeline" data-loaded="@Math.Min(pageSize, timelineItems.Length)" data-total="@timelineItems.Length" aria-busy="false">
+                    <div data-lazy-content>
+                        @foreach (var item in timelineItems.Take(pageSize))
+                        {
+                            var dayNumber = Math.Max(1, Model.Today.DayNumber - item.OriginalDate.DayNumber + 1);
+                            <article class="timeline-item kind-@item.Kind.ToString().ToLowerInvariant()@(item.CoverUrl.Length > 0 ? " has-cover" : "")">
+                                <div class="timeline-rail" aria-hidden="true"><i></i><span></span></div>
+                                @if (item.CoverUrl.Length > 0)
+                                {
+                                    <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                                }
+                                <div class="timeline-copy">
+                                    <div class="timeline-title-row">
+                                        <h3><a href="@item.Url">@item.Title</a></h3>
+                                        <span>@IndexModel.KindName(item.Kind)</span>
+                                        @if (item.RepeatYearly)
+                                        {
+                                            <em>每年提醒</em>
+                                        }
+                                        @if (item.IsPrivate)
+                                        {
+                                            <em class="privacy-tag">@Icon("lock")私密</em>
+                                        }
+                                    </div>
+                                    <div class="anniversary-meta"><time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">@item.OriginalDate.ToString("yyyy.MM.dd")</time><span>由 @item.AuthorName 记录</span></div>
+                                    <p class="timeline-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还没有写下描述。")</p>
+                                </div>
+                                <strong class="timeline-day">第 @dayNumber 天</strong>
+                            </article>
+                        }
+                    </div>
+                </div>
+                <footer class="memory-section-footer" data-lazy-footer="timeline">
+                    <span data-lazy-status aria-live="polite">@(timelineItems.Length > pageSize ? "向下滚动，继续加载" : "全部回忆已显示")</span>
+                    <span data-lazy-progress>已显示 @Math.Min(pageSize, timelineItems.Length) / @timelineItems.Length</span>
+                </footer>
+            }
+            else
+            {
+                <div class="memory-empty"><strong>时间轴还是空的</strong><span>添加一个纪念日，它就会从这里开始。</span></div>
+            }
+        </section>
+
+        <section class="memory-section upcoming-section" aria-labelledby="upcoming-title">
+            <header class="memory-section-header">
+                <div>
+                    <p>UPCOMING</p>
+                    <h2 id="upcoming-title">即将到来</h2>
+                </div>
+                <span>共 @upcomingItems.Length 个年度提醒</span>
+            </header>
+
+            @if (upcomingItems.Length > 0)
+            {
+                <div class="lazy-scroll upcoming-scroll" data-lazy-list="upcoming" data-loaded="@Math.Min(pageSize, upcomingItems.Length)" data-total="@upcomingItems.Length" aria-busy="false">
+                    <div class="upcoming-list" data-lazy-content>
+                        @foreach (var item in upcomingItems.Take(pageSize))
+                        {
+                            <article class="upcoming-card kind-@item.Kind.ToString().ToLowerInvariant()@(item.CoverUrl.Length > 0 ? " has-cover" : "")">
+                                <time datetime="@item.NextDate!.Value.ToString("yyyy-MM-dd")">
+                                    <b>@item.NextDate.Value.ToString("dd")</b>
+                                    <span>@item.NextDate.Value.ToString("MM月")</span>
+                                </time>
+                                @if (item.CoverUrl.Length > 0)
+                                {
+                                    <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                                }
+                                <div>
+                                    <div class="upcoming-title-row">
+                                        <h3><a href="@item.Url">@item.Title</a></h3>
+                                        <span>@IndexModel.KindName(item.Kind)</span>
+                                        @if (item.IsPrivate)
+                                        {
+                                            <em class="privacy-tag">@Icon("lock")私密</em>
+                                        }
+                                    </div>
+                                    <span class="anniversary-recorder">由 @item.AuthorName 记录</span>
+                                    <p class="upcoming-note">@(item.Summary.Length > 0 ? item.Summary : "每年这一天，都回来看看。")</p>
+                                </div>
+                                <strong>@(item.IsToday ? "今天" : $"{item.DaysUntil} 天")</strong>
+                            </article>
+                        }
+                    </div>
+                </div>
+                <footer class="memory-section-footer" data-lazy-footer="upcoming">
+                    <span data-lazy-status aria-live="polite">@(upcomingItems.Length > pageSize ? "向下滚动，继续加载" : "全部提醒已显示")</span>
+                    <span data-lazy-progress>已显示 @Math.Min(pageSize, upcomingItems.Length) / @upcomingItems.Length</span>
+                </footer>
+            }
+            else
+            {
+                <div class="memory-empty"><strong>没有年度提醒</strong><span>开启“每年重复”后，它会出现在这里。</span></div>
+            }
+        </section>
+    </div>
+
+    @if (calendarItems.Length > 0)
+    {
+        <section class="memory-calendar" data-anniversary-calendar data-today="@Model.Today.ToString("yyyy-MM-dd")" aria-labelledby="calendar-title">
+            <header class="memory-section-header memory-calendar-header">
+                <div>
+                    <p>CALENDAR</p>
+                    <h2 id="calendar-title">纪念日日历</h2>
+                </div>
+                <div class="memory-calendar-controls" aria-label="切换日历月份">
+                    <button type="button" data-calendar-previous aria-label="上一个月">@Icon("chevron-left")</button>
+                    <label>
+                        <span class="sr-only">年份</span>
+                        <select data-calendar-year aria-label="选择年份"></select>
+                    </label>
+                    <label>
+                        <span class="sr-only">月份</span>
+                        <select data-calendar-month aria-label="选择月份">
+                            @for (var month = 1; month <= 12; month++)
+                            {
+                                <option value="@month">@month 月</option>
+                            }
+                        </select>
+                    </label>
+                    <button type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
+                    <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
+                </div>
+            </header>
+            <div class="memory-calendar-body">
+                <div class="memory-calendar-month">
+                    <div class="memory-calendar-weekdays" aria-hidden="true">
+                        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                    </div>
+                    <div class="memory-calendar-grid" data-calendar-grid role="grid" aria-label="纪念日月历"></div>
+                </div>
+                <aside class="memory-calendar-agenda" aria-live="polite">
+                    <header>
+                        <span data-calendar-agenda-weekday></span>
+                        <h3 data-calendar-agenda-date></h3>
+                        <small data-calendar-agenda-count></small>
+                    </header>
+                    <div data-calendar-agenda></div>
+                </aside>
+            </div>
+            <script type="application/json" data-calendar-data>@Html.Raw(System.Text.Json.JsonSerializer.Serialize(calendarItems))</script>
+        </section>
+    }
+
+</main>

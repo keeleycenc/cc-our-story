@@ -95,11 +95,10 @@ public class EditModel(IMomentService moments, SiteClock clock) : PageModel {
         };
 
         if (id is null) {
-            // 作者就是当前登录的人，不给改：这个站点只有两个人在写
             var authorId = User.UserId() ?? 0;
-            var created = await moments.CreateAsync(model, authorId, cancellationToken);
-            TempData["Flash"] = "记录已经保存好了。";
-            return Redirect($"/admin/moments/edit/{created.Id}");
+            _ = await moments.CreateAsync(model, authorId, cancellationToken);
+            TempData["Flash"] = "记录已经保存好了。快去看看吧";
+            return Redirect("/admin/moments");
         }
 
         if (!await moments.UpdateAsync(id.Value, model, cancellationToken)) {
@@ -107,7 +106,7 @@ public class EditModel(IMomentService moments, SiteClock clock) : PageModel {
         }
 
         TempData["Flash"] = "改动已经保存。";
-        return Redirect($"/admin/moments/edit/{id.Value}");
+        return Redirect("/admin/moments");
     }
 
     /// <summary>
@@ -160,11 +159,10 @@ public class EditModel(IMomentService moments, SiteClock clock) : PageModel {
         /// 获取或设置 MomentDate
         /// </summary>
         /// <remarks>
-        /// datetime-local 默认 step 是 60 秒，标签助手却会带秒和毫秒渲染出来，
-        /// 浏览器判定成无效值，非得手动改一下时间才肯提交。这里把格式钉到分钟。
+        /// 点点滴滴和纪念日都只记录发生日期，使用同一套日期控件。
         /// </remarks>
-        [DataType(DataType.DateTime)]
-        [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime MomentDate { get; set; } = DateTime.Now;
 
         /// <summary>

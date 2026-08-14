@@ -1,0 +1,5 @@
+# EF Core 迁移由工具生成，不对其执行 IDE/CA 代码风格分析。
+# 编译器诊断仍然保留，因此真正的语法或类型错误不会被隐藏。
+[*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none

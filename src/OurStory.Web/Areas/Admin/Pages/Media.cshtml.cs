@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core.Abstractions;
 using OurStory.Core.Configuration;
 using OurStory.Core.Options;
+using OurStory.Services.Moments;
 using OurStory.Services.Storage;
 
 namespace OurStory.Web.Areas.Admin.Pages;
@@ -16,7 +17,8 @@ public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
     StoragePaths paths,
-    ActiveConfiguration configuration) : PageModel {
+    ActiveConfiguration configuration,
+    IMarkdownRenderer markdown) : PageModel {
     private const int MaxListed = 60;
 
     /// <summary>
@@ -82,6 +84,10 @@ public class MediaModel(
             ? new JsonResult(new { ok = true, url = result.Url })
             : new JsonResult(new { ok = false, error = result.Error }) { StatusCode = StatusCodes.Status400BadRequest };
     }
+
+    /// <summary>使用与前台正文一致的规则生成 Markdown 预览。</summary>
+    public IActionResult OnPostPreview(string? content) =>
+        new JsonResult(new { ok = true, html = markdown.ToHtml(content) });
 
     /// <summary>
     /// 本地存储时列出最近上传的图片。

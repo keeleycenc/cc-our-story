@@ -25,6 +25,11 @@ public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : Db
     public DbSet<Moment> Moments => Set<Moment>();
 
     /// <summary>
+    /// 执行 Anniversaries 操作
+    /// </summary>
+    public DbSet<Anniversary> Anniversaries => Set<Anniversary>();
+
+    /// <summary>
     /// 执行 Comments 操作
     /// </summary>
     public DbSet<Comment> Comments => Set<Comment>();

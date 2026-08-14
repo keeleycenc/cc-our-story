@@ -1,0 +1,87 @@
+@page "/admin/anniversaries/edit/{id:int?}"
+@model OurStory.Web.Areas.Admin.Pages.Anniversaries.EditModel
+@{
+    ViewData["ActiveMenu"] = "anniversaries";
+    ViewData["Eyebrow"] = Model.IsNew ? "NEW ANNIVERSARY" : "EDIT ANNIVERSARY";
+    ViewData["Title"] = Model.IsNew ? "添加纪念日" : "编辑纪念日";
+}
+<form method="post" data-dirty-guard>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <p class="admin-error">@Icon("circle-alert")@Html.Raw(string.Join("；", ViewData.ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage)))</p>
+    }
+
+    <div class="editor-layout anniversary-editor-layout">
+        <div class="editor-body">
+            <div class="admin-panel">
+                <label class="field">
+                    <span>纪念日名称</span>
+                    <input asp-for="Input.Title" type="text" maxlength="80" required autofocus placeholder="例如：第一次见面的日子">
+                </label>
+
+                <partial name="_MarkdownImageEditor" model="@(new MarkdownEditorModel(
+                    "Input.Note",
+                    "这一天的故事（Markdown）",
+                    Model.Input.Note,
+                    "Input.CoverUrl",
+                    Model.Input.CoverUrl,
+                    "写下这一天发生的故事……",
+                    "支持 Markdown 和图片；封面留空时会自动使用正文中的第一张图片。",
+                    8000))" />
+            </div>
+        </div>
+
+        <div class="editor-side">
+            <div class="admin-panel">
+                <h2>@Icon("calendar-heart")@(Model.IsNew ? "添加纪念日" : "编辑纪念日")</h2>
+                <p class="admin-panel-hint">记录值得回看的日期和故事</p>
+
+                <label class="field">
+                    <span>日期</span>
+                    <input asp-for="Input.AnniversaryDate" type="date" required>
+                </label>
+                <label class="field">
+                    <span>分类</span>
+                    <select asp-for="Input.Kind">
+                        @foreach (var option in AnniversaryKinds.All)
+                        {
+                            <option value="@option.Value">@option.Label</option>
+                        }
+                    </select>
+                </label>
+
+                <div class="anniversary-options">
+                    <label class="field-check">
+                        <input asp-for="Input.RepeatYearly" type="checkbox">
+                        <span><strong>每年重复</strong><small>用于生日、相识日等会持续增长的纪念日</small></span>
+                    </label>
+                    <fieldset class="anniversary-visibility">
+                        <legend>谁可以看</legend>
+                        <label class="visibility-choice">
+                            <input asp-for="Input.IsPrivate" type="radio" value="false">
+                            <span>@Icon("eye")<strong>公开</strong><small>所有人都能查看</small></span>
+                        </label>
+                        <label class="visibility-choice">
+                            <input asp-for="Input.IsPrivate" type="radio" value="true">
+                            <span>@Icon("lock")<strong>私密</strong><small>只有情侣双方可见</small></span>
+                        </label>
+                    </fieldset>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn" type="submit">@Icon("save")保存纪念日</button>
+                    <a class="btn btn-ghost" href="/admin/anniversaries">返回列表</a>
+                </div>
+            </div>
+
+            @if (!Model.IsNew)
+            {
+                <div class="admin-panel editor-preview-link">
+                    <h2>@Icon("eye")前台效果</h2>
+                    <p class="admin-panel-hint">保存后可以回到纪念日页面查看图片和排版。</p>
+                    <a class="btn btn-ghost" href="/anniversaries" target="_blank" rel="noopener">查看纪念日页面</a>
+                </div>
+            }
+        </div>
+    </div>
+</form>

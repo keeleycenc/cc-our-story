@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OurStory.Data;
 
@@ -10,9 +11,11 @@ using OurStory.Data;
 namespace OurStory.Data.Migrations
 {
     [DbContext(typeof(OurStoryDbContext))]
-    partial class OurStoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260814054619_AddAnniversaryRichContent")]
+    partial class AddAnniversaryRichContent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -26,9 +29,6 @@ namespace OurStory.Data.Migrations
                     b.Property<DateOnly>("AnniversaryDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("AuthorId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("CoverUrl")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -36,7 +36,7 @@ namespace OurStory.Data.Migrations
                     b.Property<long>("CreatedAt")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsPrivate")
+                    b.Property<bool>("IsVisible")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Kind")
@@ -62,9 +62,7 @@ namespace OurStory.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("IsPrivate", "AnniversaryDate");
+                    b.HasIndex("IsVisible", "AnniversaryDate");
 
                     b.ToTable("anniversaries", (string)null);
                 });
@@ -289,16 +287,6 @@ namespace OurStory.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("OurStory.Core.Entities.Anniversary", b =>
-                {
-                    b.HasOne("OurStory.Core.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Author");
                 });
 
             modelBuilder.Entity("OurStory.Core.Entities.Comment", b =>

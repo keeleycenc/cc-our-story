@@ -1,0 +1,63 @@
+@page "/admin/anniversaries"
+@model OurStory.Web.Areas.Admin.Pages.Anniversaries.IndexModel
+@{
+    ViewData["ActiveMenu"] = "anniversaries";
+    ViewData["Eyebrow"] = "ANNIVERSARIES";
+    ViewData["Title"] = "纪念日";
+}
+<div class="admin-panel">
+    <div class="admin-toolbar">
+        <p class="admin-panel-hint" style="margin:0">共记录了 @Model.Items.Count 个重要日子。</p>
+        <a class="btn" href="/admin/anniversaries/edit">@Icon("plus")添加纪念日</a>
+    </div>
+
+    @if (Model.Items.Count > 0)
+    {
+        <div class="admin-moment-list anniversary-admin-list">
+            @foreach (var item in Model.Items)
+            {
+                <article class="admin-moment-item">
+                    <div class="admin-moment-summary">
+                        <div class="admin-moment-title">
+                            <a href="/admin/anniversaries/edit/@item.Id">@item.Title</a>
+                            @if (item.IsPrivate)
+                            {
+                                <span class="tag is-draft">@Icon("lock")私密</span>
+                            }
+                            else if (item.IsToday)
+                            {
+                                <span class="tag">就是今天</span>
+                            }
+                        </div>
+                        <div class="admin-moment-meta">
+                            <span>@Icon("calendar-days")@item.OriginalDate.ToString("yyyy-MM-dd")</span>
+                            <span>@Icon("user-round")由 @item.AuthorName 记录</span>
+                            <span>@Icon("tag")@IndexModel.KindName(item.Kind)</span>
+                            <span>@(item.RepeatYearly ? "每年重复" : "仅一次")</span>
+                            @if (!item.IsArchived)
+                            {
+                                <span>@(item.IsToday ? "D-day" : $"D-{item.DaysUntil}")</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="admin-moment-actions" aria-label="@item.Title 的操作">
+                        <a class="btn btn-ghost btn-small" href="@item.Url" target="_blank" rel="noopener">@Icon("eye")<span>查看</span></a>
+                        <a class="btn btn-ghost btn-small" href="/admin/anniversaries/edit/@item.Id">@Icon("pen-line")<span>编辑</span></a>
+                        <form method="post" asp-page-handler="Delete" data-confirm-title="删除纪念日" data-confirm="删除后无法恢复这个纪念日，确定继续吗？" data-confirm-ok="删除">
+                            <input type="hidden" name="id" value="@item.Id">
+                            <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")<span>删除</span></button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="admin-empty-state">
+            @Icon("calendar-heart")
+            <h2>还没有纪念日</h2>
+            <p>从一个对你们最重要的日子开始。</p>
+        </div>
+    }
+</div>

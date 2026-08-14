@@ -36,6 +36,8 @@
     let titleNode = null;
     let textNode = null;
     let okButton = null;
+    let cancelButton = null;
+    let iconUse = null;
     let settle = null;
     let opener = null;
 
@@ -71,6 +73,8 @@
       titleNode = host.querySelector('.admin-dialog-title');
       textNode = host.querySelector('.admin-dialog-text');
       okButton = host.querySelector('[data-dialog-ok]');
+      cancelButton = host.querySelector('.admin-dialog-actions [data-dialog-cancel]');
+      iconUse = host.querySelector('.admin-dialog-icon use');
 
       host.querySelectorAll('[data-dialog-cancel]').forEach((node) => {
         node.addEventListener('click', () => close(false));
@@ -92,6 +96,10 @@
       textNode.textContent = options.text || '';
       textNode.hidden = !options.text;
       okButton.textContent = options.ok || '删掉';
+      cancelButton.textContent = options.cancel || '再想想';
+      iconUse.setAttribute('href', '#i-' + (options.icon || 'trash-2'));
+      host.classList.toggle('is-warning', options.tone === 'warning');
+      okButton.className = options.danger === false ? 'btn' : 'btn btn-solid-danger';
 
       settle = done;
       opener = document.activeElement;
@@ -115,6 +123,45 @@
         form.dataset.confirmed = 'yes';
         if (form.requestSubmit) form.requestSubmit();
         else form.submit();
+      });
+    });
+  });
+
+  /* 编辑页离开保护：站内跳转统一使用自己的确认框，不再调用浏览器原生提示。 */
+  document.querySelectorAll('form[data-dirty-guard]').forEach((form) => {
+    let dirty = false;
+    let submitting = false;
+
+    const markDirty = () => { dirty = true; };
+    form.addEventListener('input', markDirty);
+    form.addEventListener('change', markDirty);
+    form.addEventListener('submit', () => {
+      submitting = true;
+      dirty = false;
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!dirty || submitting || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const link = event.target.closest('a[href]');
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+      const destination = new URL(link.href, window.location.href);
+      if (destination.pathname === window.location.pathname && destination.search === window.location.search && destination.hash) return;
+
+      event.preventDefault();
+      confirmDialog({
+        title: '更改尚未保存',
+        text: '现在离开后，本页刚刚做的修改将不会保存。',
+        ok: '不保存并离开',
+        cancel: '继续编辑',
+        icon: 'circle-alert',
+        tone: 'warning',
+        danger: false
+      }).then((yes) => {
+        if (!yes) return;
+        dirty = false;
+        window.location.assign(destination.href);
       });
     });
   });
@@ -187,43 +234,95 @@
     });
   });
 
-  /* 编辑器里的插图：上传完直接把 Markdown 图片语法插到光标处 */
-  const uploadInput = document.querySelector('[data-upload-input]');
-  const editor = document.querySelector('[data-editor]');
-  const status = document.querySelector('[data-upload-status]');
+  /* 点点滴滴和纪念日共用同一套 Markdown、预览和插图行为。 */
+  document.querySelectorAll('[data-markdown-composer]').forEach((composer) => {
+    const editor = composer.querySelector('[data-markdown-editor]');
+    const editorPane = composer.querySelector('[data-markdown-editor-pane]');
+    const previewPane = composer.querySelector('[data-markdown-preview-pane]');
+    const editButton = composer.querySelector('[data-markdown-edit]');
+    const previewButton = composer.querySelector('[data-markdown-preview-button]');
+    const uploadInput = composer.querySelector('[data-markdown-upload]');
+    const status = composer.querySelector('[data-markdown-status]');
+    const cover = composer.querySelector('.markdown-cover-field input');
+    let renderedValue = null;
 
-  if (uploadInput && editor) {
+    if (!editor || !editorPane || !previewPane) return;
+
+    const token = () => document.querySelector('input[name="__RequestVerificationToken"]');
+    const setMode = (previewing) => {
+      editorPane.hidden = previewing;
+      previewPane.hidden = !previewing;
+      editButton.classList.toggle('is-active', !previewing);
+      previewButton.classList.toggle('is-active', previewing);
+      editButton.setAttribute('aria-selected', String(!previewing));
+      previewButton.setAttribute('aria-selected', String(previewing));
+    };
+
+    editButton.addEventListener('click', () => {
+      setMode(false);
+      editor.focus();
+    });
+
+    previewButton.addEventListener('click', async () => {
+      if (renderedValue === editor.value) {
+        setMode(true);
+        return;
+      }
+
+      const body = new FormData();
+      body.append('content', editor.value);
+      const verification = token();
+      if (verification) body.append('__RequestVerificationToken', verification.value);
+      status.textContent = '正在生成预览…';
+
+      try {
+        const response = await fetch('/admin/media?handler=Preview', { method: 'POST', body: body });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error('preview failed');
+
+        previewPane.innerHTML = data.html || '<p class="markdown-preview-empty">写下一些内容后，在这里查看最终排版。</p>';
+        renderedValue = editor.value;
+        setMode(true);
+        status.textContent = '预览已更新。';
+      } catch (error) {
+        status.textContent = '预览暂时生成不了，请稍后重试。';
+      }
+    });
+
+    if (!uploadInput) return;
     uploadInput.addEventListener('change', async () => {
       const file = uploadInput.files && uploadInput.files[0];
       if (!file) return;
 
       const body = new FormData();
       body.append('file', file);
-      const token = document.querySelector('input[name="__RequestVerificationToken"]');
-      if (token) body.append('__RequestVerificationToken', token.value);
-
-      if (status) status.textContent = '正在上传…';
+      const verification = token();
+      if (verification) body.append('__RequestVerificationToken', verification.value);
+      status.textContent = '正在上传…';
 
       try {
         const response = await fetch('/admin/media?handler=Upload', { method: 'POST', body: body });
         const data = await response.json();
-
         if (!response.ok || !data.ok) {
-          if (status) status.textContent = data.error || '上传失败。';
+          status.textContent = data.error || '上传失败。';
           return;
         }
 
-        const snippet = '\n![](' + data.url + ')\n';
+        const snippet = '\n![图片](' + data.url + ')\n';
         const at = editor.selectionStart || editor.value.length;
         editor.value = editor.value.slice(0, at) + snippet + editor.value.slice(at);
-        editor.focus();
         editor.selectionStart = editor.selectionEnd = at + snippet.length;
-        if (status) status.textContent = '已插入正文。';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        if (cover && !cover.value) cover.value = data.url;
+        renderedValue = null;
+        setMode(false);
+        editor.focus();
+        status.textContent = '图片已插入正文。';
       } catch (error) {
-        if (status) status.textContent = '网络开了个小差，稍后再试。';
+        status.textContent = '网络开了个小差，稍后再试。';
       } finally {
         uploadInput.value = '';
       }
     });
-  }
+  });
 }());

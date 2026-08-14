@@ -1,0 +1,409 @@
+/* 纪念日：总览、固定高度时间轴与即将到来。 */
+.memory-page,
+.anniversary-detail-page {
+    --memory-bg: #f6f4f3;
+    --memory-surface: #fff;
+    --memory-surface-soft: #fbf9f8;
+    --memory-ink: #292527;
+    --memory-muted: #777073;
+    --memory-faint: #aaa3a6;
+    --memory-line: #e9e4e4;
+    --memory-line-strong: #d9d2d4;
+    --memory-accent: #b85e75;
+    --memory-accent-soft: #f9eaf0;
+    --memory-love: #ca627e;
+    --memory-birthday: #c68a3c;
+    --memory-firstmeeting: #9a6eb0;
+    --memory-wedding: #c65f71;
+    --memory-travel: #4d8c8a;
+    --memory-festival: #b77c32;
+    --memory-promise: #a6658d;
+    --memory-family: #668668;
+    --memory-milestone: #647fb2;
+    --memory-custom: #718e78;
+    min-height: 100vh;
+    padding: 0 24px 64px;
+    overflow: hidden;
+    color: var(--memory-ink);
+    background:
+        radial-gradient(circle at 8% 4%, rgba(205, 111, 139, .06), transparent 25%),
+        var(--memory-bg);
+}
+
+:root[data-theme="dark"] .memory-page,
+:root[data-theme="dark"] .anniversary-detail-page {
+    --memory-bg: #151416;
+    --memory-surface: #1e1c1f;
+    --memory-surface-soft: #242124;
+    --memory-ink: #f2edef;
+    --memory-muted: #b5adb0;
+    --memory-faint: #756f72;
+    --memory-line: #322f32;
+    --memory-line-strong: #494449;
+    --memory-accent: #e18ba1;
+    --memory-accent-soft: #38252c;
+    --memory-love: #e2839b;
+    --memory-birthday: #dfa65d;
+    --memory-firstmeeting: #c598da;
+    --memory-wedding: #ed8293;
+    --memory-travel: #78b8b5;
+    --memory-festival: #e0a95e;
+    --memory-promise: #d490b9;
+    --memory-family: #91b391;
+    --memory-milestone: #91addd;
+    --memory-custom: #96b49d;
+}
+
+.memory-page-header {
+    width: min(1180px, 100%);
+    margin: 0 auto 38px;
+    padding: 150px 4px 0;
+    text-align: center;
+}
+
+.memory-page-header p,
+.memory-section-header p {
+    margin: 0 0 8px;
+    color: var(--memory-accent);
+    font: 700 9px Arial, sans-serif;
+    letter-spacing: .2em;
+}
+
+.memory-page-header h1 { margin: 12px 0; color: var(--memory-ink); font: 400 clamp(38px, 6vw, 62px)/1.1 var(--serif); letter-spacing: -.04em }
+.memory-page-header > span { display: block; color: var(--memory-muted); font-size: 13px }
+.memory-page-header .manage-anniversary { display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; padding: 9px 15px; border: 1px solid var(--memory-line-strong); border-radius: 99px; color: var(--memory-ink); font-size: 12px; transition: border-color .18s, color .18s, background-color .18s }
+.memory-page-header .manage-anniversary:hover { border-color: var(--memory-accent); background: var(--memory-accent-soft); color: var(--memory-accent) }
+
+.memory-overview {
+    width: min(1180px, 100%);
+    margin: 0 auto 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.overview-card {
+    position: relative;
+    min-height: 136px;
+    padding: 22px 26px;
+    overflow: hidden;
+    border: 1px solid var(--memory-line);
+    border-radius: 16px;
+    background: var(--memory-surface);
+}
+
+.overview-card:after {
+    content: "";
+    position: absolute;
+    right: -26px;
+    bottom: -48px;
+    width: 115px;
+    height: 115px;
+    border-radius: 36px;
+    background: var(--memory-accent-soft);
+    transform: rotate(18deg);
+}
+
+.overview-card > span { display: block; color: var(--memory-muted); font-size: 12px }
+.overview-card > strong { position: relative; z-index: 1; display: block; margin-top: 11px; color: var(--memory-ink); font: 400 35px/1 var(--serif); letter-spacing: -.04em }
+.overview-card > small { position: relative; z-index: 1; display: block; margin-top: 9px; color: var(--memory-faint); font-size: 12px }
+.overview-next > strong { color: var(--memory-accent) }
+.overview-repeat:after { background: color-mix(in srgb, var(--memory-milestone) 12%, transparent) }
+
+.memory-columns {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+.memory-section {
+    overflow: hidden;
+    border: 1px solid var(--memory-line);
+    border-radius: 18px;
+    background: var(--memory-surface);
+    box-shadow: 0 18px 45px color-mix(in srgb, var(--memory-ink) 4%, transparent);
+}
+
+.memory-section-header {
+    min-height: 76px;
+    padding: 17px 23px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    border-bottom: 1px solid var(--memory-line);
+}
+
+.memory-section-header p { margin-bottom: 4px; font-size: 9px }
+.memory-section-header h2 { margin: 0; color: var(--memory-ink); font: 400 25px var(--serif) }
+.memory-section-header > span { padding-bottom: 3px; color: var(--memory-faint); font-size: 12px; white-space: nowrap }
+
+.lazy-scroll {
+    height: 516px;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--memory-line-strong) transparent;
+}
+
+.lazy-scroll::-webkit-scrollbar { width: 6px }
+.lazy-scroll::-webkit-scrollbar-thumb { border-radius: 10px; background: var(--memory-line-strong) }
+.lazy-scroll[aria-busy="true"] + .memory-section-footer [data-lazy-status]:before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 1px solid var(--memory-line-strong); border-top-color: var(--memory-accent); border-radius: 50%; animation: memory-spin .7s linear infinite }
+.memory-section-footer { min-height: 44px; padding: 0 18px 0 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--memory-line); background: var(--memory-surface-soft); color: var(--memory-faint); font-size: 10px }
+.memory-section-footer [data-lazy-status] { display: inline-flex; align-items: center }
+.memory-section-footer [data-lazy-progress] { padding: 4px 8px; border-radius: 99px; background: var(--memory-surface); color: var(--memory-muted); font: 700 9px Arial, sans-serif; letter-spacing: .04em; white-space: nowrap }
+.memory-section-footer button { padding: 0; border: 0; background: none; color: var(--memory-accent); font: inherit; cursor: pointer }
+
+.memory-calendar { width: min(1180px, 100%); margin: 16px auto 0; overflow: hidden; border: 1px solid var(--memory-line); border-radius: 18px; background: var(--memory-surface); box-shadow: 0 18px 45px color-mix(in srgb, var(--memory-ink) 4%, transparent) }
+.memory-calendar-header { align-items: center }
+.memory-calendar-controls { display: flex; align-items: center; gap: 7px }
+.memory-calendar-controls button, .memory-calendar-controls select { height: 34px; border: 1px solid var(--memory-line-strong); border-radius: 10px; background: var(--memory-surface-soft); color: var(--memory-ink); font: 11px var(--sans) }
+.memory-calendar-controls button { min-width: 34px; padding: 0 9px; display: inline-grid; place-items: center; cursor: pointer }
+.memory-calendar-controls button:hover { border-color: var(--memory-accent); color: var(--memory-accent) }
+.memory-calendar-controls select { min-width: 76px; padding: 0 25px 0 10px }
+.memory-calendar-controls .calendar-today { padding: 0 12px; white-space: nowrap }
+.memory-calendar-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: stretch }
+.memory-calendar-month { min-width: 0; padding: 18px 20px 20px }
+.memory-calendar-weekdays { height: 28px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; color: var(--memory-faint); font: 700 9px Arial, sans-serif; text-align: center }
+.memory-calendar-grid { overflow: hidden; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(6, 72px); gap: 1px; border: 1px solid var(--memory-line); border-radius: 14px; background: var(--memory-line) }
+.calendar-day, .calendar-day-blank { min-width: 0; border: 0; background: var(--memory-surface) }
+.calendar-day { position: relative; padding: 7px 8px; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; color: var(--memory-ink); text-align: left; cursor: pointer }
+.calendar-day:hover { background: var(--memory-surface-soft) }
+.calendar-day.is-selected { z-index: 1; background: var(--memory-accent-soft); box-shadow: inset 0 0 0 1px var(--memory-accent) }
+.calendar-day-number { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: var(--memory-muted); font: 700 10px Arial, sans-serif }
+.calendar-day.is-today .calendar-day-number { background: var(--memory-accent); color: #fff }
+.calendar-day-records { min-width: 0; width: 100%; display: grid; gap: 2px }
+.calendar-day-entry { display: block; padding: 2px 5px; overflow: hidden; border-radius: 5px; background: color-mix(in srgb, var(--kind) 13%, transparent); color: var(--kind); font-size: 8px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap }
+.calendar-day-more { color: var(--memory-faint); font-size: 8px }
+.memory-calendar-agenda { min-width: 0; height: 479px; display: flex; flex-direction: column; border-left: 1px solid var(--memory-line); background: var(--memory-surface-soft) }
+.memory-calendar-agenda > header { padding: 22px 22px 18px; border-bottom: 1px solid var(--memory-line) }
+.memory-calendar-agenda > header > span { color: var(--memory-accent); font: 700 9px Arial, sans-serif; letter-spacing: .12em }
+.memory-calendar-agenda h3 { margin: 7px 0 0; color: var(--memory-ink); font: 400 23px var(--serif) }
+.memory-calendar-agenda > header > small { display: block; margin-top: 7px; color: var(--memory-faint); font-size: 10px }
+.memory-calendar-agenda > div { min-height: 0; flex: 1; padding: 12px; overflow-y: auto; display: grid; align-content: start; gap: 8px }
+.calendar-agenda-item { padding: 12px 13px; display: grid; gap: 5px; border: 1px solid var(--memory-line); border-left: 3px solid var(--kind); border-radius: 11px; background: var(--memory-surface); transition: border-color .18s, transform .18s }
+.calendar-agenda-item:hover { border-color: var(--kind); transform: translateX(2px) }
+.calendar-agenda-item > span { color: var(--kind); font-size: 9px }
+.calendar-agenda-item > strong { overflow: hidden; color: var(--memory-ink); font: 500 14px var(--serif); text-overflow: ellipsis; white-space: nowrap }
+.calendar-agenda-item > small { color: var(--memory-faint); font-size: 9px }
+.calendar-agenda-empty { min-height: 180px; display: grid; place-items: center; color: var(--memory-faint); font-size: 11px; text-align: center }
+.memory-calendar > script { display: none }
+
+.kind-love { --kind: var(--memory-love) }
+.kind-birthday { --kind: var(--memory-birthday) }
+.kind-firstmeeting { --kind: var(--memory-firstmeeting) }
+.kind-wedding { --kind: var(--memory-wedding) }
+.kind-travel { --kind: var(--memory-travel) }
+.kind-festival { --kind: var(--memory-festival) }
+.kind-promise { --kind: var(--memory-promise) }
+.kind-family { --kind: var(--memory-family) }
+.kind-milestone { --kind: var(--memory-milestone) }
+.kind-custom { --kind: var(--memory-custom) }
+
+.timeline-item {
+    min-height: 126px;
+    padding: 21px 20px 20px 15px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 76px;
+    gap: 9px;
+    border-bottom: 1px solid var(--memory-line);
+}
+.timeline-item.has-cover { grid-template-columns: 34px 76px minmax(0, 1fr) 76px }
+
+.anniversary-thumb { display: block; align-self: center; width: 76px; height: 76px; overflow: hidden; border-radius: 12px; background: var(--memory-surface-soft) }
+.anniversary-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease }
+.timeline-item:hover .anniversary-thumb img,
+.upcoming-card:hover .anniversary-thumb img { transform: scale(1.035) }
+
+.timeline-rail { position: relative; display: flex; justify-content: center }
+.timeline-rail i { position: relative; z-index: 2; width: 13px; height: 13px; margin-top: 4px; border: 3px solid var(--memory-surface); border-radius: 50%; background: var(--kind); box-shadow: 0 0 0 1px color-mix(in srgb, var(--kind) 55%, var(--memory-line)) }
+.timeline-rail span { position: absolute; z-index: 1; top: 19px; bottom: -42px; left: 50%; width: 1px; background: color-mix(in srgb, var(--kind) 35%, var(--memory-line)); transform: translateX(-50%) }
+.timeline-item:last-child .timeline-rail span { display: none }
+.timeline-copy { min-width: 0 }
+.timeline-title-row, .upcoming-title-row { min-width: 0; display: flex; align-items: center; gap: 7px }
+.timeline-title-row h3, .upcoming-title-row h3 {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: var(--memory-ink);
+    font: 500 16px var(--serif);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.timeline-title-row h3 a, .upcoming-title-row h3 a { color: inherit }
+.timeline-title-row h3 a:hover, .upcoming-title-row h3 a:hover { color: var(--kind) }
+
+.timeline-title-row > span,
+.timeline-title-row > em,
+.upcoming-title-row > span,
+.upcoming-title-row > em {
+    flex: none;
+    padding: 3px 6px;
+    border-radius: 99px;
+    color: var(--kind);
+    background: color-mix(in srgb, var(--kind) 10%, transparent);
+    font-size: 10px;
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.timeline-title-row > em { color: var(--memory-muted); background: var(--memory-surface-soft) }
+.timeline-title-row > .privacy-tag, .upcoming-title-row > .privacy-tag { display: inline-flex; align-items: center; gap: 3px; color: var(--memory-muted); background: var(--memory-surface-soft); font-style: normal }
+.privacy-tag .icon { font-size: 9px }
+.anniversary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 7px; color: var(--memory-faint); font-size: 10px }
+.anniversary-meta time { display: block; margin: 0; font: 700 11px Arial, sans-serif; letter-spacing: .08em }
+.anniversary-recorder { display: block; margin-top: 5px; color: var(--memory-faint) !important; font-size: 9px !important }
+.timeline-note { display: -webkit-box; max-height: 3.2em; margin: 8px 0 0; overflow: hidden; color: var(--memory-muted); font-size: 13px; line-height: 1.6; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2 }
+
+.timeline-day { align-self: center; color: var(--kind); font: 400 15px var(--serif); text-align: right; white-space: nowrap }
+
+.upcoming-list { display: grid; gap: 10px; padding: 13px }
+.upcoming-card {
+    min-height: 92px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    border: 1px solid var(--memory-line);
+    border-left: 3px solid var(--kind);
+    border-radius: 12px;
+    background: var(--memory-surface-soft);
+}
+.upcoming-card.has-cover { grid-template-columns: 46px 54px minmax(0, 1fr) auto }
+.upcoming-card .anniversary-thumb { width: 54px; height: 62px; border-radius: 10px }
+
+.upcoming-card > time { display: grid; justify-items: center; padding-right: 12px; border-right: 1px solid var(--memory-line) }
+.upcoming-card > time b { color: var(--memory-ink); font: 400 23px/1 var(--serif) }
+.upcoming-card > time span { margin-top: 4px; color: var(--memory-faint); font-size: 7px }
+.upcoming-card > div { min-width: 0 }
+.upcoming-title-row h3 { font-size: 15px }
+.upcoming-note { max-height: 1.65em; margin: 5px 0 0; overflow: hidden; color: var(--memory-muted); font-size: 12px; line-height: 1.65; text-overflow: ellipsis; white-space: nowrap }
+.upcoming-card > strong { color: var(--kind); font: 500 13px var(--serif); white-space: nowrap }
+
+.memory-empty { min-height: 220px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center }
+.memory-empty strong { color: var(--memory-ink); font: 400 20px var(--serif) }
+.memory-empty span { margin-top: 9px; color: var(--memory-muted); font-size: 12px }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0 }
+
+/* 纪念日详情：列表负责提示时间，详情负责完整承载 Markdown 和图片。 */
+.anniversary-detail-page {
+    --kind: var(--memory-love);
+    min-height: 100vh;
+    padding: 145px 24px 110px;
+    overflow: visible;
+    color: var(--memory-ink);
+    background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--kind) 10%, transparent), transparent 31%), var(--memory-bg);
+}
+.anniversary-story { width: min(1180px, 100%); margin: 0 auto }
+.anniversary-story-header { max-width: 760px; margin: 55px auto 45px; text-align: center }
+.anniversary-story-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 19px }
+.anniversary-story-tags span { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 99px; background: color-mix(in srgb, var(--kind) 11%, var(--memory-surface)); color: var(--kind); font-size: 11px }
+.anniversary-story-tags .is-private { color: var(--memory-muted); background: var(--memory-surface-soft) }
+.anniversary-story-header time { color: var(--memory-faint); font: 700 11px Arial, sans-serif; letter-spacing: .12em }
+.anniversary-story-header h1 { margin: 14px 0 12px; color: var(--memory-ink); font: 400 clamp(38px, 6vw, 64px)/1.15 var(--serif); letter-spacing: -.04em }
+.anniversary-story-header > p { margin: 0; color: var(--kind); font-size: 13px }
+.anniversary-story-cover { margin: 0 0 25px; overflow: hidden; border-radius: 24px; background: var(--memory-surface-soft); box-shadow: 0 22px 65px color-mix(in srgb, var(--kind) 12%, transparent) }
+.anniversary-story-cover img { display: block; width: 100%; max-height: 580px; object-fit: cover }
+.anniversary-story-layout { position: relative }
+.anniversary-story-body { width: min(720px, 100%); margin: 0 auto; padding: 12px 0 30px; color: var(--memory-ink); font: 16px/2 var(--serif) }
+.anniversary-story-body > :first-child { margin-top: 0 }
+.anniversary-story-body > :last-child { margin-bottom: 0 }
+.anniversary-story-body h1, .anniversary-story-body h2, .anniversary-story-body h3 { margin: 1.7em 0 .7em; color: var(--memory-ink); line-height: 1.4 }
+.anniversary-story-body p { margin: 0 0 1.25em }
+.anniversary-story-body img { display: block; max-width: 100%; height: auto; margin: 28px auto; border-radius: 17px }
+.anniversary-story-body a { color: var(--kind); border-bottom: 1px solid currentColor }
+.anniversary-story-body blockquote { margin: 25px 0; padding: 5px 0 5px 19px; border-left: 3px solid var(--kind); color: var(--memory-muted) }
+.anniversary-story-body code { padding: 2px 6px; border-radius: 6px; background: var(--memory-surface-soft); font: .86em ui-monospace, SFMono-Regular, Consolas, monospace }
+.anniversary-story-body pre { padding: 17px; overflow: auto; border-radius: 14px; background: var(--memory-surface-soft) }
+.anniversary-story-body pre code { padding: 0; background: none }
+.anniversary-story-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse }
+.anniversary-story-body th, .anniversary-story-body td { padding: 8px 11px; border: 1px solid var(--memory-line) }
+.anniversary-story-empty { display: grid; min-height: 230px; place-items: center; color: var(--memory-faint); text-align: center }
+.anniversary-story-facts { position: fixed; z-index: 3; top: 95px; left: max(24px, calc(50vw - 614px)); width: 230px; max-height: calc(100vh - 119px); padding: 37px 20px 20px; overflow-y: auto; border: 1px solid var(--memory-line); border-radius: 20px; background: var(--memory-surface) }
+.anniversary-story-facts > div { display: grid; gap: 5px; padding: 17px 0; border-bottom: 1px solid var(--memory-line) }
+.anniversary-story-facts span { color: var(--memory-faint); font-size: 10px }
+.anniversary-story-facts strong { color: var(--memory-ink); font: 400 17px var(--serif) }
+.anniversary-facts-back { position: absolute; top: 16px; left: 20px; display: inline-flex; align-items: center; gap: 5px; color: var(--memory-faint); font-size: 10px }
+.anniversary-facts-back:hover { color: var(--kind) }
+.anniversary-story-nav { margin-top: 8px }
+.anniversary-story-nav > div { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 7px }
+.anniversary-edit-link, .anniversary-story-nav > div > a, .anniversary-story-nav .is-disabled { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; padding: 9px 8px; border: 1px solid var(--memory-line-strong); border-radius: 11px; background: transparent; color: var(--memory-ink); font-size: 11px }
+.anniversary-story-nav > div > a span, .anniversary-story-nav .is-disabled span { color: inherit }
+.anniversary-story-nav .is-disabled { border-color: var(--memory-line); background: var(--memory-surface-soft); color: var(--memory-faint); opacity: .58 }
+.anniversary-edit-link { width: 100%; margin-top: 18px }
+.anniversary-story-nav a:hover, .anniversary-edit-link:hover { border-color: var(--kind); color: var(--kind) }
+
+@keyframes memory-spin { to { transform: rotate(360deg) } }
+
+@media (max-width: 1240px) {
+    .anniversary-story { width: min(980px, 100%) }
+    .anniversary-story-facts { position: relative; top: auto; left: auto; width: min(720px, 100%); max-height: none; margin: 24px auto 0; overflow: visible; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 18px }
+    .anniversary-story-nav, .anniversary-edit-link { grid-column: 1 / -1 }
+}
+
+@media (max-width: 980px) {
+    .memory-columns { grid-template-columns: 1fr }
+    .lazy-scroll { height: 520px }
+    .memory-calendar-header { align-items: flex-end }
+    .memory-calendar-body { grid-template-columns: 1fr }
+    .memory-calendar-agenda { height: auto; min-height: 220px; border-top: 1px solid var(--memory-line); border-left: 0 }
+}
+
+@media (max-width: 700px) {
+    .memory-page { padding-right: 15px; padding-left: 15px }
+    .memory-page-header { margin-bottom: 48px; padding-top: 120px }
+    .memory-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+    .overview-total { grid-row: span 2; min-height: 100% }
+    .overview-card { min-height: 125px; padding: 21px }
+    .overview-card > strong { font-size: 31px }
+    .memory-calendar-header { align-items: stretch; flex-direction: column }
+    .memory-calendar-controls { width: 100% }
+    .memory-calendar-controls label { flex: 1 }
+    .memory-calendar-controls select { width: 100%; min-width: 0 }
+    .memory-calendar-month { padding: 12px 10px 14px }
+    .memory-calendar-grid { grid-template-rows: repeat(6, 54px); border-radius: 11px }
+    .calendar-day { padding: 5px; gap: 2px }
+    .calendar-day-number { width: 20px; height: 20px; font-size: 9px }
+    .calendar-day-records { display: flex; flex-wrap: wrap; gap: 3px }
+    .calendar-day-entry { width: 6px; height: 6px; padding: 0; border-radius: 50%; font-size: 0 }
+    .calendar-day-more { width: 100%; font-size: 7px }
+    .anniversary-detail-page { padding: 115px 15px 75px }
+    .anniversary-story-header { margin-top: 40px }
+    .anniversary-story-body { padding-right: 0 }
+    .anniversary-story-facts { grid-template-columns: 1fr }
+}
+
+@media (max-width: 500px) {
+    .memory-page { padding-right: 10px; padding-bottom: 80px; padding-left: 10px }
+    .memory-page-header { padding-right: 8px; padding-left: 8px }
+    .memory-page-header h1 { font-size: 42px }
+    .memory-section-header { padding-right: 17px; padding-left: 17px }
+    .memory-section-header > span { font-size: 10px }
+    .lazy-scroll { height: 480px }
+    .timeline-item { padding-right: 13px; padding-left: 8px; grid-template-columns: 30px minmax(0, 1fr) 62px; gap: 6px }
+    .timeline-item.has-cover { grid-template-columns: 30px 58px minmax(0, 1fr) 58px }
+    .timeline-item .anniversary-thumb { width: 58px; height: 64px }
+    .timeline-title-row { flex-wrap: wrap; row-gap: 5px }
+    .timeline-title-row h3 { flex-basis: 100%; font-size: 15px }
+    .timeline-day { font-size: 13px }
+    .upcoming-list { padding: 10px }
+    .upcoming-card { padding: 12px 10px; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 10px }
+    .upcoming-card.has-cover { grid-template-columns: 42px minmax(0, 1fr) auto }
+    .upcoming-card.has-cover > .anniversary-thumb { display: none }
+    .upcoming-title-row h3 { font-size: 14px }
+    .upcoming-card > strong { font-size: 11px }
+    .memory-section-footer { min-height: 42px; padding: 0 12px; gap: 8px; font-size: 9px }
+    .memory-section-footer [data-lazy-progress] { padding: 3px 6px; font-size: 8px }
+    .memory-calendar-controls { display: grid; grid-template-columns: 34px 1fr 1fr 34px }
+    .memory-calendar-controls .calendar-today { grid-column: 1 / -1 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lazy-scroll[aria-busy="true"] + .memory-section-footer [data-lazy-status]:before { animation: none }
+}

@@ -51,6 +51,7 @@
         <nav aria-label="站内导航">
             <a href="/"@(activeNav == "home" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("house")<span>首页</span></a>
             <a href="/moments"@(activeNav == "moments" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("camera")<span>点点滴滴</span></a>
+            <a href="/anniversaries"@(activeNav == "anniversaries" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("calendar-heart")<span>纪念日</span></a>
         </nav>
         <div class="nav-actions">
             <button class="theme-toggle" type="button" aria-label="配色：跟随系统" title="配色：跟随系统">@Icon("sun-moon", "icon-auto")@Icon("sun", "icon-sun")@Icon("moon-star", "icon-moon")</button>

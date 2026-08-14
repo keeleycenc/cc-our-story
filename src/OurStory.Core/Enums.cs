@@ -36,3 +36,57 @@ public enum MomentStatus {
     /// </summary>
     Published = 1
 }
+
+/// <summary>
+/// 纪念日的视觉与语义分类
+/// </summary>
+public enum AnniversaryKind {
+    /// <summary>
+    /// 两个人关系中的重要日子
+    /// </summary>
+    Love = 0,
+
+    /// <summary>
+    /// 生日
+    /// </summary>
+    Birthday = 1,
+
+    /// <summary>
+    /// 共同完成的里程碑
+    /// </summary>
+    Milestone = 2,
+
+    /// <summary>
+    /// 其它值得记住的日子
+    /// </summary>
+    Custom = 3,
+
+    /// <summary>
+    /// 第一次见面或初次相遇
+    /// </summary>
+    FirstMeeting = 4,
+
+    /// <summary>
+    /// 一起完成的旅行
+    /// </summary>
+    Travel = 5,
+
+    /// <summary>同庆祝的节日
+    /// </summary>
+    Festival = 6,
+
+    /// <summary>
+    /// 两个人之间的约定
+    /// </summary>
+    Promise = 7,
+
+    /// <summary>
+    /// 家庭相关的重要日期
+    /// </summary>
+    Family = 8,
+
+    /// <summary>
+    /// 结婚纪念日
+    /// </summary>
+    Wedding = 9
+}

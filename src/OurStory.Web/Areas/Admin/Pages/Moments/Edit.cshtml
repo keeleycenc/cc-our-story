@@ -5,7 +5,7 @@
     ViewData["Eyebrow"] = Model.IsNew ? "NEW MOMENT" : "EDIT MOMENT";
     ViewData["Title"] = Model.IsNew ? "写一条记录" : "编辑记录";
 }
-<form method="post">
+<form method="post" data-dirty-guard>
     @if (!ViewData.ModelState.IsValid)
     {
         <p class="admin-error">@Icon("circle-alert")@Html.Raw(string.Join("；", ViewData.ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage)))</p>
@@ -19,11 +19,14 @@
                     <input asp-for="Input.Title" type="text" maxlength="180" required autofocus>
                 </label>
 
-                <label class="field" style="margin-bottom:0">
-                    <span>正文（Markdown）</span>
-                    <textarea asp-for="Input.Content" data-editor rows="24"></textarea>
-                    <small>支持 Markdown 与表格、任务列表等常用扩展；单个换行就是换行。</small>
-                </label>
+                <partial name="_MarkdownImageEditor" model="@(new MarkdownEditorModel(
+                    "Input.Content",
+                    "正文（Markdown）",
+                    Model.Input.Content,
+                    "Input.CoverUrl",
+                    Model.Input.CoverUrl,
+                    "写下这一刻发生的故事……",
+                    "支持 Markdown、表格和任务列表；上传图片后会直接插入正文。"))" />
             </div>
         </div>
 
@@ -38,7 +41,7 @@
 
                 <label class="field">
                     <span>发生日期</span>
-                    <input asp-for="Input.MomentDate" type="datetime-local">
+                    <input asp-for="Input.MomentDate" type="date">
                     <small>可以补记很久以前的事，时间轴按它排。</small>
                 </label>
 
@@ -49,25 +52,12 @@
 
                 <div class="form-actions">
                     <button class="btn" type="submit">@Icon("save")保存</button>
+                    <a class="btn btn-ghost" href="/admin/moments">返回列表</a>
                     @if (!Model.IsNew && Model.Slug is not null)
                     {
                         <a class="btn btn-ghost" href="/moments/@Model.Slug" target="_blank" rel="noopener">@Icon("eye")预览</a>
                     }
                 </div>
-            </div>
-
-            <div class="admin-panel">
-                <h2>@Icon("image")插图</h2>
-                <label class="upload-drop">
-                    @Icon("upload")<span>选一张图片，直接插进正文</span>
-                    <input type="file" accept="image/*" data-upload-input>
-                </label>
-                <small style="display:block;margin-top:9px;color:var(--faint)" data-upload-status></small>
-
-                <label class="field" style="margin-top:16px;margin-bottom:0">
-                    <span>封面图</span>
-                    <input asp-for="Input.CoverUrl" type="text" maxlength="500" placeholder="留空时自动取正文里的第一张图">
-                </label>
             </div>
 
             <div class="admin-panel">

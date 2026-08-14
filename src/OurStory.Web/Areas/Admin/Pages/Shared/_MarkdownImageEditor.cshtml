@@ -1,0 +1,31 @@
+@model MarkdownEditorModel
+<section class="markdown-composer" data-markdown-composer>
+    <div class="markdown-composer-head">
+        <label for="@Model.Id">@Model.Label</label>
+        <div class="markdown-mode" role="tablist" aria-label="正文显示模式">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-markdown-edit>@Icon("pen-line")编辑</button>
+            <button type="button" role="tab" aria-selected="false" data-markdown-preview-button>@Icon("eye")预览</button>
+        </div>
+    </div>
+
+    <div class="markdown-editor-pane" data-markdown-editor-pane>
+        <textarea id="@Model.Id" name="@Model.FieldName" data-markdown-editor placeholder="@Model.Placeholder" maxlength="@Model.MaxLength">@Model.Value</textarea>
+    </div>
+    <div class="markdown-preview-pane article-body" data-markdown-preview-pane hidden>
+        <p class="markdown-preview-empty" data-markdown-preview-empty>写下一些内容后，在这里查看最终排版。</p>
+    </div>
+
+    <div class="markdown-composer-foot">
+        <label class="upload-drop">
+            @Icon("upload")<span>上传图片并插入正文</span>
+            <input type="file" accept="image/*" data-markdown-upload>
+        </label>
+        <small data-markdown-status></small>
+    </div>
+
+    <label class="field markdown-cover-field">
+        <span>封面图</span>
+        <input name="@Model.CoverFieldName" type="text" maxlength="500" value="@Model.CoverUrl" placeholder="留空时自动使用正文中的第一张图片">
+    </label>
+    <small class="markdown-hint">@Model.Hint</small>
+</section>

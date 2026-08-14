@@ -5,9 +5,9 @@
 using Microsoft.EntityFrameworkCore;
 using OurStory.Core.Configuration;
 using OurStory.Core.Models;
-using OurStory.Core.Options;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.Moments;
 using OurStory.Services.Settings;
 
 namespace OurStory.Tests;
@@ -25,6 +25,9 @@ internal static class TestDoubles {
     /// <summary>没配时区，等于 UTC，断言时间时不用跟着机器跑。</summary>
     public static SiteClock Clock() =>
         new(new ActiveConfiguration(new ConfigurationStore("."), new OurStoryConfiguration()));
+
+    /// <summary>使用与站点相同的 Markdown 渲染规则。</summary>
+    public static IMarkdownRenderer Markdown() => new MarkdownRenderer();
 }
 
 /// <summary>不碰设置表，站点配置固定给一份。</summary>

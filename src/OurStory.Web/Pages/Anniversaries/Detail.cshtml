@@ -1,0 +1,88 @@
+@page "/anniversaries/{id:int}"
+@model OurStory.Web.Pages.Anniversaries.DetailModel
+@{
+    ViewData["Title"] = Model.Item.Title;
+    ViewData["ActiveNav"] = "anniversaries";
+    ViewData["Bundle"] = "anniversaries";
+
+    var item = Model.Item;
+}
+<main id="main" class="anniversary-detail-page kind-@item.Kind.ToString().ToLowerInvariant()">
+    <article class="anniversary-story">
+        <header class="anniversary-story-header">
+            <div class="anniversary-story-tags">
+                <span>@Icon(IndexModel.KindIcon(item.Kind))@IndexModel.KindName(item.Kind)</span>
+                @if (item.RepeatYearly)
+                {
+                    <span>@Icon("history")每年重逢</span>
+                }
+                @if (item.IsPrivate)
+                {
+                    <span class="is-private">@Icon("lock")仅情侣可见</span>
+                }
+                <span class="anniversary-author">@Icon("user-round")由 @item.AuthorName 记录</span>
+            </div>
+            <time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">@item.OriginalDate.ToString("yyyy 年 MM 月 dd 日")</time>
+            <h1>@item.Title</h1>
+            <p>@(item.IsToday ? "就是今天" : item.NextDate is null ? "一次被好好收藏的日子" : $"下一次还有 {item.DaysUntil} 天")</p>
+        </header>
+
+        @if (item.CoverUrl.Length > 0 && !item.NoteHtml.Contains(item.CoverUrl, StringComparison.Ordinal))
+        {
+            <figure class="anniversary-story-cover">
+                <img src="@item.CoverUrl" alt="@item.Title" decoding="async">
+            </figure>
+        }
+
+        <div class="anniversary-story-layout">
+            <div class="anniversary-story-body article-body">
+                @if (item.NoteHtml.Length > 0)
+                {
+                    @Html.Raw(item.NoteHtml)
+                }
+                else if (item.Note.Length > 0)
+                {
+                    <p>@item.Note</p>
+                }
+                else
+                {
+                    <p class="anniversary-story-empty">这一天的故事，还等着你们慢慢写下来。</p>
+                }
+            </div>
+
+            <aside class="anniversary-story-facts">
+                <a class="anniversary-facts-back" href="/anniversaries">@Icon("arrow-left")返回纪念日</a>
+                <div><span>最初日期</span><strong>@item.OriginalDate.ToString("yyyy.MM.dd")</strong></div>
+                @if (item.NextDate is not null)
+                {
+                    <div><span>下一次</span><strong>@item.NextDate.Value.ToString("yyyy.MM.dd")</strong></div>
+                }
+                <div><span>已经走过</span><strong>@Math.Max(1, Model.Today.DayNumber - item.OriginalDate.DayNumber + 1) 天</strong></div>
+                @if (User.IsOwner())
+                {
+                    <a class="anniversary-edit-link" href="/admin/anniversaries/edit/@item.Id">@Icon("pen-line")编辑这篇纪念日</a>
+                }
+                <nav class="anniversary-story-nav" aria-label="纪念日文章导航">
+                    <div>
+                        @if (Model.Previous is not null)
+                        {
+                            <a href="@Model.Previous.Url" title="@Model.Previous.Title">@Icon("chevron-left")<span>上一个</span></a>
+                        }
+                        else
+                        {
+                            <span class="is-disabled">@Icon("chevron-left")<span>上一个</span></span>
+                        }
+                        @if (Model.Next is not null)
+                        {
+                            <a href="@Model.Next.Url" title="@Model.Next.Title"><span>下一个</span>@Icon("chevron-right")</a>
+                        }
+                        else
+                        {
+                            <span class="is-disabled"><span>下一个</span>@Icon("chevron-right")</span>
+                        }
+                    </div>
+                </nav>
+            </aside>
+        </div>
+    </article>
+</main>

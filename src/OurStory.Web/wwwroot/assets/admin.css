@@ -343,6 +343,9 @@ p { margin: 0 }
 .field input[type="password"],
 .field input[type="number"],
 .field input[type="datetime-local"],
+.field input[type="date"],
+.field input[type="time"],
+.field input[type="month"],
 .field select,
 .field textarea {
     width: 100%;
@@ -372,6 +375,10 @@ p { margin: 0 }
     min-height: 40px;
     text-align: left;
 }
+
+:root[data-theme="light"] .field input[type="date"] { color-scheme: light }
+:root[data-theme="dark"] .field input[type="date"] { color-scheme: dark }
+.field input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
 
 /* 栅格里的每一格都允许被压缩，否则某一项撑不下就把整行推宽 */
 .field-grid > .field { min-width: 0 }
@@ -461,15 +468,82 @@ p { margin: 0 }
 
 .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px }
 
-/* 10. 编辑器 ------------------------------------------------------------- */
-.editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start }
+.admin-empty-state { padding: 52px 20px; text-align: center; color: var(--muted) }
+.admin-empty-state > .icon { color: var(--pink-dark); font-size: 32px }
+.admin-empty-state h2 { margin-top: 13px; color: var(--ink); font: 400 20px var(--serif) }
+.admin-empty-state p { margin-top: 5px; font-size: 12px }
+.anniversary-editor { max-width: 760px }
+.anniversary-editor .admin-panel > h2 { display: flex; align-items: center; gap: 8px }
+.anniversary-editor .admin-panel-hint { font-size: 12px }
+.anniversary-editor .field > span { font-size: 13px }
+.anniversary-editor .field input,
+.anniversary-editor .field select,
+.anniversary-editor .field textarea { font-size: 14px }
+.anniversary-editor .field input[type="date"] { min-height: 44px }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.anniversary-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px }
+.anniversary-options .field-check { align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft) }
+.anniversary-options .field-check span { display: grid; gap: 2px }
+.anniversary-options .field-check strong { color: var(--ink); font-size: 13px; font-weight: 400 }
+.anniversary-options .field-check small { color: var(--faint); font-size: 10px; line-height: 1.6 }
+.anniversary-visibility { display: grid; gap: 8px; margin: 0; padding: 0; border: 0 }
+.anniversary-visibility legend { margin-bottom: 7px; color: var(--muted); font-size: 12px }
+.visibility-choice { position: relative; display: block; cursor: pointer }
+.visibility-choice > input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.visibility-choice > span { display: grid; padding: 12px 13px 12px 42px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft) }
+.visibility-choice .icon { position: absolute; top: 17px; left: 15px; color: var(--faint); font-size: 16px }
+.visibility-choice strong { color: var(--ink); font-size: 13px; font-weight: 500 }
+.visibility-choice small { margin-top: 2px; color: var(--faint); font-size: 10px }
+.visibility-choice > input:checked + span { border-color: var(--pink); background: var(--pink-soft); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pink) 12%, transparent) }
+.visibility-choice > input:checked + span .icon,
+.visibility-choice > input:checked + span strong { color: var(--pink-dark) }
+.visibility-choice > input:focus-visible + span { outline: 2px solid var(--pink); outline-offset: 2px }
 
-.editor-body textarea {
-    min-height: 460px;
-    font: 13px/1.75 ui-monospace, SFMono-Regular, Consolas, "Microsoft YaHei", monospace;
-}
+/* 10. 点点滴滴与纪念日共用的 Markdown / 图片编辑器 ---------------------- */
+.editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: stretch }
+.editor-body { min-width: 0 }
+.editor-body > .admin-panel { display: flex; height: 100%; min-height: 720px; flex-direction: column }
+
+.markdown-composer { display: flex; min-height: 0; flex: 1; flex-direction: column }
+.markdown-composer-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 9px }
+.markdown-composer-head > label { color: var(--muted); font-size: 13px }
+.markdown-mode { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-muted) }
+.markdown-mode button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: 11px var(--sans); cursor: pointer }
+.markdown-mode button.is-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm) }
+.markdown-mode .icon { font-size: 13px }
+
+.markdown-editor-pane,
+.markdown-preview-pane { height: 0; min-height: 360px; flex: 1 1 0; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface) }
+.markdown-editor-pane { display: flex; overflow: hidden }
+.markdown-editor-pane[hidden], .markdown-preview-pane[hidden] { display: none }
+.markdown-editor-pane textarea { width: 100%; min-height: 100%; padding: 16px 17px; resize: none; border: 0; background: transparent; color: var(--ink); font: 14px/1.8 ui-monospace, SFMono-Regular, Consolas, "Microsoft YaHei", monospace; outline: none }
+.markdown-editor-pane:focus-within { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+.markdown-preview-pane { padding: 19px 21px; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; color: var(--ink); font: 15px/1.85 var(--serif) }
+.markdown-preview-pane::-webkit-scrollbar { width: 6px }
+.markdown-preview-pane::-webkit-scrollbar-thumb { border-radius: 99px; background: var(--line-strong) }
+.markdown-preview-pane > :first-child { margin-top: 0 }
+.markdown-preview-pane > :last-child { margin-bottom: 0 }
+.markdown-preview-pane p { margin: 0 0 1em }
+.markdown-preview-pane h1, .markdown-preview-pane h2, .markdown-preview-pane h3 { margin: 1.4em 0 .6em; color: var(--ink); line-height: 1.4 }
+.markdown-preview-pane img { display: block; max-width: 100%; margin: 18px auto; border-radius: 14px }
+.markdown-preview-pane a { color: var(--pink-dark); border-bottom: 1px solid currentColor }
+.markdown-preview-pane blockquote { margin: 18px 0; padding: 3px 0 3px 17px; border-left: 3px solid var(--pink); color: var(--muted) }
+.markdown-preview-pane code { padding: 2px 6px; border-radius: 6px; background: var(--surface-muted); font: .86em ui-monospace, SFMono-Regular, Consolas, monospace }
+.markdown-preview-pane pre { padding: 14px; overflow: auto; border-radius: 12px; background: var(--surface-muted) }
+.markdown-preview-pane pre code { padding: 0; background: none }
+.markdown-preview-pane table { width: 100%; border-collapse: collapse }
+.markdown-preview-pane th, .markdown-preview-pane td { padding: 8px 10px; border: 1px solid var(--line) }
+.markdown-preview-empty { display: grid; min-height: 360px; place-items: center; color: var(--faint); text-align: center }
+
+.markdown-composer-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px }
+.markdown-composer-foot .upload-drop { flex: none; margin: 0; padding: 10px 13px }
+.markdown-composer-foot > small { color: var(--faint); font-size: 11px }
+.markdown-cover-field { margin: 13px 0 0 }
+.markdown-hint { display: block; margin-top: 7px; color: var(--faint); font-size: 11px; line-height: 1.65 }
 
 .editor-side .admin-panel { padding: 20px 22px }
+.anniversary-editor-layout .anniversary-options { grid-template-columns: 1fr }
+.editor-preview-link .btn { justify-content: center; width: 100% }
 
 .upload-drop {
     display: flex;
@@ -704,6 +778,8 @@ body.auth-page {
     font-size: 21px;
 }
 
+.admin-dialog.is-warning .admin-dialog-icon { background: var(--pink-soft); color: var(--pink-dark) }
+
 .admin-dialog-title { font: 400 19px var(--serif) }
 .admin-dialog-text { margin-top: 9px; color: var(--muted); font-size: 13px; line-height: 1.8 }
 .admin-dialog-text[hidden] { display: none }
@@ -723,6 +799,7 @@ body.auth-page {
 /* 15. 响应式 ------------------------------------------------------------- */
 @media (max-width: 1000px) {
     .editor-layout { grid-template-columns: minmax(0, 1fr) }
+    .editor-body > .admin-panel { min-height: 620px }
 }
 
 @media (max-width: 760px) {
@@ -844,6 +921,12 @@ body.auth-page {
     .admin-who { display: none }
 
     .admin-panel { padding: 20px 16px }
+    .form-grid, .anniversary-options { grid-template-columns: 1fr }
+    .markdown-composer-head { align-items: flex-start; flex-direction: column }
+    .markdown-mode { align-self: stretch }
+    .markdown-mode button { flex: 1; justify-content: center }
+    .markdown-composer-foot { align-items: flex-start; flex-direction: column }
+    .markdown-editor-pane, .markdown-preview-pane { min-height: 380px }
     .admin-moment-item, .admin-comment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
 
     /* 操作按钮改成等宽的格子：用 flex 的话每一格都不肯小于自己的内容，
