@@ -19,6 +19,12 @@
         .Where(item => !item.IsArchived && item.NextDate is not null)
         .OrderBy(item => item.NextDate)
         .FirstOrDefault();
+    var todayItems = Model.Items
+        .Where(item => !item.IsArchived && item.IsToday)
+        .OrderBy(item => item.Title)
+        .ToArray();
+    string[] weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+    var todayWeekday = weekdayNames[(int)Model.Today.DayOfWeek];
     var calendarItems = Model.Items.Select(item => new {
         id = item.Id,
         title = item.Title,
@@ -42,6 +48,52 @@
             <a class="manage-anniversary" href="/admin/anniversaries">@Icon("pen-line")管理纪念日</a>
         }
     </header>
+
+    @* 今天没有纪念日的日子占绝大多数，这一块就整个不出现，免得常年挂着一个空盒子。 *@
+    @if (todayItems.Length > 0)
+    {
+        <section class="memory-today" aria-labelledby="today-title">
+            <header>
+                <p><i class="memory-today-pulse" aria-hidden="true"></i>TODAY</p>
+                <h2 id="today-title">今天是 @Model.Today.ToString("M 月 d 日")</h2>
+                <span>@todayWeekday · @todayItems.Length 个纪念日就在今天</span>
+            </header>
+            <div class="memory-today-list@(todayItems.Length > 1 ? " is-multiple" : "")">
+                @foreach (var item in todayItems)
+                {
+                    <a class="memory-today-card kind-@item.Kind.ToString().ToLowerInvariant()@(item.CoverUrl.Length > 0 ? " has-cover" : "")" href="@item.Url">
+                        @if (item.CoverUrl.Length > 0)
+                        {
+                            <span class="anniversary-thumb"><img src="@item.CoverUrl" alt="" loading="lazy" decoding="async"></span>
+                        }
+                        <span class="memory-today-copy">
+                            <span class="memory-today-row">
+                                <strong>@item.Title</strong>
+                                <em>@IndexModel.KindName(item.Kind)</em>
+                                @if (item.IsPrivate)
+                                {
+                                    <em class="privacy-tag">@Icon("lock")私密</em>
+                                }
+                            </span>
+                            <span class="memory-today-meta">
+                                @if (item.RepeatYearly && item.Years > 0)
+                                {
+                                    <b>第 @item.Years 年</b>
+                                }
+                                else
+                                {
+                                    <b>从今天开始</b>
+                                }
+                                <span>由 @item.AuthorName 记录</span>
+                            </span>
+                            <span class="memory-today-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还没有写下描述。")</span>
+                        </span>
+                        <span class="memory-today-go">@Icon("arrow-right")</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
 
     <section class="memory-overview" aria-labelledby="overview-title">
         <h2 id="overview-title" class="sr-only">纪念日总览</h2>

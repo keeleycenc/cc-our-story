@@ -74,6 +74,64 @@
 .memory-page-header .manage-anniversary { display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; padding: 9px 15px; border: 1px solid var(--memory-line-strong); border-radius: 99px; color: var(--memory-ink); font-size: 12px; transition: border-color .18s, color .18s, background-color .18s }
 .memory-page-header .manage-anniversary:hover { border-color: var(--memory-accent); background: var(--memory-accent-soft); color: var(--memory-accent) }
 
+/* 今天：整页唯一一处用强调色铺底的地方，好让「就是今天」一眼被认出来。 */
+.memory-today {
+    position: relative;
+    width: min(1180px, 100%);
+    margin: 0 auto 16px;
+    padding: 26px 30px 28px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--memory-accent) 32%, var(--memory-line));
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 88% -25%, color-mix(in srgb, var(--memory-accent) 22%, transparent), transparent 55%),
+        linear-gradient(135deg, color-mix(in srgb, var(--memory-accent) 10%, var(--memory-surface)), var(--memory-surface) 62%);
+    box-shadow: 0 20px 50px color-mix(in srgb, var(--memory-accent) 13%, transparent);
+}
+
+.memory-today > header p { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--memory-accent); font: 700 10px Arial, sans-serif; letter-spacing: .2em }
+.memory-today-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--memory-accent); animation: memory-pulse 2.4s ease-out infinite }
+.memory-today > header h2 { margin: 0; color: var(--memory-ink); font: 400 clamp(26px, 3.4vw, 36px)/1.15 var(--serif); letter-spacing: -.03em }
+.memory-today > header > span { display: block; margin-top: 9px; color: var(--memory-muted); font-size: 12px }
+
+.memory-today-list { display: grid; gap: 12px; margin-top: 20px }
+
+/*
+ * 六列栅格：一张卡占 6 列是整行、3 列是一半、2 列是三分之一。
+ * 末行剩几张就把它们摊开填满，别在右边留一块空地。
+ */
+.memory-today-list.is-multiple { grid-template-columns: repeat(6, minmax(0, 1fr)) }
+.memory-today-list.is-multiple > .memory-today-card { grid-column: span 6 }
+
+.memory-today-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--memory-line);
+    border-radius: 15px;
+    background: var(--memory-surface);
+    transition: border-color .18s, box-shadow .18s, transform .18s;
+}
+
+.memory-today-card.has-cover { grid-template-columns: 64px minmax(0, 1fr) 34px }
+.memory-today-card .anniversary-thumb { width: 64px; height: 64px; border-radius: 13px }
+.memory-today-card:hover { border-color: color-mix(in srgb, var(--kind) 50%, var(--memory-line)); box-shadow: 0 12px 28px color-mix(in srgb, var(--kind) 17%, transparent); transform: translateY(-2px) }
+.memory-today-card:hover .anniversary-thumb img { transform: scale(1.035) }
+
+.memory-today-copy { min-width: 0 }
+.memory-today-row { min-width: 0; display: flex; align-items: center; gap: 8px }
+.memory-today-row strong { min-width: 0; overflow: hidden; color: var(--memory-ink); font: 500 18px var(--serif); text-overflow: ellipsis; white-space: nowrap }
+.memory-today-card:hover .memory-today-row strong { color: var(--kind) }
+.memory-today-row em { flex: none; padding: 3px 7px; border-radius: 99px; background: color-mix(in srgb, var(--kind) 12%, transparent); color: var(--kind); font-size: 10px; font-style: normal; white-space: nowrap }
+.memory-today-row .privacy-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--memory-surface-soft); color: var(--memory-muted) }
+.memory-today-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 7px; color: var(--memory-faint); font-size: 10px }
+.memory-today-meta b { color: var(--kind); font: 500 12px var(--serif) }
+.memory-today-note { display: block; max-height: 1.7em; margin-top: 8px; overflow: hidden; color: var(--memory-muted); font-size: 13px; line-height: 1.7; text-overflow: ellipsis; white-space: nowrap }
+.memory-today-go { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--kind) 11%, transparent); color: var(--kind); font-size: 15px; transition: background-color .18s, transform .18s }
+.memory-today-card:hover .memory-today-go { background: color-mix(in srgb, var(--kind) 20%, transparent); transform: translateX(3px) }
+
 .memory-overview {
     width: min(1180px, 100%);
     margin: 0 auto 16px;
@@ -407,7 +465,28 @@
 .anniversary-edit-link { width: 100%; margin-top: 18px }
 .anniversary-story-nav a:hover, .anniversary-edit-link:hover { border-color: var(--kind); color: var(--kind) }
 
+/* 平板：两张一行，落单的那张占满。 */
+@media (min-width: 701px) and (max-width: 980px) {
+    .memory-today-list.is-multiple > .memory-today-card { grid-column: span 3 }
+    .memory-today-list.is-multiple > .memory-today-card:nth-child(odd):last-child { grid-column: span 6 }
+}
+
+/* 桌面：三张一行；末行剩一张占满整行，剩两张各占一半。 */
+@media (min-width: 981px) {
+    .memory-today-list.is-multiple > .memory-today-card { grid-column: span 2 }
+    .memory-today-list.is-multiple > .memory-today-card:nth-child(3n+1):last-child { grid-column: span 6 }
+
+    .memory-today-list.is-multiple > .memory-today-card:nth-child(3n+1):nth-last-child(2),
+    .memory-today-list.is-multiple > .memory-today-card:nth-child(3n+2):last-child { grid-column: span 3 }
+}
+
 @keyframes memory-spin { to { transform: rotate(360deg) } }
+
+@keyframes memory-pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--memory-accent) 50%, transparent) }
+    70% { box-shadow: 0 0 0 8px transparent }
+    100% { box-shadow: 0 0 0 0 transparent }
+}
 
 @media (max-width: 1240px) {
     .anniversary-story { width: min(980px, 100%) }
@@ -427,6 +506,13 @@
 @media (max-width: 700px) {
     .memory-page { padding-right: 15px; padding-left: 15px }
     .memory-page-header { margin-bottom: 48px; padding-top: 120px }
+    .memory-today { padding: 22px 18px 24px; border-radius: 18px }
+    .memory-today-card { padding: 14px; gap: 12px; grid-template-columns: minmax(0, 1fr) 30px }
+    .memory-today-card.has-cover { grid-template-columns: 54px minmax(0, 1fr) 30px }
+    .memory-today-card .anniversary-thumb { width: 54px; height: 54px; border-radius: 11px }
+    .memory-today-row { flex-wrap: wrap; row-gap: 5px }
+    .memory-today-row strong { flex-basis: 100%; font-size: 16px }
+    .memory-today-go { width: 30px; height: 30px; font-size: 13px }
     .memory-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .overview-total { grid-row: span 2; min-height: 100% }
     .overview-card { min-height: 125px; padding: 21px }
@@ -482,4 +568,5 @@
 
 @media (prefers-reduced-motion: reduce) {
     .lazy-scroll[aria-busy="true"] + .memory-section-footer [data-lazy-status]:before { animation: none }
+    .memory-today-pulse { animation: none }
 }
