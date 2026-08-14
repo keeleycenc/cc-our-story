@@ -27,13 +27,6 @@
             <p>@(item.IsToday ? "就在今天" : item.NextDate is null ? "一次被好好收藏的日子" : $"下一次还有 {item.DaysUntil} 天")</p>
         </header>
 
-        @if (item.CoverUrl.Length > 0 && !item.NoteHtml.Contains(item.CoverUrl, StringComparison.Ordinal))
-        {
-            <figure class="anniversary-story-cover">
-                <img src="@item.CoverUrl" alt="@item.Title" decoding="async">
-            </figure>
-        }
-
         <div class="anniversary-story-layout">
             <div class="anniversary-story-body article-body">
                 @if (item.NoteHtml.Length > 0)
