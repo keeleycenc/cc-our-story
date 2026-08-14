@@ -12,9 +12,9 @@ namespace OurStory.Services.Storage;
 // 缩略图只对本地目录有意义：OSS 那边的图片库不需要列清单
 internal sealed class ThumbnailService(StoragePaths paths, ILogger<ThumbnailService> logger) : IThumbnailService {
     // 4:3 裁切，和各处封面框的 object-fit: cover 是同一种取景。
-    // 尺寸按最大的那个用家来定：点点滴滴卡片的封面约 324 × 250，二倍屏下要 650 上下
-    private const int Width = 720;
-    private const int Height = 540;
+    // 尺寸取自 ThumbnailSize，OSS 那条路用的是同一个数
+    private const int Width = ThumbnailSize.Width;
+    private const int Height = ThumbnailSize.Height;
 
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
