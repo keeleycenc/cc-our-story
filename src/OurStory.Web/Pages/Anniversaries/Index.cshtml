@@ -26,6 +26,7 @@
         originalDate = item.OriginalDate.ToString("yyyy-MM-dd"),
         kind = item.Kind.ToString().ToLowerInvariant(),
         kindName = IndexModel.KindName(item.Kind),
+        kindIcon = IndexModel.KindIcon(item.Kind),
         repeatYearly = item.RepeatYearly,
         isPrivate = item.IsPrivate,
         authorName = item.AuthorName
@@ -186,21 +187,23 @@
                     <h2 id="calendar-title">纪念日日历</h2>
                 </div>
                 <div class="memory-calendar-controls" aria-label="切换日历月份">
-                    <button type="button" data-calendar-previous aria-label="上一个月">@Icon("chevron-left")</button>
-                    <label>
-                        <span class="sr-only">年份</span>
-                        <select data-calendar-year aria-label="选择年份"></select>
-                    </label>
-                    <label>
-                        <span class="sr-only">月份</span>
-                        <select data-calendar-month aria-label="选择月份">
-                            @for (var month = 1; month <= 12; month++)
-                            {
-                                <option value="@month">@month 月</option>
-                            }
-                        </select>
-                    </label>
-                    <button type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
+                    <div class="calendar-stepper">
+                        <button class="calendar-step" type="button" data-calendar-previous aria-label="上一个月">@Icon("chevron-left")</button>
+                        <span class="calendar-select">
+                            <select data-calendar-year aria-label="选择年份"></select>
+                            @Icon("chevron-down")
+                        </span>
+                        <span class="calendar-select">
+                            <select data-calendar-month aria-label="选择月份">
+                                @for (var month = 1; month <= 12; month++)
+                                {
+                                    <option value="@month">@month 月</option>
+                                }
+                            </select>
+                            @Icon("chevron-down")
+                        </span>
+                        <button class="calendar-step" type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
+                    </div>
                     <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
                 </div>
             </header>

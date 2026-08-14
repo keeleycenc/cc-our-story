@@ -11,6 +11,16 @@
     return element;
   };
 
+  const icon = (name) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'icon');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#i-' + name);
+    svg.append(use);
+    return svg;
+  };
+
   const thumb = (url) => {
     const holder = document.createElement('span');
     holder.className = 'anniversary-thumb';
@@ -167,6 +177,7 @@
   const agendaWeekday = calendar.querySelector('[data-calendar-agenda-weekday]');
   const agendaDate = calendar.querySelector('[data-calendar-agenda-date]');
   const agendaCount = calendar.querySelector('[data-calendar-agenda-count]');
+  const agendaPanel = calendar.querySelector('.memory-calendar-agenda');
   const agenda = calendar.querySelector('[data-calendar-agenda]');
   const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   const todayParts = calendar.dataset.today.split('-').map(Number);
@@ -183,6 +194,11 @@
   let maximumYear = Math.max(today.year + 10, ...items.map((item) => item.year));
 
   const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+  const shiftMonth = (year, month, delta) => {
+    const moved = new Date(year, month - 1 + delta, 1);
+    return { year: moved.getFullYear(), month: moved.getMonth() + 1 };
+  };
 
   const recordsFor = (year, month, day) => items
     .filter((item) => {
@@ -216,13 +232,18 @@
   const renderAgenda = () => {
     const records = recordsFor(viewYear, viewMonth, selectedDay);
     const selectedDate = new Date(viewYear, viewMonth - 1, selectedDay);
-    agendaWeekday.textContent = weekdays[selectedDate.getDay()];
+    const isToday = viewYear === today.year && viewMonth === today.month && selectedDay === today.day;
+    agendaPanel.classList.toggle('is-today', isToday);
+    agendaWeekday.textContent = isToday ? '今天 · ' + weekdays[selectedDate.getDay()] : weekdays[selectedDate.getDay()];
     agendaDate.textContent = viewYear + ' 年 ' + viewMonth + ' 月 ' + selectedDay + ' 日';
     agendaCount.textContent = records.length ? records.length + ' 条纪念日' : '这一天还没有记录';
     agenda.replaceChildren();
 
     if (!records.length) {
-      agenda.append(text('p', 'calendar-agenda-empty', '这一天还没有纪念日，留给未来慢慢填写。'));
+      const empty = document.createElement('p');
+      empty.className = 'calendar-agenda-empty';
+      empty.append(icon('calendar-heart'), text('span', '', '这一天还没有纪念日，留给未来慢慢填写。'));
+      agenda.append(empty);
       return;
     }
 
@@ -230,16 +251,79 @@
       const link = document.createElement('a');
       link.className = 'calendar-agenda-item kind-' + item.kind;
       link.href = item.url;
+
+      const badge = document.createElement('span');
+      badge.className = 'calendar-agenda-icon';
+      badge.append(icon(item.kindIcon || 'calendar-heart'));
+
       const labels = [item.kindName];
       if (item.repeatYearly) labels.push('每年重复');
       if (item.isPrivate) labels.push('私密');
-      link.append(
-        text('span', '', labels.join(' · ')),
+
+      const copy = document.createElement('span');
+      copy.className = 'calendar-agenda-copy';
+      copy.append(
         text('strong', '', item.title),
+        text('span', 'calendar-agenda-tags', labels.join(' · ')),
         text('small', '', '由 ' + item.authorName + ' 记录')
       );
+
+      link.append(badge, copy);
       agenda.append(link);
     });
+  };
+
+  /** 画一个日期格子；越界的日期用相邻月份补齐，点一下就翻过去。 */
+  const buildDay = (year, month, day, outside) => {
+    const records = recordsFor(year, month, day);
+    const weekday = new Date(year, month - 1, day).getDay();
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'calendar-day';
+    button.setAttribute('role', 'gridcell');
+    button.setAttribute('aria-label', year + '年' + month + '月' + day + '日，'
+      + (records.length ? records.length + '条纪念日' : '没有纪念日'));
+    if (weekday === 0 || weekday === 6) button.classList.add('is-weekend');
+    if (outside) button.classList.add('is-outside');
+    if (records.length) button.classList.add('has-records');
+    if (year === today.year && month === today.month && day === today.day) button.classList.add('is-today');
+    if (!outside && day === selectedDay) button.classList.add('is-selected');
+    button.append(text('span', 'calendar-day-number', String(day)));
+
+    if (records.length && outside) {
+      const dots = document.createElement('span');
+      dots.className = 'calendar-day-dots';
+      records.slice(0, 3).forEach((item) => dots.append(text('i', 'kind-' + item.kind, '')));
+      button.append(dots);
+    } else if (records.length) {
+      // 格子只有两行的高度：装得下就都列出来，装不下就留一条加一句「还有几个」。
+      const visible = records.length > 2 ? records.slice(0, 1) : records;
+      const recordList = document.createElement('span');
+      recordList.className = 'calendar-day-records';
+      visible.forEach((item) => {
+        const entry = document.createElement('span');
+        entry.className = 'calendar-day-entry kind-' + item.kind;
+        entry.title = item.title;
+        entry.append(text('i', '', ''), text('b', '', item.title));
+        recordList.append(entry);
+      });
+      if (records.length > visible.length) {
+        recordList.append(text('span', 'calendar-day-more', '还有 ' + (records.length - visible.length) + ' 个'));
+      }
+
+      button.append(recordList);
+    }
+
+    button.addEventListener('click', () => {
+      if (outside) {
+        viewYear = year;
+        viewMonth = month;
+      }
+
+      selectedDay = day;
+      renderCalendar();
+    });
+    return button;
   };
 
   const renderCalendar = () => {
@@ -250,47 +334,25 @@
 
     const leadingBlanks = (new Date(viewYear, viewMonth - 1, 1).getDay() + 6) % 7;
     const monthDays = daysInMonth(viewYear, viewMonth);
+    // 至少五行：二月刚好从周一开始时只要四行，月历会突然矮一截，翻月份时跳得很难看。
+    const rows = Math.max(5, Math.ceil((leadingBlanks + monthDays) / 7));
+    const previous = shiftMonth(viewYear, viewMonth, -1);
+    const following = shiftMonth(viewYear, viewMonth, 1);
+    const previousDays = daysInMonth(previous.year, previous.month);
     const cells = [];
 
-    for (let index = 0; index < 42; index += 1) {
+    for (let index = 0; index < rows * 7; index += 1) {
       const day = index - leadingBlanks + 1;
-      if (day < 1 || day > monthDays) {
-        const blank = document.createElement('span');
-        blank.className = 'calendar-day-blank';
-        blank.setAttribute('aria-hidden', 'true');
-        cells.push(blank);
-        continue;
+      if (day < 1) {
+        cells.push(buildDay(previous.year, previous.month, previousDays + day, true));
+      } else if (day > monthDays) {
+        cells.push(buildDay(following.year, following.month, day - monthDays, true));
+      } else {
+        cells.push(buildDay(viewYear, viewMonth, day, false));
       }
-
-      const records = recordsFor(viewYear, viewMonth, day);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'calendar-day';
-      button.setAttribute('role', 'gridcell');
-      button.setAttribute('aria-label', viewYear + '年' + viewMonth + '月' + day + '日，' + records.length + '条纪念日');
-      if (viewYear === today.year && viewMonth === today.month && day === today.day) button.classList.add('is-today');
-      if (day === selectedDay) button.classList.add('is-selected');
-      button.append(text('span', 'calendar-day-number', String(day)));
-
-      if (records.length) {
-        const recordList = document.createElement('span');
-        recordList.className = 'calendar-day-records';
-        records.slice(0, 2).forEach((item) => {
-          const entry = text('span', 'calendar-day-entry kind-' + item.kind, item.title);
-          entry.title = item.title;
-          recordList.append(entry);
-        });
-        if (records.length > 2) recordList.append(text('span', 'calendar-day-more', '+' + (records.length - 2)));
-        button.append(recordList);
-      }
-
-      button.addEventListener('click', () => {
-        selectedDay = day;
-        renderCalendar();
-      });
-      cells.push(button);
     }
 
+    grid.style.setProperty('--calendar-rows', String(rows));
     grid.replaceChildren(...cells);
     grid.setAttribute('aria-label', viewYear + '年' + viewMonth + '月纪念日日历');
     renderAgenda();

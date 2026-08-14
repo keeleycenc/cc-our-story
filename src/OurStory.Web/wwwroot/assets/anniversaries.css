@@ -65,7 +65,7 @@
 .memory-section-header p {
     margin: 0 0 8px;
     color: var(--memory-accent);
-    font: 700 9px Arial, sans-serif;
+    font: 700 10px Arial, sans-serif;
     letter-spacing: .2em;
 }
 
@@ -83,32 +83,35 @@
 }
 
 .overview-card {
+    --overview-tint: var(--memory-accent);
     position: relative;
     min-height: 136px;
     padding: 22px 26px;
     overflow: hidden;
     border: 1px solid var(--memory-line);
-    border-radius: 16px;
+    border-radius: 18px;
     background: var(--memory-surface);
 }
 
+/* 一团化开的暖色，比一块旋转的方块更安静。 */
 .overview-card:after {
     content: "";
     position: absolute;
-    right: -26px;
-    bottom: -48px;
-    width: 115px;
-    height: 115px;
-    border-radius: 36px;
-    background: var(--memory-accent-soft);
-    transform: rotate(18deg);
+    right: -34px;
+    bottom: -54px;
+    width: 158px;
+    height: 158px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--overview-tint) 16%, transparent), transparent 68%);
 }
 
-.overview-card > span { display: block; color: var(--memory-muted); font-size: 12px }
-.overview-card > strong { position: relative; z-index: 1; display: block; margin-top: 11px; color: var(--memory-ink); font: 400 35px/1 var(--serif); letter-spacing: -.04em }
+.overview-card > span { position: relative; z-index: 1; display: block; color: var(--memory-muted); font-size: 12px }
+.overview-card > strong { position: relative; z-index: 1; display: block; margin-top: 11px; color: var(--memory-ink); font: 400 36px/1 var(--serif); letter-spacing: -.04em }
 .overview-card > small { position: relative; z-index: 1; display: block; margin-top: 9px; color: var(--memory-faint); font-size: 12px }
+.overview-total { --overview-tint: var(--memory-travel) }
+.overview-next { --overview-tint: var(--memory-accent) }
 .overview-next > strong { color: var(--memory-accent) }
-.overview-repeat:after { background: color-mix(in srgb, var(--memory-milestone) 12%, transparent) }
+.overview-repeat { --overview-tint: var(--memory-milestone) }
 
 .memory-columns {
     width: min(1180px, 100%);
@@ -137,7 +140,7 @@
     border-bottom: 1px solid var(--memory-line);
 }
 
-.memory-section-header p { margin-bottom: 4px; font-size: 9px }
+.memory-section-header p { margin-bottom: 4px; font-size: 10px }
 .memory-section-header h2 { margin: 0; color: var(--memory-ink); font: 400 25px var(--serif) }
 .memory-section-header > span { padding-bottom: 3px; color: var(--memory-faint); font-size: 12px; white-space: nowrap }
 
@@ -157,39 +160,104 @@
 .memory-section-footer [data-lazy-progress] { padding: 4px 8px; border-radius: 99px; background: var(--memory-surface); color: var(--memory-muted); font: 700 9px Arial, sans-serif; letter-spacing: .04em; white-space: nowrap }
 .memory-section-footer button { padding: 0; border: 0; background: none; color: var(--memory-accent); font: inherit; cursor: pointer }
 
+/* 日历：不画表格线，让「有记录的日子」自己浮起来，空白的日子安静退到背景里。 */
 .memory-calendar { width: min(1180px, 100%); margin: 16px auto 0; overflow: hidden; border: 1px solid var(--memory-line); border-radius: 18px; background: var(--memory-surface); box-shadow: 0 18px 45px color-mix(in srgb, var(--memory-ink) 4%, transparent) }
 .memory-calendar-header { align-items: center }
-.memory-calendar-controls { display: flex; align-items: center; gap: 7px }
-.memory-calendar-controls button, .memory-calendar-controls select { height: 34px; border: 1px solid var(--memory-line-strong); border-radius: 10px; background: var(--memory-surface-soft); color: var(--memory-ink); font: 11px var(--sans) }
-.memory-calendar-controls button { min-width: 34px; padding: 0 9px; display: inline-grid; place-items: center; cursor: pointer }
-.memory-calendar-controls button:hover { border-color: var(--memory-accent); color: var(--memory-accent) }
-.memory-calendar-controls select { min-width: 76px; padding: 0 25px 0 10px }
-.memory-calendar-controls .calendar-today { padding: 0 12px; white-space: nowrap }
-.memory-calendar-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: stretch }
-.memory-calendar-month { min-width: 0; padding: 18px 20px 20px }
-.memory-calendar-weekdays { height: 28px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; color: var(--memory-faint); font: 700 9px Arial, sans-serif; text-align: center }
-.memory-calendar-grid { overflow: hidden; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(6, 72px); gap: 1px; border: 1px solid var(--memory-line); border-radius: 14px; background: var(--memory-line) }
-.calendar-day, .calendar-day-blank { min-width: 0; border: 0; background: var(--memory-surface) }
-.calendar-day { position: relative; padding: 7px 8px; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; color: var(--memory-ink); text-align: left; cursor: pointer }
-.calendar-day:hover { background: var(--memory-surface-soft) }
-.calendar-day.is-selected { z-index: 1; background: var(--memory-accent-soft); box-shadow: inset 0 0 0 1px var(--memory-accent) }
-.calendar-day-number { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: var(--memory-muted); font: 700 10px Arial, sans-serif }
-.calendar-day.is-today .calendar-day-number { background: var(--memory-accent); color: #fff }
-.calendar-day-records { min-width: 0; width: 100%; display: grid; gap: 2px }
-.calendar-day-entry { display: block; padding: 2px 5px; overflow: hidden; border-radius: 5px; background: color-mix(in srgb, var(--kind) 13%, transparent); color: var(--kind); font-size: 8px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap }
-.calendar-day-more { color: var(--memory-faint); font-size: 8px }
-.memory-calendar-agenda { min-width: 0; height: 479px; display: flex; flex-direction: column; border-left: 1px solid var(--memory-line); background: var(--memory-surface-soft) }
-.memory-calendar-agenda > header { padding: 22px 22px 18px; border-bottom: 1px solid var(--memory-line) }
-.memory-calendar-agenda > header > span { color: var(--memory-accent); font: 700 9px Arial, sans-serif; letter-spacing: .12em }
-.memory-calendar-agenda h3 { margin: 7px 0 0; color: var(--memory-ink); font: 400 23px var(--serif) }
-.memory-calendar-agenda > header > small { display: block; margin-top: 7px; color: var(--memory-faint); font-size: 10px }
-.memory-calendar-agenda > div { min-height: 0; flex: 1; padding: 12px; overflow-y: auto; display: grid; align-content: start; gap: 8px }
-.calendar-agenda-item { padding: 12px 13px; display: grid; gap: 5px; border: 1px solid var(--memory-line); border-left: 3px solid var(--kind); border-radius: 11px; background: var(--memory-surface); transition: border-color .18s, transform .18s }
-.calendar-agenda-item:hover { border-color: var(--kind); transform: translateX(2px) }
-.calendar-agenda-item > span { color: var(--kind); font-size: 9px }
-.calendar-agenda-item > strong { overflow: hidden; color: var(--memory-ink); font: 500 14px var(--serif); text-overflow: ellipsis; white-space: nowrap }
-.calendar-agenda-item > small { color: var(--memory-faint); font-size: 9px }
-.calendar-agenda-empty { min-height: 180px; display: grid; place-items: center; color: var(--memory-faint); font-size: 11px; text-align: center }
+
+/* 月份导航：箭头和年月下拉合成一颗药丸，下拉去掉系统外壳后当标题用。 */
+.memory-calendar-controls { display: flex; align-items: center; gap: 10px }
+.calendar-stepper { display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--memory-line); border-radius: 999px; background: var(--memory-surface-soft) }
+.calendar-step { width: 30px; height: 30px; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--memory-muted); font-size: 14px; cursor: pointer; transition: background-color .18s, color .18s }
+.calendar-step:hover { background: var(--memory-surface); color: var(--memory-accent); box-shadow: 0 1px 4px color-mix(in srgb, var(--memory-ink) 10%, transparent) }
+.calendar-select { position: relative; display: inline-flex; align-items: center }
+.calendar-select select { appearance: none; -webkit-appearance: none; height: 30px; padding: 0 23px 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--memory-ink); font: 400 16px/1 var(--serif); cursor: pointer; transition: color .18s }
+.calendar-select select:hover { color: var(--memory-accent) }
+.calendar-select select option { background: var(--memory-surface); color: var(--memory-ink); font: 13px var(--sans) }
+.calendar-select .icon { position: absolute; right: 8px; color: var(--memory-faint); font-size: 11px; pointer-events: none }
+.calendar-today { height: 34px; padding: 0 15px; border: 1px solid var(--memory-line-strong); border-radius: 999px; background: var(--memory-surface); color: var(--memory-muted); font: 11px var(--sans); white-space: nowrap; cursor: pointer; transition: border-color .18s, background-color .18s, color .18s }
+.calendar-today:hover { border-color: var(--memory-accent); background: var(--memory-accent-soft); color: var(--memory-accent) }
+
+.memory-calendar-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: stretch }
+.memory-calendar-month { min-width: 0; padding: 20px 22px 24px }
+/* 内边距和间距要跟下面的网格对齐（6px 内边距 + 1px 描边），否则星期几会歪。 */
+.memory-calendar-weekdays { height: 30px; padding: 0 7px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; align-items: center; color: var(--memory-faint); font: 12px var(--sans); letter-spacing: .1em; text-align: center }
+.memory-calendar-weekdays span:nth-child(n+6) { color: color-mix(in srgb, var(--memory-accent) 50%, var(--memory-faint)) }
+
+.memory-calendar-grid {
+    padding: 6px;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--calendar-rows, 6), 84px);
+    gap: 5px;
+    border: 1px solid var(--memory-line);
+    border-radius: 18px;
+    background: var(--memory-surface-soft);
+}
+
+.calendar-day {
+    position: relative;
+    min-width: 0;
+    padding: 6px 8px 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    border: 0;
+    border-radius: 13px;
+    background: transparent;
+    color: var(--memory-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .18s, box-shadow .18s, transform .18s, opacity .18s;
+}
+
+.calendar-day.has-records { background: var(--memory-surface); box-shadow: 0 0 0 1px var(--memory-line), 0 2px 6px color-mix(in srgb, var(--memory-ink) 4%, transparent) }
+.calendar-day:hover { background: var(--memory-surface); box-shadow: 0 0 0 1px var(--memory-line-strong), 0 8px 18px color-mix(in srgb, var(--memory-ink) 9%, transparent); transform: translateY(-1px) }
+.calendar-day.is-outside { opacity: .4 }
+.calendar-day.is-outside:hover { opacity: .78 }
+
+.calendar-day.is-selected,
+.calendar-day.is-selected:hover {
+    z-index: 1;
+    opacity: 1;
+    background: var(--memory-accent-soft);
+    box-shadow: 0 0 0 1.5px var(--memory-accent), 0 10px 24px color-mix(in srgb, var(--memory-accent) 20%, transparent);
+}
+
+.calendar-day-number { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; color: var(--memory-muted); font: 400 15px/1 var(--serif) }
+.calendar-day.is-weekend .calendar-day-number { color: color-mix(in srgb, var(--memory-accent) 50%, var(--memory-muted)) }
+.calendar-day.has-records .calendar-day-number { color: var(--memory-ink) }
+.calendar-day.is-today .calendar-day-number { background: var(--memory-accent); color: #fff; box-shadow: 0 3px 9px color-mix(in srgb, var(--memory-accent) 42%, transparent) }
+
+/* 格子里的标题只留一行可读的字，颜色交给前面那颗点，别让整块日历花掉。 */
+.calendar-day-records { min-width: 0; width: 100%; display: grid; gap: 3px }
+.calendar-day-entry { min-width: 0; display: flex; align-items: center; gap: 5px; padding: 2px 6px; border-radius: 7px; background: color-mix(in srgb, var(--kind) 12%, transparent) }
+.calendar-day-entry i { flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--kind) }
+.calendar-day-entry b { min-width: 0; overflow: hidden; color: var(--memory-ink); font: 400 10px/1.3 var(--sans); text-overflow: ellipsis; white-space: nowrap }
+.calendar-day-more { padding-left: 6px; color: var(--memory-faint); font: 9px/1.3 var(--sans) }
+.calendar-day-dots { display: flex; flex-wrap: wrap; gap: 3px; padding-left: 9px }
+.calendar-day-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--kind) }
+
+.memory-calendar-agenda { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; border-left: 1px solid var(--memory-line); background: var(--memory-surface-soft) }
+.memory-calendar-agenda > header { padding: 24px 24px 20px; border-bottom: 1px solid var(--memory-line) }
+.memory-calendar-agenda > header > span { display: inline-flex; align-items: center; gap: 6px; color: var(--memory-faint); font: 11px var(--sans); letter-spacing: .12em }
+.memory-calendar-agenda.is-today > header > span { color: var(--memory-accent) }
+.memory-calendar-agenda.is-today > header > span:before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor }
+.memory-calendar-agenda h3 { margin: 8px 0 0; color: var(--memory-ink); font: 400 24px var(--serif); letter-spacing: -.02em }
+.memory-calendar-agenda > header > small { display: block; margin-top: 8px; color: var(--memory-faint); font-size: 11px }
+.memory-calendar-agenda > div { min-height: 0; flex: 1; padding: 14px; overflow-y: auto; display: grid; align-content: start; gap: 9px; scrollbar-width: thin }
+
+.calendar-agenda-item { padding: 13px 14px; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 11px; border: 1px solid var(--memory-line); border-radius: 14px; background: var(--memory-surface); transition: border-color .18s, box-shadow .18s, transform .18s }
+.calendar-agenda-item:hover { border-color: color-mix(in srgb, var(--kind) 45%, var(--memory-line)); box-shadow: 0 8px 20px color-mix(in srgb, var(--kind) 15%, transparent); transform: translateY(-1px) }
+.calendar-agenda-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: color-mix(in srgb, var(--kind) 13%, transparent); color: var(--kind); font-size: 16px }
+.calendar-agenda-copy { min-width: 0; display: grid; gap: 4px }
+.calendar-agenda-item strong { min-width: 0; overflow: hidden; color: var(--memory-ink); font: 500 15px var(--serif); text-overflow: ellipsis; white-space: nowrap }
+.calendar-agenda-tags { min-width: 0; overflow: hidden; color: var(--kind); font-size: 10px; text-overflow: ellipsis; white-space: nowrap }
+.calendar-agenda-item small { color: var(--memory-faint); font-size: 10px }
+.calendar-agenda-empty { min-height: 200px; display: grid; align-content: center; justify-items: center; gap: 12px; margin: 0; color: var(--memory-faint); font-size: 12px; text-align: center }
+.calendar-agenda-empty .icon { font-size: 30px; color: var(--memory-line-strong); stroke-width: 1.4 }
+.calendar-agenda-empty span { max-width: 190px; line-height: 1.7 }
 .memory-calendar > script { display: none }
 
 .kind-love { --kind: var(--memory-love) }
@@ -352,7 +420,8 @@
     .lazy-scroll { height: 520px }
     .memory-calendar-header { align-items: flex-end }
     .memory-calendar-body { grid-template-columns: 1fr }
-    .memory-calendar-agenda { height: auto; min-height: 220px; border-top: 1px solid var(--memory-line); border-left: 0 }
+    .memory-calendar-agenda { overflow: visible; min-height: 220px; border-top: 1px solid var(--memory-line); border-left: 0 }
+    .memory-calendar-agenda > div { max-height: 360px }
 }
 
 @media (max-width: 700px) {
@@ -363,16 +432,20 @@
     .overview-card { min-height: 125px; padding: 21px }
     .overview-card > strong { font-size: 31px }
     .memory-calendar-header { align-items: stretch; flex-direction: column }
-    .memory-calendar-controls { width: 100% }
-    .memory-calendar-controls label { flex: 1 }
-    .memory-calendar-controls select { width: 100%; min-width: 0 }
-    .memory-calendar-month { padding: 12px 10px 14px }
-    .memory-calendar-grid { grid-template-rows: repeat(6, 54px); border-radius: 11px }
-    .calendar-day { padding: 5px; gap: 2px }
-    .calendar-day-number { width: 20px; height: 20px; font-size: 9px }
-    .calendar-day-records { display: flex; flex-wrap: wrap; gap: 3px }
-    .calendar-day-entry { width: 6px; height: 6px; padding: 0; border-radius: 50%; font-size: 0 }
-    .calendar-day-more { width: 100%; font-size: 7px }
+    .memory-calendar-controls { width: 100%; flex-direction: column; align-items: stretch; gap: 8px }
+    .calendar-stepper { justify-content: space-between }
+    .calendar-select { flex: 1; justify-content: center }
+    .calendar-select select { width: 100%; text-align: center; text-align-last: center }
+    .memory-calendar-month { padding: 14px 12px 16px }
+    .memory-calendar-weekdays { padding: 0 5px; gap: 3px; font-size: 11px }
+    .memory-calendar-grid { padding: 4px; gap: 3px; grid-template-rows: repeat(var(--calendar-rows, 6), 60px); border-radius: 14px }
+    .calendar-day { padding: 6px 4px; gap: 3px; align-items: center; border-radius: 10px }
+    .calendar-day-number { width: 22px; height: 22px; font-size: 13px }
+    .calendar-day-records { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px }
+    .calendar-day-entry { width: 6px; height: 6px; padding: 0; gap: 0; border-radius: 50%; background: var(--kind) }
+    .calendar-day-entry i, .calendar-day-entry b { display: none }
+    .calendar-day-more { width: 100%; padding: 0; font-size: 8px; text-align: center }
+    .calendar-day-dots { justify-content: center; padding: 0 }
     .anniversary-detail-page { padding: 115px 15px 75px }
     .anniversary-story-header { margin-top: 40px }
     .anniversary-story-body { padding-right: 0 }
@@ -400,8 +473,11 @@
     .upcoming-card > strong { font-size: 11px }
     .memory-section-footer { min-height: 42px; padding: 0 12px; gap: 8px; font-size: 9px }
     .memory-section-footer [data-lazy-progress] { padding: 3px 6px; font-size: 8px }
-    .memory-calendar-controls { display: grid; grid-template-columns: 34px 1fr 1fr 34px }
-    .memory-calendar-controls .calendar-today { grid-column: 1 / -1 }
+    .memory-calendar-month { padding: 10px 8px 12px }
+    .memory-calendar-grid { grid-template-rows: repeat(var(--calendar-rows, 6), 54px) }
+    .memory-calendar-agenda > header { padding: 20px 18px 16px }
+    .memory-calendar-agenda h3 { font-size: 21px }
+    .memory-calendar-agenda > div { padding: 12px 10px }
 }
 
 @media (prefers-reduced-motion: reduce) {
