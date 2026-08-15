@@ -911,6 +911,8 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 }
 
 .admin-moment-item.is-waiting .admin-tap-hint { background: var(--surface-muted); color: var(--faint) }
+
+.admin-moment-item.is-done { opacity: .7 }
 .admin-moment-item.is-tappable:not(.is-waiting):hover .admin-tap-hint { transform: translateX(3px) }
 
 .admin-preset-name { overflow: hidden; font: 400 16px var(--serif); text-overflow: ellipsis; white-space: nowrap }
@@ -930,7 +932,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     list-style: none;
 }
 
-.admin-details > summary::-webkit-details-marker { display: none }
+.admin-details > summary::marker { content: "" }
 .admin-details > summary:hover { color: var(--pink-dark) }
 .admin-details[open] > summary { border-bottom: 1px solid var(--line); color: var(--ink) }
 .admin-details > form { padding: 18px 16px 4px }
@@ -958,7 +960,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     height: 22px;
     padding: 0;
     border: 0;
-    background: none;
+    background: linear-gradient(var(--surface-muted), var(--surface-muted)) center / 100% 6px no-repeat;
     cursor: pointer;
 }
 
@@ -968,13 +970,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .slider-field input[type="range"]::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 99px;
-    background: var(--surface-muted);
-}
-
-.slider-field input[type="range"]::-moz-range-track {
-    height: 6px;
-    border-radius: 99px;
-    background: var(--surface-muted);
+    background: transparent;
 }
 
 .slider-field input[type="range"]::-webkit-slider-thumb {
@@ -1234,6 +1230,8 @@ body.auth-page {
 
 .admin-dialog-actions { display: flex; gap: 10px; margin-top: 22px }
 .admin-dialog-actions .btn { flex: 1; justify-content: center }
+
+.admin-dialog-actions .btn[hidden] { display: none }
 
 @keyframes dialog-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96) } }
 

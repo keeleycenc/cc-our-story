@@ -92,13 +92,14 @@
         <div class="admin-moment-list">
             @foreach (var item in Model.Items.Items)
             {
-                var (goUrl, goTip) = Model.CardAction(item);
-                <article class="admin-moment-item is-tappable@(goUrl is null ? " is-waiting" : null)"
+                var action = Model.CardAction(item);
+                <article class="admin-moment-item is-tappable@(action.Url is null ? " is-waiting" : null)@(action.IsDone ? " is-done" : null)"
                          role="button"
                          tabindex="0"
-                         data-shop-go="@goUrl"
-                         data-shop-tip="@goTip"
-                         aria-label="@item.Title：@(goUrl is null ? goTip : "去前台处理")">
+                         data-shop-go="@action.Url"
+                         data-shop-tip="@action.Tip"
+                         data-shop-tip-title="@action.TipTitle"
+                         aria-label="@item.Title：@(action.Url is null ? action.Tip : action.Hint)">
                     <div class="admin-moment-summary">
                         <div class="admin-moment-title">
                             <span class="admin-preset-name">
@@ -152,14 +153,19 @@
                     </div>
 
                     <span class="admin-tap-hint">
-                        @if (goUrl is null)
+                        @if (action.Url is not null)
                         {
-                            @Icon("clock")<span>等待对方</span>
+                            @Icon("arrow-right")
+                        }
+                        else if (action.IsDone)
+                        {
+                            @Icon("circle-check")
                         }
                         else
                         {
-                            @Icon("arrow-right")<span>去处理</span>
+                            @Icon("clock")
                         }
+                        <span>@action.Hint</span>
                     </span>
                 </article>
             }

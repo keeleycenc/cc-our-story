@@ -462,9 +462,18 @@
     const tip = card.dataset.shopTip;
     if (!go && !tip) return;
 
+    const done = card.classList.contains('is-done');
+
     const act = () => {
       if (go) { window.location.href = go; return; }
-      confirmDialog({ title: '温馨提示', text: tip, ok: '知道啦', notice: true, danger: false, icon: 'clock' });
+      confirmDialog({
+        title: card.dataset.shopTipTitle || '温馨提示',
+        text: tip,
+        ok: '知道啦',
+        notice: true,
+        danger: false,
+        icon: done ? 'circle-check' : 'clock'
+      });
     };
 
     card.addEventListener('click', act);
