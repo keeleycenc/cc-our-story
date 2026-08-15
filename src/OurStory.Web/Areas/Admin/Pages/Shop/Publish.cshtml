@@ -1,0 +1,238 @@
+@page "/admin/shop/publish"
+@model OurStory.Web.Areas.Admin.Pages.Shop.PublishModel
+@{
+    ViewData["ActiveMenu"] = "shop";
+    ViewData["Eyebrow"] = "NEW WISH";
+    ViewData["Title"] = "发布心愿";
+    ViewData["BackUrl"] = "/admin/shop";
+}
+
+<form method="post" data-dirty-guard data-shop-form>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="admin-error">
+            @Icon("circle-alert")@Model.Error
+        </p>
+    }
+
+    <div class="editor-layout">
+        <div class="editor-body">
+            <div class="admin-panel">
+                <h2>@Icon("store")心愿内容</h2>
+
+                <p class="admin-panel-hint">
+                    心愿发布后不可修改、删除或主动下架。
+                    请确认内容无误后再发布，未被兑换的心愿会在上架期限结束后自动下架。
+                </p>
+
+                <label class="field">
+                    <span>选择预设</span>
+
+                    <select asp-for="Input.PresetId" data-shop-preset>
+                        <option value="">不使用预设</option>
+
+                        @foreach (var preset in Model.Presets)
+                        {
+                            <option value="@preset.Id"
+                                    data-preset-title="@preset.Title"
+                                    data-preset-description="@preset.Description"
+                                    data-preset-cover="@preset.CoverUrl"
+                                    data-preset-redeem="@preset.RedeemMode">
+                                @preset.Title
+                            </option>
+                        }
+                    </select>
+
+                    <small>
+                        选择后会自动填入名称、描述、封面和使用方式，其他设置仍可自行调整。
+                        @if (Model.Presets.Count == 0)
+                        {
+                            <text>
+                                当前没有可用预设，可前往 <a href="/admin/shop">心意商城管理</a> 添加。
+                            </text>
+                        }
+                    </small>
+                </label>
+
+                <label class="field">
+                    <span>心愿名称</span>
+                    <input asp-for="Input.Title"
+                           type="text"
+                           maxlength="60"
+                           required
+                           placeholder="例如：今晚你不用洗碗"
+                           data-shop-title>
+                </label>
+
+                <label class="field">
+                    <span>心愿描述</span>
+                    <textarea asp-for="Input.Description"
+                              rows="4"
+                              maxlength="300"
+                              placeholder="写下这个心愿包含什么，或者留一句想对对方说的话"
+                              data-shop-description></textarea>
+                </label>
+
+                <div class="field cover-picker" data-cover-uploader>
+                    <span>封面图</span>
+
+                    <input asp-for="Input.CoverUrl"
+                           type="text"
+                           maxlength="500"
+                           placeholder="留空使用默认封面"
+                           data-cover-target>
+
+                    <label class="upload-drop">
+                        @Icon("upload")
+                        <span>上传封面</span>
+                        <input type="file" accept="image/*" data-cover-upload>
+                    </label>
+
+                    <partial name="_UploadProgress" />
+
+                    <small data-cover-status>
+                        未设置封面时，将自动使用默认图标和背景。
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-side">
+            <div class="admin-panel">
+                <h2>@Icon("coins")兑换设置</h2>
+
+                @* 使用滑块快速设置价格和期限，当前值显示在标题右侧。 *@
+                <div class="field slider-field" data-slider-field>
+                    <span class="slider-head">
+                        兑换价格
+                        <b data-slider-value>@Model.Input.Price</b>
+                    </span>
+
+                    <input asp-for="Input.Price"
+                           type="range"
+                           min="@Model.Site.ShopPriceMin"
+                           max="@Model.Site.ShopPriceMax"
+                           step="1"
+                           data-slider>
+
+                    <span class="slider-scale">
+                        <i>@Model.Site.ShopPriceMin</i>
+                        <i>@Model.Site.ShopPriceMax</i>
+                    </span>
+                </div>
+
+                <div class="field slider-field" data-slider-field>
+                    <span class="slider-head">
+                        上架期限
+                        <b data-slider-value data-slider-unit=" 天">
+                            @Model.Input.ListingDays 天
+                        </b>
+                    </span>
+
+                    <input asp-for="Input.ListingDays"
+                           type="range"
+                           min="1"
+                           max="180"
+                           step="1"
+                           data-slider>
+
+                    <span class="slider-scale">
+                        <i>1 天</i>
+                        <i>180 天</i>
+                    </span>
+
+                    <small>
+                        未被兑换的心愿将在期限结束后自动下架。
+                    </small>
+                </div>
+
+                <div class="field slider-field" data-slider-field>
+                    <span class="slider-head">
+                        使用期限
+                        <b data-slider-value data-slider-unit=" 天">
+                            @Model.Input.ValidDays 天
+                        </b>
+                    </span>
+
+                    <input asp-for="Input.ValidDays"
+                           type="range"
+                           min="1"
+                           max="180"
+                           step="1"
+                           data-slider>
+
+                    <span class="slider-scale">
+                        <i>1 天</i>
+                        <i>180 天</i>
+                    </span>
+
+                    <small>
+                        从兑换成功时开始计算，过期后将无法继续使用。
+                    </small>
+                </div>
+
+                <fieldset class="choice-group">
+                    <legend>使用方式</legend>
+
+                    <label class="visibility-choice">
+                        <input asp-for="Input.RedeemMode"
+                               type="radio"
+                               value="@ShopRedeemMode.MutualConfirm">
+
+                        <span>
+                            @Icon("hand-heart")
+                            <strong>双方确认</strong>
+                            <small>@ShopDisplay.RedeemHint(ShopRedeemMode.MutualConfirm)</small>
+                        </span>
+                    </label>
+
+                    <label class="visibility-choice">
+                        <input asp-for="Input.RedeemMode"
+                               type="radio"
+                               value="@ShopRedeemMode.Instant">
+
+                        <span>
+                            @Icon("circle-check")
+                            <strong>直接使用</strong>
+                            <small>@ShopDisplay.RedeemHint(ShopRedeemMode.Instant)</small>
+                        </span>
+                    </label>
+                </fieldset>
+
+                <fieldset class="choice-group">
+                    <legend>可见范围</legend>
+
+                    <label class="visibility-choice">
+                        <input asp-for="Input.IsPrivate"
+                               type="radio"
+                               value="false">
+
+                        <span>
+                            @Icon("eye")
+                            <strong>公开</strong>
+                            <small>所有访客都能看到，只有你们可以兑换</small>
+                        </span>
+                    </label>
+
+                    <label class="visibility-choice">
+                        <input asp-for="Input.IsPrivate"
+                               type="radio"
+                               value="true">
+
+                        <span>
+                            @Icon("lock")
+                            <strong>仅双方</strong>
+                            <small>只有你们两个人可以看到</small>
+                        </span>
+                    </label>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button class="btn" type="submit">
+                        @Icon("store")发布心愿
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

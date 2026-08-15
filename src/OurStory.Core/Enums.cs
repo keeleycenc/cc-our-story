@@ -90,3 +90,80 @@ public enum AnniversaryKind {
     /// </summary>
     Wedding = 9
 }
+
+/// <summary>
+/// 表示一条心意流水来源
+/// </summary>
+public enum HeartPointReason {
+    /// <summary>
+    /// 当天第一次想你
+    /// </summary>
+    DailyHeartbeat = 0,
+
+    /// <summary>
+    /// 当天第一次发布点点滴滴
+    /// </summary>
+    MomentPublished = 1,
+
+    /// <summary>
+    /// 当天第一次发布纪念日
+    /// </summary>
+    AnniversaryPublished = 2,
+
+    /// <summary>
+    /// 兑换心愿，心意直接销毁
+    /// </summary>
+    Purchase = 3
+}
+
+/// <summary>
+/// 表示心愿的使用确认方式
+/// </summary>
+public enum ShopRedeemMode {
+    /// <summary>
+    /// 持有人发起使用，由发布者确认完成后核销。
+    /// 适用于洗碗券、做饭券等需要对方履行的心愿。
+    /// </summary>
+    MutualConfirm = 0,
+
+    /// <summary>
+    /// 持有人确认使用后立即核销。
+    /// 适用于「今晚我选电影」等无需对方确认的心愿。
+    /// </summary>
+    Instant = 1
+}
+
+/// <summary>
+/// 心愿商品状态
+/// </summary>
+public enum ShopItemStatus {
+    /// <summary>
+    /// 已上架，等待兑换
+    /// </summary>
+    Listed = 0,
+
+    /// <summary>
+    /// 已兑换，等待使用
+    /// </summary>
+    Redeemed = 1,
+
+    /// <summary>
+    /// 已发起使用，等待发布者确认
+    /// </summary>
+    PendingConfirm = 2,
+
+    /// <summary>
+    /// 已使用，终态
+    /// </summary>
+    Used = 3,
+
+    /// <summary>
+    /// 上架有效期已结束且未被兑换，终态
+    /// </summary>
+    ListingExpired = 4,
+
+    /// <summary>
+    /// 兑换后未在有效期内使用，终态
+    /// </summary>
+    Expired = 5
+}

@@ -114,7 +114,7 @@
         <label class="field" style="margin-bottom:0">
             <span>随机情话</span>
             <textarea asp-for="Input.LoveLetters" rows="8"></textarea>
-            <small>一行一句，每次打开首页随机显示一句。全部清空会退回主题自带的那一份。</small>
+            <small>一行一句，每次打开首页随机显示一句。</small>
         </label>
     </div>
 
@@ -156,15 +156,70 @@
         </div>
     </div>
 
+    @* 心意的发放和价格区间只让男主动，女主登录时这一块整个不出现 *@
+    @if (Model.CanEditHeartRules)
+    {
+        <div class="admin-panel">
+            <h2>@Icon("coins")心意规则</h2>
+
+            <p class="admin-panel-hint">
+                心意只用来记录彼此的投入，每项奖励每天最多获得一次，重复记录不会重复累计
+            </p>
+
+            <div class="field-grid">
+                <label class="field">
+                    <span>每日首次想你</span>
+                    <input asp-for="Input.RewardHeartbeat" type="number" min="0" max="100">
+                    <small>每天首次互动时获得一次奖励。</small>
+                </label>
+
+                <label class="field">
+                    <span>发布点点滴滴</span>
+                    <input asp-for="Input.RewardMoment" type="number" min="0" max="100">
+                    <small>内容正式发布后获得，每天最多一次。</small>
+                </label>
+
+                <label class="field">
+                    <span>发布纪念日</span>
+                    <input asp-for="Input.RewardAnniversary" type="number" min="0" max="100">
+                    <small>纪念日正式发布后获得，每天最多一次。</small>
+                </label>
+
+                <label class="field">
+                    <span>心愿最低价格</span>
+                    <input asp-for="Input.ShopPriceMin" type="number" min="1" max="99999">
+                </label>
+
+                <label class="field">
+                    <span>心愿最高价格</span>
+                    <input asp-for="Input.ShopPriceMax" type="number" min="1" max="99999">
+                    <small>用于限制单个心愿可设置的最高价格。</small>
+                </label>
+
+                <label class="field">
+                    <span>默认上架天数</span>
+                    <input asp-for="Input.ShopListingDays" type="number" min="1" max="3650">
+                    <small>新发布的心愿默认保持上架的天数。</small>
+                </label>
+
+                <label class="field">
+                    <span>默认有效天数</span>
+                    <input asp-for="Input.ShopValidDays" type="number" min="1" max="3650">
+                    <small>兑换后的默认使用期限，发布时可单独调整。</small>
+                </label>
+            </div>
+        </div>
+    }
+
     <div class="admin-panel">
         <h2>@Icon("message-circle-heart")留言</h2>
         <label class="field-check">
             <input asp-for="Input.AllowGuestComments" type="checkbox">
-            <span>允许没有账号的人留言</span>
+            <span>允许访客留言</span>
         </label>
         <label class="field-check">
             <input asp-for="Input.CommentsRequireMail" type="checkbox">
-            <span>访客留言必须填邮箱</span>
+            <span>留言必须填邮箱</span>
         </label>
 
         <div class="form-actions">

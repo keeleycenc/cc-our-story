@@ -1,0 +1,422 @@
+/* 心意商城与心愿仓库：货架、仓库列表、心意账单 */
+/* 1. 页面骨架 ------------------------------------------------------------ */
+.content-page { min-height: 75vh; padding: 150px max(24px, calc((100vw - 1120px)/2)) 100px }
+.page-heading { text-align: center; margin-bottom: 46px }
+.page-heading > p { font: 700 8px Arial; letter-spacing: .25em; color: var(--pink-dark) }
+.page-heading h1 { font: 400 clamp(38px, 6vw, 62px) var(--serif); margin: 12px 0 }
+.page-heading > span { font-size: 12px; color: var(--muted) }
+
+.shop-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.shop-stats span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 99px;
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+    font-size: 11px;
+}
+
+.shop-stats .shop-balance strong { font: 400 15px var(--serif) }
+.shop-stats .is-urgent { background: var(--danger-soft); color: var(--danger) }
+
+.shop-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px }
+
+.shop-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 18px;
+    border-radius: 99px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 11px;
+    box-shadow: var(--shadow-sm);
+    transition: transform .2s;
+}
+
+.shop-link:hover { transform: translateY(-2px) }
+.shop-links .shop-link + .shop-link { background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink) }
+
+.shop-flash {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 760px;
+    margin: 0 auto 26px;
+    padding: 13px 18px;
+    border-radius: 14px;
+    background: var(--card-mint);
+    color: var(--ink);
+    font-size: 12px;
+}
+
+.shop-flash.is-bad { background: var(--danger-soft); color: var(--danger-strong) }
+
+/* 2. 筛选 ---------------------------------------------------------------- */
+.shop-filter {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 30px;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: var(--surface);
+    width: fit-content;
+    margin-inline: auto;
+    box-shadow: var(--shadow-sm);
+}
+
+.shop-filter a {
+    padding: 8px 18px;
+    border-radius: 99px;
+    color: var(--muted);
+    font-size: 12px;
+    transition: background-color .2s, color .2s;
+}
+
+.shop-filter a:hover { color: var(--pink-dark) }
+.shop-filter a.is-active { background: var(--pink-soft); color: var(--pink-dark) }
+
+/* 3. 货架 ---------------------------------------------------------------- */
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(266px, 1fr)); gap: 20px }
+
+.shop-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: var(--surface);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+
+.shop-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow-md) }
+.shop-card.is-done { opacity: .62 }
+.shop-card.is-done:hover { transform: none; box-shadow: none }
+
+.shop-cover {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 152px;
+    overflow: hidden;
+}
+
+.shop-cover img { width: 100%; height: 100%; object-fit: cover }
+.shop-cover-icon { color: var(--pink-dark); font-size: 38px; opacity: .72 }
+
+.shop-cover.tone-peach { background: var(--card-peach) }
+.shop-cover.tone-mint { background: var(--card-mint) }
+.shop-cover.tone-blue { background: var(--card-blue) }
+.shop-cover.tone-rose { background: var(--card-rose) }
+.shop-cover.tone-lilac { background: var(--card-lilac) }
+.shop-cover.tone-gold { background: var(--card-gold) }
+
+.shop-status, .shop-private {
+    position: absolute;
+    top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    background: var(--card-chip);
+    color: var(--ink);
+    font-size: 10px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.shop-status { left: 12px }
+.shop-private { right: 12px }
+
+.shop-status.is-listed { background: var(--pink-soft); color: var(--pink-dark) }
+.shop-status.is-redeemed { background: var(--card-mint); color: var(--ink) }
+.shop-status.is-pending { background: var(--card-gold); color: var(--ink) }
+.shop-status.is-used { background: var(--ink); color: var(--paper) }
+.shop-status.is-dead { background: var(--surface-muted); color: var(--faint) }
+
+.shop-body { flex: 1; padding: 20px 20px 14px }
+.shop-body h2 { font: 400 20px var(--serif); margin-bottom: 8px }
+
+.shop-desc {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.85;
+}
+
+.shop-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-top: 13px;
+    color: var(--faint);
+    font-size: 11px;
+}
+
+.shop-meta > span { display: inline-flex; align-items: center; gap: 5px }
+.shop-meta .is-urgent { color: var(--danger) }
+
+.shop-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px 18px;
+    border-top: 1px solid var(--line);
+}
+
+.shop-price { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px }
+.shop-price strong { color: var(--pink-dark); font: 400 21px var(--serif) }
+
+.shop-buy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 99px;
+    background: var(--ink);
+    color: var(--paper);
+    font: 11px var(--sans);
+    cursor: pointer;
+    transition: background-color .2s;
+}
+
+.shop-buy:hover { background: var(--pink-dark) }
+
+/* 换不了的时候按钮位置换成一句说明，别留个点不动的按钮让人猜 */
+.shop-buy.is-off { background: var(--surface-muted); color: var(--faint); cursor: default }
+
+.shop-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 99px;
+    color: var(--muted);
+    font: 11px var(--sans);
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+
+.shop-ghost:hover { border-color: var(--pink); color: var(--pink-dark) }
+
+/* 4. 仓库 ---------------------------------------------------------------- */
+.shop-section { max-width: 880px; margin: 0 auto 46px }
+
+.shop-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.shop-section-head p { font: 700 8px Arial; letter-spacing: .25em; color: var(--pink-dark); margin-bottom: 7px }
+.shop-section-head h2 { font: 400 24px var(--serif) }
+.shop-section-head > span { color: var(--faint); font-size: 11px }
+
+.shop-list { display: grid; gap: 12px }
+
+.shop-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+}
+
+.shop-row.is-pending { border-color: var(--pink); background: var(--pink-softer) }
+.shop-row.is-done { opacity: .6 }
+
+.shop-row-mark {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--surface-muted);
+    color: var(--pink-dark);
+    font-size: 19px;
+}
+
+.shop-row.is-pending .shop-row-mark { background: var(--surface); color: var(--pink-dark) }
+.shop-row-body { min-width: 0 }
+.shop-row-title { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 6px }
+.shop-row-title strong { font: 400 17px var(--serif) }
+.shop-row-title .shop-status { position: static }
+.shop-row-actions { display: flex; align-items: center; gap: 8px }
+.shop-row-actions form { margin: 0 }
+
+/* 5. 心意账单 ------------------------------------------------------------ */
+.ledger-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none }
+
+.ledger-item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 18px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.ledger-mark {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--card-mint);
+    color: var(--ink);
+    font-size: 16px;
+}
+
+.ledger-item.is-spend .ledger-mark { background: var(--pink-soft); color: var(--pink-dark) }
+.ledger-body { min-width: 0 }
+.ledger-body > strong { display: block; overflow: hidden; font-size: 13px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap }
+.ledger-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 10px; margin-top: 4px; color: var(--faint); font-size: 10px }
+.ledger-meta em { font-style: normal }
+.ledger-backfill { padding: 2px 8px; border-radius: 99px; background: var(--surface-muted); color: var(--muted) }
+.ledger-amount { color: var(--ink); font: 400 17px var(--serif) }
+.ledger-item.is-spend .ledger-amount { color: var(--pink-dark) }
+
+/* 6. 空状态与翻页 -------------------------------------------------------- */
+.shop-empty { padding: 70px 20px; text-align: center; color: var(--muted) }
+.shop-empty > .icon { color: var(--pink-dark); font-size: 40px }
+.shop-empty h2 { margin-top: 16px; color: var(--ink); font: 400 24px var(--serif) }
+.shop-empty p { margin-top: 7px; font-size: 12px }
+.shop-empty.is-inline { padding: 44px 20px; border: 1px dashed var(--line-strong); border-radius: 18px }
+.shop-empty .shop-link { margin-top: 22px }
+
+.page-navigator { margin-top: 32px }
+
+.page-navigator ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-navigator li { display: flex }
+
+.page-navigator a,
+.page-navigator .current > span {
+    display: grid;
+    place-items: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 11px;
+    border-radius: 12px;
+    background: var(--surface-muted);
+    font-size: 12px;
+    transition: background-color .2s, color .2s;
+}
+
+.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
+.page-navigator .current > span { background: var(--ink); color: var(--paper) }
+
+.page-navigator .gap {
+    align-items: center;
+    padding: 0 2px;
+    color: var(--faint);
+    font-size: 12px;
+    user-select: none;
+}
+
+.page-navigator .gap-narrow { display: none }
+
+/* 7. 确认框 -------------------------------------------------------------- */
+.shop-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    place-items: center;
+    padding: 20px;
+}
+
+.shop-dialog.is-open { display: grid }
+
+.shop-dialog-mask {
+    position: absolute;
+    inset: 0;
+    background: var(--scrim);
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+}
+
+.shop-dialog-card {
+    position: relative;
+    width: min(420px, 100%);
+    padding: 34px 32px 26px;
+    border-radius: 26px;
+    background: var(--paper);
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+.shop-dialog-icon {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 16px;
+    border-radius: 18px;
+    background: var(--pink-soft);
+    color: var(--pink-dark);
+    font-size: 24px;
+}
+
+.shop-dialog-card h2 { font: 400 22px var(--serif) }
+.shop-dialog-card p { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.85 }
+.shop-dialog-actions { display: flex; gap: 10px; margin-top: 24px }
+.shop-dialog-actions button { flex: 1; justify-content: center }
+
+/* 8. 响应式 -------------------------------------------------------------- */
+@media (max-width: 800px) {
+    .content-page { padding-top: 120px }
+    .shop-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px }
+    .shop-row { grid-template-columns: 38px minmax(0, 1fr); row-gap: 12px }
+    .shop-row-mark { width: 38px; height: 38px; font-size: 17px }
+    .shop-row-actions { grid-column: 1 / -1 }
+    .shop-row-actions form, .shop-row-actions .shop-buy, .shop-row-actions .shop-ghost { flex: 1 }
+    .shop-row-actions .shop-buy, .shop-row-actions .shop-ghost { justify-content: center; width: 100% }
+    .shop-section-head { align-items: flex-start; flex-direction: column; gap: 8px }
+}
+
+@media (max-width: 600px) {
+    .page-navigator .edge, .page-navigator .far { display: none }
+    .page-navigator .gap-narrow { display: flex }
+    .page-navigator ol { gap: 6px }
+    .page-navigator a, .page-navigator .current > span { min-width: 34px; padding: 0 8px }
+    .shop-grid { grid-template-columns: 1fr }
+    .ledger-item { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; padding: 12px 14px }
+    .ledger-mark { width: 32px; height: 32px; font-size: 14px }
+}

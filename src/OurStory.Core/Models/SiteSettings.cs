@@ -64,10 +64,14 @@ public class SiteSettings {
     /// </summary>
     public string DailyNote { get; set; } = "想和你一起，把柴米油盐过成诗，\n把每一个普通的日子都写上我们的名字。";
 
-    /// <summary>首页每次加载随机显示一句。</summary>
+    /// <summary>
+    /// 获取或设置首页每次加载随机显示一句
+    /// </summary>
     public IReadOnlyList<string> LoveLetters { get; set; } = DefaultLoveLetters;
 
-    /// <summary>auto / light / dark，页面右上角还能各自再切。</summary>
+    /// <summary>
+    /// 获取或设置auto / light / dark，页面右上角还能各自再切
+    /// </summary>
     public string ColorMode { get; set; } = "auto";
 
     /// <summary>
@@ -75,14 +79,55 @@ public class SiteSettings {
     /// </summary>
     public int MomentsPageSize { get; set; } = 10;
 
-    /// <summary>访客留言是否必须填邮箱。</summary>
+    /// <summary>
+    /// 获取或设置访客留言是否必须填邮箱
+    /// </summary>
     public bool CommentsRequireMail { get; set; }
 
-    /// <summary>是否接受访客（未登录）留言。</summary>
+    /// <summary>
+    /// 获取或设置是否接受访客（未登录）留言
+    /// </summary>
     public bool AllowGuestComments { get; set; } = true;
 
-    /// <summary>同一个人一天最多记多少次心动。</summary>
+    /// <summary>
+    /// 获取或设置同一个人一天最多记多少次心动
+    /// </summary>
     public int HeartbeatDailyLimit { get; set; } = 99;
+
+    /// <summary>
+    /// 获取或设置当天第一次想你能拿到多少心意
+    /// </summary>
+    public int RewardHeartbeat { get; set; } = 2;
+
+    /// <summary>
+    /// 获取或设置当天第一次发布点点滴滴能拿到多少心意
+    /// </summary>
+    public int RewardMoment { get; set; } = 8;
+
+    /// <summary>
+    /// 获取或设置当天第一次发布纪念日能拿到多少心意
+    /// </summary>
+    public int RewardAnniversary { get; set; } = 12;
+
+    /// <summary>
+    /// 获取或设置心愿的最低标价
+    /// </summary>
+    public int ShopPriceMin { get; set; } = 5;
+
+    /// <summary>
+    /// 获取或设置心愿的最高标价
+    /// </summary>
+    public int ShopPriceMax { get; set; } = 999;
+
+    /// <summary>
+    /// 获取或设置发布后多少天没人兑换就自动下架
+    /// </summary>
+    public int ShopListingDays { get; set; } = 30;
+
+    /// <summary>
+    /// 获取或设置兑换之后多少天没用掉就作废
+    /// </summary>
+    public int ShopValidDays { get; set; } = 30;
 
     /// <summary>
     /// 表示 DefaultLoveLetters
@@ -188,4 +233,32 @@ public static class SettingKeys {
     /// 表示 HeartbeatDailyLimit
     /// </summary>
     public const string HeartbeatDailyLimit = "heartbeat.dailyLimit";
+    /// <summary>
+    /// 表示 RewardHeartbeat
+    /// </summary>
+    public const string RewardHeartbeat = "heart.reward.heartbeat";
+    /// <summary>
+    /// 表示 RewardMoment
+    /// </summary>
+    public const string RewardMoment = "heart.reward.moment";
+    /// <summary>
+    /// 表示 RewardAnniversary
+    /// </summary>
+    public const string RewardAnniversary = "heart.reward.anniversary";
+    /// <summary>
+    /// 表示 ShopPriceMin
+    /// </summary>
+    public const string ShopPriceMin = "shop.price.min";
+    /// <summary>
+    /// 表示 ShopPriceMax
+    /// </summary>
+    public const string ShopPriceMax = "shop.price.max";
+    /// <summary>
+    /// 表示 ShopListingDays
+    /// </summary>
+    public const string ShopListingDays = "shop.listingDays";
+    /// <summary>
+    /// 表示 ShopValidDays
+    /// </summary>
+    public const string ShopValidDays = "shop.validDays";
 }

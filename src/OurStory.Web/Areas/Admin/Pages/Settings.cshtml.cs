@@ -4,10 +4,12 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Models;
 using OurStory.Core.Options;
 using OurStory.Services.Settings;
+using OurStory.Web.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace OurStory.Web.Areas.Admin.Pages;
@@ -31,11 +33,22 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     /// </summary>
     public string? Error { get; private set; }
 
-    /// <summary>获取当前实际生效的存储方式：OSS 参数没配全时它会和上面选的不一样</summary>
+    /// <summary>
+    /// 获取一个值，指示当前登录的人能否改心意规则
+    /// </summary>
+    /// <remarks>
+    /// 心意的发放和价格区间只让男主动：这类站点一般是男生搭给女生的
+    /// </remarks>
+    public bool CanEditHeartRules => User.Role() == UserRole.Boy;
+
+    /// <summary>
+    /// 获取当前实际生效的存储方式：OSS 参数没配全时它会和上面选的不一样</summary>
     public string EffectiveDriverText =>
         configuration.Storage.EffectiveDriver == Core.Options.StorageDriver.AliyunOss ? "阿里云 OSS" : "本地目录";
 
-    /// <summary>获取配置文件的位置，页面上说明一句这些设置存在哪儿</summary>
+    /// <summary>
+    /// 获取配置文件的位置
+    /// </summary>
     public string ConfigFilePath => configuration.FilePath;
 
     /// <summary>
@@ -70,7 +83,14 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             MomentsPageSize = site.MomentsPageSize,
             HeartbeatDailyLimit = site.HeartbeatDailyLimit,
             CommentsRequireMail = site.CommentsRequireMail,
-            AllowGuestComments = site.AllowGuestComments
+            AllowGuestComments = site.AllowGuestComments,
+            RewardHeartbeat = site.RewardHeartbeat,
+            RewardMoment = site.RewardMoment,
+            RewardAnniversary = site.RewardAnniversary,
+            ShopPriceMin = site.ShopPriceMin,
+            ShopPriceMax = site.ShopPriceMax,
+            ShopListingDays = site.ShopListingDays,
+            ShopValidDays = site.ShopValidDays
         };
     }
 
@@ -102,6 +122,21 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         site.CommentsRequireMail = Input.CommentsRequireMail;
         site.AllowGuestComments = Input.AllowGuestComments;
 
+        if (CanEditHeartRules) {
+            if (HeartRuleError() is { } problem) {
+                Error = problem;
+                return Page();
+            }
+
+            site.RewardHeartbeat = Input.RewardHeartbeat;
+            site.RewardMoment = Input.RewardMoment;
+            site.RewardAnniversary = Input.RewardAnniversary;
+            site.ShopPriceMin = Input.ShopPriceMin;
+            site.ShopPriceMax = Input.ShopPriceMax;
+            site.ShopListingDays = Input.ShopListingDays;
+            site.ShopValidDays = Input.ShopValidDays;
+        }
+
         // 情话在后台按「一行一句」编辑，存进去还是 JSON 数组
         var letters = (Input.LoveLetters ?? string.Empty)
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -120,6 +155,31 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         TempData["Flash"] = "设置已经保存。";
         return RedirectToPage();
     }
+
+    /// <summary>
+    /// 心意规则的范围检查，都合规就返回 null
+    /// </summary>
+    private string? HeartRuleError() {
+        if (!InRange(Input.RewardHeartbeat, 0, 100)
+            || !InRange(Input.RewardMoment, 0, 100)
+            || !InRange(Input.RewardAnniversary, 0, 100)) {
+            return "三档心意奖励都要在 0 到 100 之间。";
+        }
+
+        if (!InRange(Input.ShopPriceMin, 1, 99999) || !InRange(Input.ShopPriceMax, 1, 99999)) {
+            return "心愿的价格要在 1 到 99999 之间。";
+        }
+
+        if (Input.ShopPriceMax < Input.ShopPriceMin) {
+            return "心愿的最高价不能比最低价还低。";
+        }
+
+        return InRange(Input.ShopListingDays, 1, 3650) && InRange(Input.ShopValidDays, 1, 3650)
+            ? null
+            : "上架天数和过期天数都要在 1 到 3650 之间。";
+    }
+
+    private static bool InRange(int value, int low, int high) => value >= low && value <= high;
 
     private void SaveRuntimeOptions(OurStoryConfiguration next) {
         next.Site.TimeZone = string.IsNullOrWhiteSpace(Input.TimeZone) ? "Asia/Shanghai" : Input.TimeZone.Trim();
@@ -288,5 +348,44 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         /// 获取或设置是否允许游客发表评论
         /// </summary>
         public bool AllowGuestComments { get; set; } = true;
+
+        #region boy 特有
+
+        /// <summary>
+        /// 获取或设置当天第一次想你给多少心意
+        /// </summary>
+        public int RewardHeartbeat { get; set; } = 2;
+
+        /// <summary>
+        /// 获取或设置当天第一次发布点点滴滴给多少心意
+        /// </summary>
+        public int RewardMoment { get; set; } = 8;
+
+        /// <summary>
+        /// 获取或设置当天第一次发布纪念日给多少心意
+        /// </summary>
+        public int RewardAnniversary { get; set; } = 12;
+
+        /// <summary>
+        /// 获取或设置心愿的最低标价
+        /// </summary>
+        public int ShopPriceMin { get; set; } = 5;
+
+        /// <summary>
+        /// 获取或设置心愿的最高标价
+        /// </summary>
+        public int ShopPriceMax { get; set; } = 500;
+
+        /// <summary>
+        /// 获取或设置默认的上架天数
+        /// </summary>
+        public int ShopListingDays { get; set; } = 30;
+
+        /// <summary>
+        /// 获取或设置默认的兑换后有效天数
+        /// </summary>
+        public int ShopValidDays { get; set; } = 30;
+
+        #endregion
     }
 }

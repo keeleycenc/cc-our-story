@@ -8,11 +8,16 @@ using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Heartbeats;
 
-internal class HeartbeatService(OurStoryDbContext db, ISettingsService settings, SiteClock clock) : IHeartbeatService {
+internal class HeartbeatService(
+    OurStoryDbContext db,
+    ISettingsService settings,
+    IHeartPointService heartPoints,
+    SiteClock clock) : IHeartbeatService {
     private const int BatchLimit = 20;  // 一次请求最多接受多少个点击
     private const int MaxAgeMs = 120_000;   // 客户端说「多少毫秒之前点的」，最多认到这个值，再早的按这个算
     private const int DayWindow = 3000; // 算连续天数时最多回溯多少天
@@ -104,12 +109,23 @@ internal class HeartbeatService(OurStoryDbContext db, ISettingsService settings,
             }));
 
             _ = await db.SaveChangesAsync(cancellationToken);
+            await AwardAsync(who, accepted, cancellationToken);
         }
 
         return new HeartbeatRecordResult(accepted.Count, accepted.Count < times.Count);
     }
 
     #region 私有方法
+
+    private async Task AwardAsync(VisitorIdentity who, List<DateTimeOffset> accepted, CancellationToken cancellationToken) {
+        if (who.UserId is not { } userId || who.Role is not (UserRole.Boy or UserRole.Girl)) {
+            return;
+        }
+
+        foreach (var day in accepted.Select(clock.DayKey).Distinct(StringComparer.Ordinal)) {
+            _ = await heartPoints.AwardDailyAsync(userId, HeartPointReason.DailyHeartbeat, day, cancellationToken);
+        }
+    }
 
     private async Task<Dictionary<string, int>> TotalsAsync(CancellationToken cancellationToken) {
         var rows = await db.Heartbeats

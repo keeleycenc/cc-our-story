@@ -1,0 +1,287 @@
+@page "/shop/warehouse"
+@model OurStory.Web.Pages.Shop.WarehouseModel
+@{
+    ViewData["Title"] = "心愿仓库";
+    ViewData["ActiveNav"] = "shop";
+    ViewData["Bundle"] = "shop";
+
+    var pager = new PaginationModel(Model.Ledger.Page, Model.Ledger.TotalPages, "/shop/warehouse");
+    var usable = Model.Holdings.Count(item => item.Status == ShopItemStatus.Redeemed);
+    var waiting = Model.Promises.Count(item => item.Status == ShopItemStatus.PendingConfirm);
+}
+
+<main class="content-page shop-page" id="main">
+    <header class="page-heading shop-heading">
+        <p>MY WAREHOUSE</p>
+        <h1>心愿仓库</h1>
+        <span>收藏已经兑换的心愿，也别错过它们的有效期。</span>
+
+        <div class="shop-stats">
+            <span class="shop-balance">
+                @Icon("coins")我的心意 <strong>@Model.Balance</strong>
+            </span>
+            <span>
+                @Icon("ticket")@usable 件待使用
+            </span>
+
+            @if (waiting > 0)
+            {
+                <span class="is-urgent">
+                    @Icon("hourglass")@waiting 件待你确认
+                </span>
+            }
+        </div>
+
+        <div class="shop-links">
+            <a class="shop-link" href="/shop">
+                @Icon("store")去商城看看
+            </a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.Flash))
+    {
+        <p class="shop-flash">
+            @Icon("circle-check")@Model.Flash
+        </p>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="shop-flash is-bad">
+            @Icon("circle-alert")@Model.Error
+        </p>
+    }
+
+    @* 对方已发起使用的心愿优先展示，方便及时确认。 *@
+    @if (waiting > 0)
+    {
+        <section class="shop-section" aria-labelledby="promise-title">
+            <header class="shop-section-head">
+                <div>
+                    <p>TO DELIVER</p>
+                    <h2 id="promise-title">待你完成</h2>
+                </div>
+                <span>完成后记得回来确认</span>
+            </header>
+
+            <div class="shop-list">
+                @foreach (var item in Model.Promises.Where(value => value.Status == ShopItemStatus.PendingConfirm))
+                {
+                    <article class="shop-row is-pending">
+                        <span class="shop-row-mark">
+                            @Icon("hourglass")
+                        </span>
+
+                        <div class="shop-row-body">
+                            <div class="shop-row-title">
+                                <strong>@item.Title</strong>
+                                <span class="shop-status is-pending">
+                                    @Icon("hourglass")待确认
+                                </span>
+                            </div>
+
+                            <p class="shop-desc">@item.Description</p>
+
+                            <div class="shop-meta">
+                                <span>
+                                    @Icon("user-round")@item.BuyerName 已发起使用
+                                </span>
+
+                                @if (item.DaysLeft is { } left)
+                                {
+                                    <span class="@(item.IsExpiringSoon ? "is-urgent" : null)">
+                                        @Icon("clock")还剩 @left 天
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="shop-row-actions">
+                            <form method="post"
+                                  asp-page-handler="Confirm"
+                                  data-confirm-title="确认完成"
+                                  data-confirm="确认「@item.Title」已经完成？确认后将视为已使用。"
+                                  data-confirm-ok="确认完成">
+                                <input type="hidden" name="id" value="@item.Id">
+
+                                <button class="shop-buy" type="submit">
+                                    @Icon("circle-check")确认完成
+                                </button>
+                            </form>
+
+                            <form method="post" asp-page-handler="Cancel">
+                                <input type="hidden" name="id" value="@item.Id">
+
+                                <button class="shop-ghost" type="submit">
+                                    @Icon("undo-2")暂未完成
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    <section class="shop-section" aria-labelledby="holding-title">
+        <header class="shop-section-head">
+            <div>
+                <p>MY WISHES</p>
+                <h2 id="holding-title">我的心愿</h2>
+            </div>
+            <span>共 @Model.Holdings.Count 件</span>
+        </header>
+
+        @if (Model.Holdings.Count > 0)
+        {
+            <div class="shop-list">
+                @foreach (var item in Model.Holdings)
+                {
+                    <article class="shop-row@(item.IsFinal ? " is-done" : "")">
+                        <span class="shop-row-mark">
+                            @Icon(ShopDisplay.StatusIcon(item.Status))
+                        </span>
+
+                        <div class="shop-row-body">
+                            <div class="shop-row-title">
+                                <strong>@item.Title</strong>
+                                <span class="shop-status is-@ShopDisplay.StatusTone(item.Status)">
+                                    @ShopDisplay.StatusName(item.Status)
+                                </span>
+                            </div>
+
+                            <p class="shop-desc">@item.Description</p>
+
+                            <div class="shop-meta">
+                                <span>
+                                    @Icon("user-round")来自 @item.SellerName
+                                </span>
+
+                                <span>
+                                    @Icon("hand-heart")@ShopDisplay.RedeemName(item.RedeemMode)
+                                </span>
+
+                                @if (item.UsedAt is { } used)
+                                {
+                                    <span>
+                                        @Icon("circle-check")@used.ToString("yyyy-MM-dd") 已使用
+                                    </span>
+                                }
+                                else if (item.DaysLeft is { } left)
+                                {
+                                    <span class="@(item.IsExpiringSoon ? "is-urgent" : null)">
+                                        @Icon("clock")还剩 @left 天
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="shop-row-actions">
+                            @if (item.Status == ShopItemStatus.Redeemed)
+                            {
+                                <form method="post"
+                                      asp-page-handler="Use"
+                                      data-confirm-title="@(item.RedeemMode == ShopRedeemMode.Instant ? "确认使用" : "发起使用")"
+                                      data-confirm="@(item.RedeemMode == ShopRedeemMode.Instant
+                                                                              ? $"确认使用「{item.Title}」？确认后即视为已使用。"
+                                                                              : $"确认使用「{item.Title}」？发起后需等待对方确认完成。")"
+                                      data-confirm-ok="@(item.RedeemMode == ShopRedeemMode.Instant ? "确认使用" : "发起使用")">
+                                    <input type="hidden" name="id" value="@item.Id">
+
+                                    <button class="shop-buy" type="submit">
+                                        @Icon("hand-heart")@(item.RedeemMode == ShopRedeemMode.Instant ? "使用" : "发起使用")
+                                    </button>
+                                </form>
+                            }
+                            else if (item.Status == ShopItemStatus.PendingConfirm)
+                            {
+                                <span class="shop-buy is-off">
+                                    等待对方确认
+                                </span>
+
+                                <form method="post" asp-page-handler="Cancel">
+                                    <input type="hidden" name="id" value="@item.Id">
+
+                                    <button class="shop-ghost" type="submit">
+                                        @Icon("undo-2")撤回
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="shop-buy is-off">
+                                    @ShopDisplay.StatusName(item.Status)
+                                </span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="shop-empty is-inline">
+                @Icon("package")
+                <h2>心愿仓库还是空的</h2>
+                <p>去看看对方准备了什么心愿，也许正好有你喜欢的。</p>
+            </div>
+        }
+    </section>
+
+    @* 心意余额由账单记录汇总得出，这里展示完整的变动明细。 *@
+    <section class="shop-section" aria-labelledby="ledger-title">
+        <header class="shop-section-head">
+            <div>
+                <p>HEART LEDGER</p>
+                <h2 id="ledger-title">心意记录</h2>
+            </div>
+            <span>共 @Model.Ledger.TotalCount 条</span>
+        </header>
+
+        @if (Model.Ledger.Items.Count > 0)
+        {
+            <ul class="ledger-list">
+                @foreach (var record in Model.Ledger.Items)
+                {
+                    <li class="ledger-item@(record.ChangeAmount < 0 ? " is-spend" : "")">
+                        <span class="ledger-mark">
+                            @Icon(ShopDisplay.ReasonIcon(record.Reason))
+                        </span>
+
+                        <span class="ledger-body">
+                            <strong>@record.Note</strong>
+
+                            <span class="ledger-meta">
+                                <em>@ShopDisplay.ReasonName(record.Reason)</em>
+
+                                <time datetime="@record.CreatedAt.ToString("yyyy-MM-dd")">
+                                    @record.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                                </time>
+
+                                @if (record.IsBackfill)
+                                {
+                                    <em class="ledger-backfill">补记</em>
+                                }
+                            </span>
+                        </span>
+
+                        <span class="ledger-amount">
+                            @(record.ChangeAmount > 0 ? "+" : "")@record.ChangeAmount
+                        </span>
+                    </li>
+                }
+            </ul>
+
+            <partial name="_Pagination" model="pager" />
+        }
+        else
+        {
+            <div class="shop-empty is-inline">
+                @Icon("receipt")
+                <h2>心意还在慢慢积攒</h2>
+                <p>记录想念、写下点滴、记住纪念日，都会为你们攒下一点心意。</p>
+            </div>
+        }
+    </section>
+</main>

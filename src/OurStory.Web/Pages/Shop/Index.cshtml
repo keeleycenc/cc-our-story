@@ -1,0 +1,191 @@
+@page "/shop"
+@model OurStory.Web.Pages.Shop.IndexModel
+@inject CoverThumbnails Thumbs
+@{
+    ViewData["Title"] = "心意商城";
+    ViewData["ActiveNav"] = "shop";
+    ViewData["Bundle"] = "shop";
+
+    var pager = new PaginationModel(Model.Items.Page, Model.Items.TotalPages, Model.FilterUrl(Model.Seller));
+    var sellers = new (UserRole? Value, string Label)[]
+    {
+        (null, "全部"),
+        (UserRole.Boy, Model.Site.BoyName),
+        (UserRole.Girl, Model.Site.GirlName)
+    };
+}
+
+<main class="content-page shop-page" id="main">
+    <header class="page-heading shop-heading">
+        <p>HEART SHOP</p>
+        <h1>心意商城</h1>
+        <span>把想为彼此做的事，变成可以兑换的小心愿。</span>
+
+        <div class="shop-stats">
+            <span>
+                @Icon("store")@Model.OnSaleCount 件心愿上架中
+            </span>
+
+            @if (User.IsOwner())
+            {
+                <span class="shop-balance">
+                    @Icon("coins")我的心意 <strong>@Model.Balance</strong>
+                </span>
+            }
+        </div>
+
+        @if (User.IsOwner())
+        {
+            <div class="shop-links">
+                <a class="shop-link" href="/shop/warehouse">
+                    @Icon("package")心愿仓库
+                </a>
+                <a class="shop-link" href="/admin/shop/publish">
+                    @Icon("plus")发布心愿
+                </a>
+            </div>
+        }
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.Flash))
+    {
+        <p class="shop-flash">
+            @Icon("circle-check")@Model.Flash
+        </p>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="shop-flash is-bad">
+            @Icon("circle-alert")@Model.Error
+        </p>
+    }
+
+    <div class="shop-filter" aria-label="按发布者筛选">
+        @foreach (var (value, label) in sellers)
+        {
+            <a class="@(Model.Seller == value ? "is-active" : null)"
+               href="@Model.FilterUrl(value)">
+                @label
+            </a>
+        }
+    </div>
+
+    @if (Model.Items.Items.Count > 0)
+    {
+        <div class="shop-grid">
+            @foreach (var item in Model.Items.Items)
+            {
+                var buyable = Model.CanBuy(item);
+
+                <article class="shop-card@(item.IsFinal ? " is-done" : "")">
+                    @* 未设置封面时，根据心愿 ID 使用固定的默认样式。 *@
+                    <div class="shop-cover tone-@ShopDisplay.CoverTone(item.Id)" @(item.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
+                        @if (item.CoverUrl.Length > 0)
+                        {
+                            <img src="@Thumbs.For(item.CoverUrl)"
+                                 alt="@item.Title"
+                                 loading="lazy"
+                                 decoding="async">
+                        }
+                        else
+                        {
+                            @Icon("gift", "shop-cover-icon")
+                        }
+
+                        <span class="shop-status is-@ShopDisplay.StatusTone(item.Status)">
+                            @Icon(ShopDisplay.StatusIcon(item.Status))@ShopDisplay.StatusName(item.Status)
+                        </span>
+
+                        @if (item.IsPrivate)
+                        {
+                            <span class="shop-private">
+                                @Icon("lock")仅双方可见
+                            </span>
+                        }
+                    </div>
+
+                    <div class="shop-body">
+                        <h2>@item.Title</h2>
+
+                        <p class="shop-desc">
+                            @(item.Description.Length > 0
+                                ? item.Description
+                                : "这份心愿没有附加说明。")
+                        </p>
+
+                        <div class="shop-meta">
+                            <span>
+                                @Icon("user-round")@item.SellerName 发布
+                            </span>
+
+                            <span>
+                                @Icon("hand-heart")@ShopDisplay.RedeemName(item.RedeemMode)
+                            </span>
+
+                            @if (item.DaysLeft is { } left && item.IsOnSale)
+                            {
+                                <span class="@(item.IsExpiringSoon ? "is-urgent" : null)">
+                                    @Icon("clock")还剩 @left 天
+                                </span>
+                            }
+                            else if (item.BuyerName is not null)
+                            {
+                                <span>
+                                    @Icon("ticket")@item.BuyerName 已兑换
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="shop-foot">
+                        <span class="shop-price">
+                            @Icon("coins")<strong>@item.Price</strong> 心意
+                        </span>
+
+                        @if (buyable)
+                        {
+                            <form method="post"
+                                  asp-page-handler="Buy"
+                                  data-confirm-title="确认兑换"
+                                  data-confirm="确认用 @item.Price 心意兑换「@item.Title」？兑换后请在 @(item.DaysLeft ?? 0) 天内使用，已使用的心意不会返还。"
+                                  data-confirm-ok="确认兑换">
+                                <input type="hidden" name="id" value="@item.Id">
+                                <input type="hidden"
+                                       name="seller"
+                                       value="@(Model.Seller?.ToString().ToLowerInvariant())">
+
+                                <button class="shop-buy" type="submit">
+                                    @Icon("hand-heart")兑换
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="shop-buy is-off">
+                                @Model.BuyHint(item)
+                            </span>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+
+        <partial name="_Pagination" model="pager" />
+    }
+    else
+    {
+        <section class="shop-empty">
+            @Icon("store")
+            <h2>这里还没有心愿</h2>
+            <p>把想为对方做的事写成心愿，发布后就可以用心意兑换。</p>
+
+            @if (User.IsOwner())
+            {
+                <a class="shop-link" href="/admin/shop/publish">
+                    @Icon("plus")发布第一个心愿
+                </a>
+            }
+        </section>
+    }
+</main>

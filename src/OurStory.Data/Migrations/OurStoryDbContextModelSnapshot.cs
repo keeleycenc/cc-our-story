@@ -123,6 +123,47 @@ namespace OurStory.Data.Migrations
                     b.ToTable("comments", (string)null);
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.HeartPointEntry", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChangeAmount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsBackfill")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId", "SourceKey")
+                        .IsUnique();
+
+                    b.ToTable("heart_point_entries", (string)null);
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.Heartbeat", b =>
                 {
                     b.Property<long>("Id")
@@ -254,6 +295,129 @@ namespace OurStory.Data.Migrations
                     b.ToTable("settings", (string)null);
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.ShopItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("BuyerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CoverUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ExpiresAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ListedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ListingDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ListingExpiresAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PresetId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("PurchasedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RedeemMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("RedeemRequestedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UsedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ValidDays")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("PresetId");
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("Status", "IsPrivate");
+
+                    b.ToTable("shop_items", (string)null);
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.ShopPreset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CoverUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RedeemMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive", "SortOrder");
+
+                    b.ToTable("shop_presets", (string)null);
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -326,6 +490,17 @@ namespace OurStory.Data.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.HeartPointEntry", b =>
+                {
+                    b.HasOne("OurStory.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.Heartbeat", b =>
                 {
                     b.HasOne("OurStory.Core.Entities.User", "User")
@@ -345,6 +520,31 @@ namespace OurStory.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.ShopItem", b =>
+                {
+                    b.HasOne("OurStory.Core.Entities.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("OurStory.Core.Entities.ShopPreset", "Preset")
+                        .WithMany()
+                        .HasForeignKey("PresetId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OurStory.Core.Entities.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Preset");
+
+                    b.Navigation("Seller");
                 });
 
             modelBuilder.Entity("OurStory.Core.Entities.Comment", b =>

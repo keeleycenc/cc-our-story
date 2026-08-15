@@ -46,6 +46,24 @@
     </div>
 </div>
 
+@* 余额是流水加出来的，不是某一列上的数字。一行两格，左右各看各的 *@
+<div class="admin-panel">
+    <div class="admin-toolbar">
+        <h2 style="margin:0">@Icon("coins") 彼此的心意</h2>
+        <a class="btn btn-small" href="/admin/shop">@Icon("store")心意商城</a>
+    </div>
+    <div class="heart-balance-grid">
+        @foreach (var balance in Model.Balances)
+        {
+            <div class="stat-card">
+                <span>@Icon("coins")@balance.Name 的心意</span>
+                <strong>@balance.Balance</strong>
+                <small>累计获得 @balance.Earned · 已兑换 @balance.Spent</small>
+            </div>
+        }
+    </div>
+</div>
+
 <div class="admin-panel">
     <div class="admin-toolbar">
         <h2 style="margin:0">@Icon("camera") 最近记录</h2>

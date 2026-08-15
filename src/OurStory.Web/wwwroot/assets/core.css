@@ -310,14 +310,19 @@ img { max-width: 100%; display: block }
     .to-top { right: 14px; bottom: 14px }
 }
 
+@media (max-width: 560px) {
+    .nav-inner { padding: 0 10px; gap: 6px }
+    .site-nav .logo { gap: 0; font-size: 0 }
+    .site-nav .logo > span { font-size: 12px }
+    .site-nav nav { padding: 4px; gap: 2px }
+    .site-nav nav a { padding: 8px 10px }
+    .nav-actions { gap: 6px }
+}
+
 @media (max-width: 520px) {
     .modal-card { padding: 38px 24px 28px }
 }
 
-/* 封面加载：点点滴滴、纪念日和首页的封面共用这一套。
-   图没到之前先摆一块骨架屏把位置占住，到了再淡入 ——
-   免得半张图先画上去、下一帧又被换掉，滚动时那一下最容易看出卡。
-   整套都挂在 .has-js 下，没有脚本时图片直接显示 */
 :root.has-js [data-cover] { position: relative; background: var(--surface-muted) }
 
 :root.has-js [data-cover]:before {

@@ -8,6 +8,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
@@ -24,6 +25,7 @@ public class IndexModel(
     IAnniversaryService anniversaries,
     ICommentService comments,
     IHeartbeatService heartbeats,
+    IHeartPointService heartPoints,
     VisitorIdentityAccessor visitors,
     SiteClock clock) : PageModel {
     /// <summary>
@@ -62,6 +64,11 @@ public class IndexModel(
     public HeartbeatSummary Heartbeat { get; private set; } = new();
 
     /// <summary>
+    /// 获取或设置两个人的心意余额
+    /// </summary>
+    public IReadOnlyList<HeartPointBalance> Balances { get; private set; } = [];
+
+    /// <summary>
     /// 获取或设置 Recent
     /// </summary>
     public IReadOnlyList<Moment> Recent { get; private set; } = [];
@@ -96,6 +103,7 @@ public class IndexModel(
         Upcoming = [.. allAnniversaries.Where(item => !item.IsArchived).Take(UpcomingSize)];
 
         Heartbeat = await heartbeats.GetSummaryAsync(await visitors.GetAsync(cancellationToken), cancellationToken);
+        Balances = await heartPoints.GetBalancesAsync(cancellationToken);
         LoveDays = LoveTimeline.DayNumber(clock.LocalNow, Site.LoveStartedAt);
     }
 

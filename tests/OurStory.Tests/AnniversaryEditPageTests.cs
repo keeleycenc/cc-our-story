@@ -18,7 +18,6 @@ namespace OurStory.Tests;
 /// 纪念日后台保存流程测试
 /// </summary>
 public class AnniversaryEditPageTests {
-    /// <summary>创建完成后回到列表，并在列表页提示结果。</summary>
     [Fact]
     public async Task 新建保存后返回列表() {
         await using var db = TestDoubles.Database(nameof(新建保存后返回列表));
@@ -32,7 +31,6 @@ public class AnniversaryEditPageTests {
         Assert.Equal("纪念日已创建。", page.TempData["Flash"]);
     }
 
-    /// <summary>编辑完成后同样回到列表，避免被误认为仍在新建。</summary>
     [Fact]
     public async Task 更新保存后返回列表() {
         await using var db = TestDoubles.Database(nameof(更新保存后返回列表));
@@ -65,8 +63,8 @@ public class AnniversaryEditPageTests {
         return new AnniversaryEditPage(service) { PageContext = pageContext };
     }
 
-    private static AnniversaryService Service(OurStory.Data.OurStoryDbContext db) =>
-        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), new SettingsStub());
+    private static AnniversaryService Service(Data.OurStoryDbContext db) =>
+        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), new SettingsStub());
 
     private static AnniversaryEditPage.InputModel Input(string title) => new() {
         Title = title,

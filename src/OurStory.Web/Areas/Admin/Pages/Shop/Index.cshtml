@@ -1,0 +1,324 @@
+@page "/admin/shop"
+@model OurStory.Web.Areas.Admin.Pages.Shop.IndexModel
+@{
+    ViewData["ActiveMenu"] = "shop";
+    ViewData["Eyebrow"] = "HEART SHOP";
+    ViewData["Title"] = "心意商城";
+
+    var pager = new PaginationModel(
+        Model.Items.Page,
+        Model.Items.TotalPages,
+        Model.FilterUrl(Model.Seller, Model.Status));
+
+    var sellers = new (UserRole? Value, string Label)[]
+    {
+        (null, "全部"),
+        (UserRole.Boy, Model.Balances.FirstOrDefault(item => item.Role == UserRole.Boy)?.Name ?? "男主"),
+        (UserRole.Girl, Model.Balances.FirstOrDefault(item => item.Role == UserRole.Girl)?.Name ?? "女主")
+    };
+
+    var states = new (ShopItemStatus? Value, string Label)[]
+    {
+        (null, "全部"),
+        (ShopItemStatus.Listed, "上架中"),
+        (ShopItemStatus.Redeemed, "待使用"),
+        (ShopItemStatus.PendingConfirm, "待确认"),
+        (ShopItemStatus.Used, "已使用")
+    };
+}
+
+<div class="stat-grid">
+    @foreach (var balance in Model.Balances)
+    {
+        <div class="stat-card">
+            <span>@Icon("coins")@balance.Name 的心意</span>
+            <strong>@balance.Balance</strong>
+        </div>
+    }
+
+    <div class="stat-card">
+        <span>@Icon("store")上架中的心愿</span>
+        <strong>
+            @Model.Items.Items.Count(item => item.IsOnSale)
+            <span style="font-size:12px;color:var(--faint)">
+                / @Model.Items.TotalCount
+            </span>
+        </strong>
+    </div>
+</div>
+
+<div class="admin-panel">
+    <div class="admin-toolbar">
+        <h2 style="margin:0">@Icon("tag") 心愿预设</h2>
+
+        <a class="btn" href="/admin/shop/publish">
+            @Icon("plus")发布心愿
+        </a>
+    </div>
+
+    <p class="admin-panel-hint">
+        可以把常用的心愿保存为预设，发布时直接带入名称、描述、封面和使用方式。
+        预设由双方共用，可随时调整、停用或删除，不会影响已经发布的心愿。
+    </p>
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="admin-error">
+            @Icon("circle-alert")@Model.Error
+        </p>
+    }
+
+    <details class="admin-details">
+        <summary>@Icon("plus")新建预设</summary>
+
+        <form method="post" asp-page-handler="Preset">
+            <div class="field-grid">
+                <label class="field">
+                    <span>心愿名称</span>
+                    <input asp-for="Preset.Title"
+                           type="text"
+                           maxlength="60"
+                           required
+                           placeholder="例如：今晚你不用洗碗">
+                </label>
+
+                <label class="field">
+                    <span>默认使用方式</span>
+                    <select asp-for="Preset.RedeemMode">
+                        <option value="@ShopRedeemMode.MutualConfirm">双方确认</option>
+                        <option value="@ShopRedeemMode.Instant">直接使用</option>
+                    </select>
+                    <small>使用预设发布时会自动带入，发布前仍可调整。</small>
+                </label>
+
+                <label class="field">
+                    <span>排序</span>
+                    <input asp-for="Preset.SortOrder"
+                           type="number"
+                           min="0"
+                           max="9999">
+                    <small>数值越小，在预设列表中的位置越靠前。</small>
+                </label>
+
+                <label class="field">
+                    <span>封面图</span>
+                    <input asp-for="Preset.CoverUrl"
+                           type="text"
+                           maxlength="500"
+                           placeholder="可留空，发布时再设置">
+                </label>
+            </div>
+
+            <label class="field">
+                <span>心愿描述</span>
+                <textarea asp-for="Preset.Description"
+                          rows="3"
+                          maxlength="300"
+                          placeholder="写下这个心愿包含什么，或者留一句想说的话"></textarea>
+            </label>
+
+            <div class="form-actions">
+                <button class="btn" type="submit">
+                    @Icon("plus")创建预设
+                </button>
+            </div>
+        </form>
+    </details>
+
+    @if (Model.Presets.Count > 0)
+    {
+        <div class="admin-moment-list admin-preset-list">
+            @foreach (var preset in Model.Presets)
+            {
+                <article class="admin-moment-item@(preset.IsActive ? null : " is-off")">
+                    <div class="admin-moment-summary">
+                        <div class="admin-moment-title">
+                            <span class="admin-preset-name">
+                                @preset.Title
+                            </span>
+
+                            @if (!preset.IsActive)
+                            {
+                                <span class="tag is-hidden">
+                                    已停用
+                                </span>
+                            }
+                        </div>
+
+                        <div class="admin-moment-meta">
+                            <span>
+                                @Icon("hand-heart")@ShopDisplay.RedeemName(preset.RedeemMode)
+                            </span>
+
+                            <span>
+                                @Icon("tag")排序 @preset.SortOrder
+                            </span>
+
+                            @if (!string.IsNullOrEmpty(preset.CoverUrl))
+                            {
+                                <span>
+                                    @Icon("image")已设置封面
+                                </span>
+                            }
+
+                            @if (preset.Description.Length > 0)
+                            {
+                                <span class="admin-preset-desc">
+                                    @preset.Description
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="admin-moment-actions"
+                         aria-label="@preset.Title 的操作">
+
+                        <form method="post" asp-page-handler="TogglePreset">
+                            <input type="hidden"
+                                   name="id"
+                                   value="@preset.Id">
+
+                            <input type="hidden"
+                                   name="active"
+                                   value="@((!preset.IsActive).ToString().ToLowerInvariant())">
+
+                            <button class="btn btn-ghost btn-small"
+                                    type="submit">
+                                @Icon(preset.IsActive ? "eye-off" : "eye")
+                                <span>@(preset.IsActive ? "停用" : "启用")</span>
+                            </button>
+                        </form>
+
+                        <form method="post"
+                              asp-page-handler="DeletePreset"
+                              data-confirm-title="删除预设"
+                              data-confirm="确认删除「@preset.Title」？已经使用该预设发布的心愿不会受到影响。"
+                              data-confirm-ok="确认删除">
+                            <input type="hidden"
+                                   name="id"
+                                   value="@preset.Id">
+
+                            <button class="btn btn-danger btn-small"
+                                    type="submit">
+                                @Icon("trash-2")
+                                <span>删除</span>
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="admin-empty">
+            还没有心愿预设，可以在上方创建一个。
+        </p>
+    }
+</div>
+
+<div class="admin-panel">
+    <h2>@Icon("store")已发布的心愿</h2>
+
+    <p class="admin-panel-hint">
+        这里展示所有已发布心愿及当前状态。心愿发布后不可修改、删除或主动下架。
+    </p>
+
+    <div class="admin-shop-toolbar">
+        <div class="admin-filter" aria-label="按发布者筛选">
+            <span>发布者</span>
+
+            @foreach (var (value, label) in sellers)
+            {
+                <a class="@(Model.Seller == value ? "is-active" : null)"
+                   href="@Model.FilterUrl(value, Model.Status)">
+                    @label
+                </a>
+            }
+        </div>
+
+        <div class="admin-filter" aria-label="按状态筛选">
+            <span>状态</span>
+
+            @foreach (var (value, label) in states)
+            {
+                <a class="@(Model.Status == value ? "is-active" : null)"
+                   href="@Model.FilterUrl(Model.Seller, value)">
+                    @label
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (Model.Items.Items.Count > 0)
+    {
+        <div class="admin-moment-list">
+            @foreach (var item in Model.Items.Items)
+            {
+                <article class="admin-moment-item">
+                    <div class="admin-moment-summary">
+                        <div class="admin-moment-title">
+                            <span class="admin-preset-name">
+                                @item.Title
+                            </span>
+
+                            <span class="tag is-@ShopDisplay.StatusTone(item.Status)">
+                                @Icon(ShopDisplay.StatusIcon(item.Status))
+                                @ShopDisplay.StatusName(item.Status)
+                            </span>
+
+                            @if (item.IsPrivate)
+                            {
+                                <span class="tag is-locked">
+                                    @Icon("lock")仅双方可见
+                                </span>
+                            }
+                        </div>
+
+                        <div class="admin-moment-meta">
+                            <span>
+                                @Icon("coins")@item.Price 心意
+                            </span>
+
+                            <span>
+                                @Icon("user-round")@item.SellerName 发布
+                            </span>
+
+                            @if (item.BuyerName is not null)
+                            {
+                                <span>
+                                    @Icon("hand-heart")@item.BuyerName 已兑换
+                                </span>
+                            }
+
+                            <span>
+                                @Icon("check")@ShopDisplay.RedeemName(item.RedeemMode)
+                            </span>
+
+                            <span>
+                                @Icon("calendar-days")@item.ListedAt.ToString("yyyy-MM-dd") 发布
+                            </span>
+
+                            @if (item.DaysLeft is { } left)
+                            {
+                                <span>
+                                    @Icon("clock")还剩 @left 天
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <partial name="_Pagination" model="pager" />
+    }
+    else
+    {
+        <div class="admin-empty-state">
+            @Icon("store")
+            <h2>还没有发布心愿</h2>
+            <p>把想为对方做的事写成一个心愿，发布后就可以用心意兑换。</p>
+        </div>
+    }
+</div>

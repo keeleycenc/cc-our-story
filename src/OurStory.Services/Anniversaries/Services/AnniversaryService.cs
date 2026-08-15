@@ -3,11 +3,13 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.EntityFrameworkCore;
+using OurStory.Core;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Text;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
 
@@ -17,6 +19,7 @@ internal class AnniversaryService(
     OurStoryDbContext db,
     SiteClock clock,
     IMarkdownRenderer markdown,
+    IHeartPointService heartPoints,
     ISettingsService settings) : IAnniversaryService {
     public async Task<IReadOnlyList<AnniversaryOccurrence>> GetForViewerAsync(bool isOwner, CancellationToken cancellationToken = default) {
         var query = isOwner ? db.Anniversaries : db.Anniversaries.Where(item => !item.IsPrivate);
@@ -56,6 +59,11 @@ internal class AnniversaryService(
         Copy(model, item);
         _ = db.Anniversaries.Add(item);
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        if (authorId is { } id) {
+            _ = await heartPoints.AwardDailyAsync(id, HeartPointReason.AnniversaryPublished, clock.TodayKey, cancellationToken);
+        }
+
         return item;
     }
 

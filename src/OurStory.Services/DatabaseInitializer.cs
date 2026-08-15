@@ -7,9 +7,11 @@ using Microsoft.Extensions.Logging;
 using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
+using OurStory.Core.Models;
 using OurStory.Core.Options;
 using OurStory.Data;
 using OurStory.Services.Accounts;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
 using System.Security.Cryptography;
 
@@ -36,10 +38,14 @@ public interface IDatabaseInitializer {
 public class DatabaseInitializer(
     OurStoryDbContext db,
     ISettingsService settings,
+    IHeartPointService heartPoints,
     ActiveConfiguration configuration,
     ILogger<DatabaseInitializer> logger) : IDatabaseInitializer {
     /// <summary>访客指纹用的盐，存在设置表里，重启后统计不会断</summary>
     public const string VisitorSecretKey = "system.visitorSecret";
+
+    /// <summary>自带心愿预设放进去的时间，有值就再也不放第二次</summary>
+    public const string ShopPresetsSeededKey = "shop.presetsSeededAt";
 
     private readonly SiteOptions _options = configuration.Site;
 
@@ -47,7 +53,60 @@ public class DatabaseInitializer(
         await db.Database.MigrateAsync(cancellationToken);
 
         await EnsureVisitorSecretAsync(cancellationToken);
-        return await EnsureAccountsAsync(cancellationToken);
+        var seeded = await EnsureAccountsAsync(cancellationToken);
+
+        await EnsureShopPresetsAsync(cancellationToken);
+        await EnsureHeartPointsAsync(cancellationToken);
+
+        return seeded;
+    }
+
+    private async Task EnsureShopPresetsAsync(CancellationToken cancellationToken) {
+        if (!string.IsNullOrWhiteSpace(await settings.GetRawAsync(ShopPresetsSeededKey, cancellationToken))) {
+            return;
+        }
+
+        await settings.SetRawAsync(
+            ShopPresetsSeededKey,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
+            cancellationToken);
+
+        if (await db.ShopPresets.AnyAsync(cancellationToken)) {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var order = 0;
+
+        foreach (var seed in DefaultShopPresets.All) {
+            _ = db.ShopPresets.Add(new ShopPreset {
+                Title = seed.Title,
+                Description = seed.Description,
+                RedeemMode = seed.RedeemMode,
+                SortOrder = order += 10,
+                IsActive = true,
+                CreatedAt = now
+            });
+        }
+
+        _ = await db.SaveChangesAsync(cancellationToken);
+        if (logger.IsEnabled(LogLevel.Information)) {
+            logger.LogInformation("已初始化 {Count} 个默认心愿预设，可在后台编辑或删除。", DefaultShopPresets.All.Count);
+        }
+    }
+
+    private async Task EnsureHeartPointsAsync(CancellationToken cancellationToken) {
+        var result = await heartPoints.BackfillAsync(cancellationToken);
+        if (result.AlreadyDone || result.Entries == 0) {
+            return;
+        }
+
+        if (logger.IsEnabled(LogLevel.Information)) {
+            logger.LogInformation(
+                "已按历史记录补充记初始心意：{Entries} 条，合计 {Total}。",
+                result.Entries,
+                result.Total);
+        }
     }
 
     private async Task EnsureVisitorSecretAsync(CancellationToken cancellationToken) {

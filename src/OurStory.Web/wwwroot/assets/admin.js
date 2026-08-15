@@ -434,6 +434,68 @@
       if (!result.failure) setTimeout(() => window.location.reload(), 700);
     });
   });
+ 
+  document.querySelectorAll('[data-cover-uploader]').forEach((picker) => {
+    const target = picker.querySelector('[data-cover-target]');
+    const input = picker.querySelector('[data-cover-upload]');
+    const progressHost = picker.querySelector('[data-upload-progress]');
+    const status = picker.querySelector('[data-cover-status]');
+    if (!target || !input) return;
+
+    input.addEventListener('change', async () => {
+      const files = Array.from(input.files || []);
+      if (files.length === 0) return;
+
+      const result = await uploadAll(files.slice(0, 1), progressHost, (url) => {
+        target.value = url;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      if (status) status.textContent = result.failure ? result.summary : '封面已经填好了。';
+      input.value = '';
+    });
+  });
+
+  document.querySelectorAll('[data-slider-field]').forEach((field) => {
+    const slider = field.querySelector('[data-slider]');
+    const output = field.querySelector('[data-slider-value]');
+    if (!slider || !output) return;
+
+    const unit = output.dataset.sliderUnit || '';
+    const show = () => { output.textContent = slider.value + unit; };
+
+    show();
+    slider.addEventListener('input', show);
+  });
+
+  document.querySelectorAll('[data-shop-preset]').forEach((select) => {
+    const form = select.closest('form');
+    if (!form) return;
+
+    const fields = [
+      { node: form.querySelector('[data-shop-title]'), key: 'presetTitle', written: null },
+      { node: form.querySelector('[data-shop-description]'), key: 'presetDescription', written: null },
+      { node: form.querySelector('[data-cover-target]'), key: 'presetCover', written: null }
+    ];
+
+    select.addEventListener('change', () => {
+      const option = select.options[select.selectedIndex];
+      if (!option || !option.value) return;
+
+      fields.forEach((field) => {
+        if (!field.node) return;
+
+        const current = field.node.value.trim();
+        if (current.length > 0 && current !== field.written) return;
+
+        field.written = (option.dataset[field.key] || '').trim();
+        field.node.value = field.written;
+      });
+
+      const redeem = form.querySelector('input[name$="RedeemMode"][value="' + option.dataset.presetRedeem + '"]');
+      if (redeem) redeem.checked = true;
+    });
+  });
 
   /* 点点滴滴和纪念日共用同一套 Markdown、预览和插图行为。 */
   document.querySelectorAll('[data-markdown-composer]').forEach((composer) => {

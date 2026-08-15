@@ -2,11 +2,15 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using OurStory.Core;
 using OurStory.Core.Configuration;
+using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
 
@@ -28,10 +32,70 @@ internal static class TestDoubles {
 
     /// <summary>使用与站点相同的 Markdown 渲染规则。</summary>
     public static IMarkdownRenderer Markdown() => new MarkdownRenderer();
+
+    /// <summary>心意流水不参与断言时给一份空实现，省得每处都拼一套。</summary>
+    public static IHeartPointService NoPoints() => new HeartPointStub();
 }
 
-/// <summary>不碰设置表，站点配置固定给一份。</summary>
+/// <summary>
+/// 一个真的 SQLite 库，只是建在内存里。
+///
+/// 心意和商城要靠唯一索引挡重复发放、靠事务保证扣心意和改状态一起生效，
+/// 还用到了 ExecuteUpdate —— 这三样 InMemory provider 都做不到，
+/// 换成 SQLite 才测得出真实行为
+/// </summary>
+internal sealed class SqliteHarness : IAsyncDisposable {
+    private readonly SqliteConnection _connection;
+
+    private SqliteHarness(SqliteConnection connection, OurStoryDbContext db) {
+        _connection = connection;
+        Db = db;
+    }
+
+    /// <summary>这次测试用的数据库上下文。</summary>
+    public OurStoryDbContext Db { get; }
+
+    /// <summary>建一个空库，表结构照实体映射生成。</summary>
+    /// <param name="createSchema">
+    /// 建好表再返回。要测启动流程的话传 false —— 那条路自己会跑迁移，
+    /// 表已经建好了再跑一遍会撞车
+    /// </param>
+    public static SqliteHarness Create(bool createSchema = true) {
+        // 连接一关内存库就没了，所以这条连接得一直开着
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+
+        var db = new OurStoryDbContext(new DbContextOptionsBuilder<OurStoryDbContext>()
+            .UseSqlite(connection)
+            .Options);
+
+        if (createSchema) {
+            _ = db.Database.EnsureCreated();
+        }
+
+        return new SqliteHarness(connection, db);
+    }
+
+    /// <summary>放两个人进去，返回男主和女主的主键。</summary>
+    public async Task<(int BoyId, int GirlId)> SeedCoupleAsync() {
+        var boy = new User { UserName = "boy", Role = UserRole.Boy, PasswordHash = "test" };
+        var girl = new User { UserName = "girl", Role = UserRole.Girl, PasswordHash = "test" };
+
+        Db.Users.AddRange(boy, girl);
+        _ = await Db.SaveChangesAsync();
+        return (boy.Id, girl.Id);
+    }
+
+    /// <summary>释放数据库上下文与底层连接。</summary>
+    public async ValueTask DisposeAsync() {
+        await Db.DisposeAsync();
+        await _connection.DisposeAsync();
+    }
+}
+
+/// <summary>不碰设置表，站点配置固定给一份；GetRaw / SetRaw 存在内存里。</summary>
 internal sealed class SettingsStub(SiteSettings? settings = null) : ISettingsService {
+    private readonly Dictionary<string, string> _raw = new(StringComparer.Ordinal);
     private readonly SiteSettings _settings = settings ?? new SiteSettings { BoyName = "男主", GirlName = "女主" };
 
     public Task<SiteSettings> GetAsync(CancellationToken cancellationToken = default) =>
@@ -41,8 +105,31 @@ internal sealed class SettingsStub(SiteSettings? settings = null) : ISettingsSer
         Task.CompletedTask;
 
     public Task<string?> GetRawAsync(string key, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(null);
+        Task.FromResult(_raw.TryGetValue(key, out var value) ? value : null);
 
-    public Task SetRawAsync(string key, string value, CancellationToken cancellationToken = default) =>
-        Task.CompletedTask;
+    public Task SetRawAsync(string key, string value, CancellationToken cancellationToken = default) {
+        _raw[key] = value;
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>不记账的心意服务，给那些和心意无关的测试用。</summary>
+internal sealed class HeartPointStub : IHeartPointService {
+    public Task<int> GetBalanceAsync(int userId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(0);
+
+    public Task<IReadOnlyList<HeartPointBalance>> GetBalancesAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<HeartPointBalance>>([]);
+
+    public Task<PagedList<HeartPointRecord>> GetRecordsAsync(int userId, int page, int pageSize, CancellationToken cancellationToken = default) =>
+        Task.FromResult(PagedList<HeartPointRecord>.Empty(pageSize));
+
+    public Task<int> AwardDailyAsync(int userId, HeartPointReason reason, string day, CancellationToken cancellationToken = default) =>
+        Task.FromResult(0);
+
+    public Task<HeartPointBackfillResult> BackfillAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(new HeartPointBackfillResult(false, 0, 0));
+
+    public Task<bool> IsBackfilledAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
 }

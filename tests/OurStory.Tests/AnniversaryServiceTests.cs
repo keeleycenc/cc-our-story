@@ -10,9 +10,8 @@ using Xunit;
 
 namespace OurStory.Tests;
 
-/// <summary>纪念日服务测试。</summary>
+/// <summary>纪念日服务测试</summary>
 public class AnniversaryServiceTests {
-    /// <summary>前台查询过滤隐藏项并按倒计时排序。</summary>
     [Fact]
     public async Task 前台只返回可见纪念日并按下一次日期排序() {
         await using var db = TestDoubles.Database(nameof(前台只返回可见纪念日并按下一次日期排序));
@@ -31,7 +30,6 @@ public class AnniversaryServiceTests {
         Assert.Equal(3, (await service.GetForViewerAsync(true)).Count);
     }
 
-    /// <summary>创建时清理文本空白并持久化选项。</summary>
     [Fact]
     public async Task 创建纪念日会整理输入() {
         await using var db = TestDoubles.Database(nameof(创建纪念日会整理输入));
@@ -52,7 +50,6 @@ public class AnniversaryServiceTests {
         Assert.Equal(1, await db.Anniversaries.CountAsync());
     }
 
-    /// <summary>纪念日故事按 Markdown 保存，并自动使用第一张正文图片作为封面。</summary>
     [Fact]
     public async Task 创建纪念日会渲染正文并提取封面() {
         await using var db = TestDoubles.Database(nameof(创建纪念日会渲染正文并提取封面));
@@ -71,7 +68,6 @@ public class AnniversaryServiceTests {
         Assert.Equal("/uploads/sunset.jpg", created.CoverUrl);
     }
 
-    /// <summary>访客拿不到私密详情，情侣双方可以正常打开。</summary>
     [Fact]
     public async Task 私密纪念日只对情侣双方开放() {
         await using var db = TestDoubles.Database(nameof(私密纪念日只对情侣双方开放));
@@ -84,7 +80,6 @@ public class AnniversaryServiceTests {
         Assert.NotNull(await service.GetOccurrenceAsync(privateItem.Id, true));
     }
 
-    /// <summary>新建纪念日会保留记录人，并使用站点中的情侣称呼展示。</summary>
     [Fact]
     public async Task 纪念日显示实际记录人() {
         await using var db = TestDoubles.Database(nameof(纪念日显示实际记录人));
@@ -112,5 +107,5 @@ public class AnniversaryServiceTests {
     };
 
     private static AnniversaryService Service(OurStory.Data.OurStoryDbContext db) =>
-        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), new SettingsStub());
+        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), new SettingsStub());
 }

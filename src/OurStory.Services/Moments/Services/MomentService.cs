@@ -9,6 +9,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Text;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Moments;
@@ -17,7 +18,8 @@ internal class MomentService(
     OurStoryDbContext db,
     ISettingsService settings,
     IMarkdownRenderer markdown,
-    SiteClock clock) : IMomentService {    
+    IHeartPointService heartPoints,
+    SiteClock clock) : IMomentService {
     public async Task<PagedList<MomentCard>> GetPageAsync(int page, MomentViewer viewer, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
         var pageSize = site.MomentsPageSize;
@@ -156,6 +158,7 @@ internal class MomentService(
         await ApplyAsync(moment, model, cancellationToken);
         _ = db.Moments.Add(moment);
         _ = await db.SaveChangesAsync(cancellationToken);
+        await AwardAsync(moment, cancellationToken);
         return moment;
     }
 
@@ -167,8 +170,15 @@ internal class MomentService(
             return false;
         }
 
+        var wasDraft = moment.Status == MomentStatus.Draft;
+
         await ApplyAsync(moment, model, cancellationToken);
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        if (wasDraft) {
+            await AwardAsync(moment, cancellationToken);
+        }
+
         return true;
     }
 
@@ -189,6 +199,18 @@ internal class MomentService(
     }
 
     #region 私有方法
+
+    private async Task AwardAsync(Moment moment, CancellationToken cancellationToken) {
+        if (moment.Status != MomentStatus.Published) {
+            return;
+        }
+
+        _ = await heartPoints.AwardDailyAsync(
+            moment.AuthorId,
+            HeartPointReason.MomentPublished,
+            clock.TodayKey,
+            cancellationToken);
+    }
 
     private async Task ApplyAsync(Moment moment, MomentEditModel model, CancellationToken cancellationToken) {
         moment.Title = model.Title.Trim();
@@ -252,8 +274,7 @@ internal class MomentService(
             Id = moment.Id,
             Title = moment.Title,
             Slug = moment.Slug,
-            // 上锁的记录连摘要和封面都不能露，否则等于没锁
-            Excerpt = locked ? "这段回忆上了锁，输入密码才能打开。" : moment.Summary ?? string.Empty,
+            Excerpt = locked ? "这段回忆已上锁，输入密码后才能查看" : moment.Summary ?? string.Empty,
             CoverUrl = locked ? string.Empty : moment.CoverUrl ?? string.Empty,
             Mood = Fallback(moment.Mood, "日常"),
             Location = moment.Location ?? string.Empty,
@@ -265,7 +286,6 @@ internal class MomentService(
         };
     }
 
-    /// <summary>页面上的称呼只有站点设置这一个出处，账号自己不再单独存名字。</summary>
     private static string AuthorName(Moment moment, SiteSettings site) =>
         moment.Author is null ? "我们" : site.RoleName(moment.Author.Role);
 

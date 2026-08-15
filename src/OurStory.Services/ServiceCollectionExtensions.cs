@@ -11,9 +11,11 @@ using OurStory.Data;
 using OurStory.Services.Accounts;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
+using OurStory.Services.HeartPoints;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
+using OurStory.Services.Shop;
 using OurStory.Services.Storage;
 
 namespace OurStory.Services;
@@ -68,6 +70,8 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IMomentService, MomentService>();
         _ = services.AddScoped<ICommentService, CommentService>();
         _ = services.AddScoped<IHeartbeatService, HeartbeatService>();
+        _ = services.AddScoped<IHeartPointService, HeartPointService>();
+        _ = services.AddScoped<IShopService, ShopService>();
         _ = services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
         _ = services.AddSingleton<IMarkdownRenderer, MarkdownRenderer>();
         _ = services.AddScoped<IAttachmentService, AttachmentService>();

@@ -64,7 +64,7 @@ public record PaginationModel(int Page, int TotalPages, string BasePath) {
     /// </summary>
     /// <param name="page">页码</param>
     /// <returns>该页的地址</returns>
-    public string UrlFor(int page) => page <= 1 ? BasePath : $"{BasePath}?page={page}";
+    public string UrlFor(int page) => page <= 1 ? BasePath : $"{BasePath}{(BasePath.Contains('?', StringComparison.Ordinal) ? '&' : '?')}page={page}";
 
     /// <summary>
     /// 获取当前页周围那一段页码，不含首尾两页

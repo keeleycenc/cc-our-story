@@ -45,6 +45,21 @@ public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : Db
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
 
     /// <summary>
+    /// 执行 HeartPointEntries 操作
+    /// </summary>
+    public DbSet<HeartPointEntry> HeartPointEntries => Set<HeartPointEntry>();
+
+    /// <summary>
+    /// 执行 ShopItems 操作
+    /// </summary>
+    public DbSet<ShopItem> ShopItems => Set<ShopItem>();
+
+    /// <summary>
+    /// 执行 ShopPresets 操作
+    /// </summary>
+    public DbSet<ShopPreset> ShopPresets => Set<ShopPreset>();
+
+    /// <summary>
     /// 执行 OnModelCreating 操作
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder) {

@@ -47,7 +47,14 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
             [SettingKeys.MomentsPageSize] = settings.MomentsPageSize.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.CommentsRequireMail] = settings.CommentsRequireMail ? "1" : "0",
             [SettingKeys.AllowGuestComments] = settings.AllowGuestComments ? "1" : "0",
-            [SettingKeys.HeartbeatDailyLimit] = settings.HeartbeatDailyLimit.ToString(CultureInfo.InvariantCulture)
+            [SettingKeys.HeartbeatDailyLimit] = settings.HeartbeatDailyLimit.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.RewardHeartbeat] = settings.RewardHeartbeat.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.RewardMoment] = settings.RewardMoment.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.RewardAnniversary] = settings.RewardAnniversary.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.ShopPriceMin] = settings.ShopPriceMin.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.ShopPriceMax] = settings.ShopPriceMax.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.ShopListingDays] = settings.ShopListingDays.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.ShopValidDays] = settings.ShopValidDays.ToString(CultureInfo.InvariantCulture)
         };
 
         foreach (var (key, value) in values) {
@@ -117,6 +124,18 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
         settings.HeartbeatDailyLimit = Math.Clamp(Number(raw, SettingKeys.HeartbeatDailyLimit, settings.HeartbeatDailyLimit), 1, 9999);
         settings.CommentsRequireMail = Flag(raw, SettingKeys.CommentsRequireMail, settings.CommentsRequireMail);
         settings.AllowGuestComments = Flag(raw, SettingKeys.AllowGuestComments, settings.AllowGuestComments);
+
+        settings.RewardHeartbeat = Math.Clamp(Number(raw, SettingKeys.RewardHeartbeat, settings.RewardHeartbeat), 0, 100);
+        settings.RewardMoment = Math.Clamp(Number(raw, SettingKeys.RewardMoment, settings.RewardMoment), 0, 100);
+        settings.RewardAnniversary = Math.Clamp(Number(raw, SettingKeys.RewardAnniversary, settings.RewardAnniversary), 0, 100);
+        settings.ShopListingDays = Math.Clamp(Number(raw, SettingKeys.ShopListingDays, settings.ShopListingDays), 1, 3650);
+        settings.ShopValidDays = Math.Clamp(Number(raw, SettingKeys.ShopValidDays, settings.ShopValidDays), 1, 3650);
+
+        settings.ShopPriceMin = Math.Clamp(Number(raw, SettingKeys.ShopPriceMin, settings.ShopPriceMin), 1, 99999);
+        settings.ShopPriceMax = Math.Clamp(
+            Number(raw, SettingKeys.ShopPriceMax, settings.ShopPriceMax),
+            settings.ShopPriceMin,
+            99999);
 
         return settings;
     }
