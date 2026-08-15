@@ -15,7 +15,7 @@ namespace OurStory.Tests;
 /// </summary>
 public class CoverThumbnailsTests {
     private const string OssOrigin = "https://img.example.com";
-    private const string OssProcess = "?x-oss-process=image/resize,m_fill,w_720,h_540/format,webp";
+    private const string OssProcess = "?x-oss-process=image/auto-orient,1/resize,m_fill,w_720,h_540/format,webp";
 
     /// <summary>本地附件换成 /thumbs 下同名的那一份。</summary>
     [Fact]

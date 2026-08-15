@@ -5,6 +5,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using OurStory.Services.Storage;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
@@ -70,6 +71,30 @@ public sealed class ThumbnailServiceTests : IDisposable {
         Assert.Equal(1, image.Frames.Count);
     }
 
+    /// <summary>手机拍的竖图靠 EXIF 摆正，缩略图得先摆正再裁，不能躺着出来。</summary>
+    [Fact]
+    public async Task 按EXIF方向摆正后再裁切() {
+        // 竖着拍的照片就是这样：像素 1200x900 横着存，左半边红右半边蓝，
+        // 靠 Orientation=6（顺时针转 90°）才是拍的时候看到的样子。
+        // 摆正后红的那半边在上，没摆正则一直在左边
+        const string key = "ourstory/public/2026/08/portrait.jpg";
+        WriteRotated(key, 1200, 900);
+
+        var thumb = await _service.EnsureAsync(key);
+
+        using var image = await Image.LoadAsync<Rgba32>(thumb!);
+
+        Assert.Equal(720, image.Width);
+        Assert.Equal(540, image.Height);
+
+        // webp 是有损的，比通道大小就够了，不必对着具体数值较真
+        var top = image[360, 20];
+        var bottom = image[360, 520];
+
+        Assert.True(top.R > top.B, $"上半边该是红的，实际 {top}");
+        Assert.True(bottom.B > bottom.R, $"下半边该是蓝的，实际 {bottom}");
+    }
+
     /// <summary>第二次直接用缓存好的那份，不再重压一遍。</summary>
     [Fact]
     public async Task 已经压过的不会重做() {
@@ -128,6 +153,27 @@ public sealed class ThumbnailServiceTests : IDisposable {
         _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
         using var image = new Image<Rgba32>(width, height);
+        image.Save(path);
+    }
+
+    // 左半边红、右半边蓝，再打上 Orientation=6：摆正后红的那半边应该在上面
+    private void WriteRotated(string key, int width, int height) {
+        var path = Path.Combine(_paths.UploadsRoot, key.Replace('/', Path.DirectorySeparatorChar));
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        using var image = new Image<Rgba32>(width, height);
+        image.ProcessPixelRows(accessor => {
+            for (var y = 0; y < accessor.Height; y++) {
+                var row = accessor.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++) {
+                    row[x] = x < width / 2 ? Color.Red : Color.Blue;
+                }
+            }
+        });
+
+        image.Metadata.ExifProfile = new ExifProfile();
+        image.Metadata.ExifProfile.SetValue(ExifTag.Orientation, (ushort)ExifOrientationMode.RightTop);
+
         image.Save(path);
     }
 

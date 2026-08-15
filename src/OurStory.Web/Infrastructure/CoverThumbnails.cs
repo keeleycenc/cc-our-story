@@ -12,9 +12,10 @@ namespace OurStory.Web.Infrastructure;
 /// 把封面地址换成对应的缩略图地址
 /// </summary>
 public sealed class CoverThumbnails(StoragePaths paths, ActiveConfiguration configuration) {
-    // m_fill 的取景和本地那套 ResizeMode.Crop 一致；动图它默认也只取第一帧
+    // m_fill 的取景和本地那套 ResizeMode.Crop 一致；动图它默认也只取第一帧。
+    // auto-orient 要排在 resize 前面：OSS 默认不理会 EXIF 方向
     private static readonly string OssProcess =
-        $"x-oss-process=image/resize,m_fill,w_{ThumbnailSize.Width},h_{ThumbnailSize.Height}/format,webp";
+        $"x-oss-process=image/auto-orient,1/resize,m_fill,w_{ThumbnailSize.Width},h_{ThumbnailSize.Height}/format,webp";
 
     private readonly string _uploads = $"/{paths.PublicBasePath.Trim('/')}/";
 

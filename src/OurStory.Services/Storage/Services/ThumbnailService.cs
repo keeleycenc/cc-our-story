@@ -49,7 +49,8 @@ internal sealed class ThumbnailService(StoragePaths paths, ILogger<ThumbnailServ
             _ = Directory.CreateDirectory(Path.GetDirectoryName(cached)!);
 
             using var image = await Image.LoadAsync(Decoding, source, cancellationToken);
-            image.Mutate(context => context.Resize(new ResizeOptions {
+
+            image.Mutate(context => context.AutoOrient().Resize(new ResizeOptions {
                 Size = new Size(Width, Height),
                 Mode = ResizeMode.Crop
             }));
