@@ -113,6 +113,7 @@
       textNode.hidden = !options.text;
       okButton.textContent = options.ok || '删掉';
       cancelButton.textContent = options.cancel || '再想想';
+      cancelButton.hidden = options.notice === true;
       iconUse.setAttribute('href', '#i-' + (options.icon || 'trash-2'));
       host.classList.toggle('is-warning', options.tone === 'warning');
       okButton.className = options.danger === false ? 'btn' : 'btn btn-solid-danger';
@@ -453,6 +454,24 @@
 
       if (status) status.textContent = result.failure ? result.summary : '封面已经填好了。';
       input.value = '';
+    });
+  });
+ 
+  document.querySelectorAll('[data-shop-go], [data-shop-tip]').forEach((card) => {
+    const go = card.dataset.shopGo;
+    const tip = card.dataset.shopTip;
+    if (!go && !tip) return;
+
+    const act = () => {
+      if (go) { window.location.href = go; return; }
+      confirmDialog({ title: '温馨提示', text: tip, ok: '知道啦', notice: true, danger: false, icon: 'clock' });
+    };
+
+    card.addEventListener('click', act);
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      act();
     });
   });
 

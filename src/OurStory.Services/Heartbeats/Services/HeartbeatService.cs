@@ -122,8 +122,14 @@ internal class HeartbeatService(
             return;
         }
 
+        var site = await settings.GetAsync(cancellationToken);
+
         foreach (var day in accepted.Select(clock.DayKey).Distinct(StringComparer.Ordinal)) {
             _ = await heartPoints.AwardDailyAsync(userId, HeartPointReason.DailyHeartbeat, day, cancellationToken);
+
+            if (await UsedTodayAsync(who, day, cancellationToken) >= site.HeartbeatDailyLimit) {
+                _ = await heartPoints.AwardDailyAsync(userId, HeartPointReason.DailyHeartbeatFull, day, cancellationToken);
+            }
         }
     }
 

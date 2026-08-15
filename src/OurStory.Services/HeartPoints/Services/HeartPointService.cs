@@ -115,7 +115,7 @@ internal class HeartPointService(
             .ToListAsync(cancellationToken);
 
         var days = new List<(int UserId, HeartPointReason Reason, string Day)>();
-        days.AddRange(await HeartbeatDaysAsync(owners, cancellationToken));
+        days.AddRange(await HeartbeatDaysAsync(owners, site.HeartbeatDailyLimit, cancellationToken));
         days.AddRange(await MomentDaysAsync(owners, cancellationToken));
         days.AddRange(await AnniversaryDaysAsync(owners, cancellationToken));
 
@@ -168,6 +168,7 @@ internal class HeartPointService(
 
     private static int AmountOf(SiteSettings site, HeartPointReason reason) => reason switch {
         HeartPointReason.DailyHeartbeat => site.RewardHeartbeat,
+        HeartPointReason.DailyHeartbeatFull => site.RewardHeartbeat,
         HeartPointReason.MomentPublished => site.RewardMoment,
         HeartPointReason.AnniversaryPublished => site.RewardAnniversary,
         _ => 0
@@ -175,6 +176,7 @@ internal class HeartPointService(
 
     private static string SourceKeyOf(HeartPointReason reason, string day) => reason switch {
         HeartPointReason.DailyHeartbeat => $"heartbeat:{day}",
+        HeartPointReason.DailyHeartbeatFull => $"heartbeat-full:{day}",
         HeartPointReason.MomentPublished => $"moment:{day}",
         HeartPointReason.AnniversaryPublished => $"anniversary:{day}",
         _ => $"other:{day}"
@@ -182,20 +184,31 @@ internal class HeartPointService(
 
     private static string NoteOf(HeartPointReason reason) => reason switch {
         HeartPointReason.DailyHeartbeat => "今天想你了",
+        HeartPointReason.DailyHeartbeatFull => "今天想了你好多次",
         HeartPointReason.MomentPublished => "写下一条点点滴滴",
         HeartPointReason.AnniversaryPublished => "记下一个纪念日",
         _ => "心意变动"
     };
 
-    /// <summary>想你的日期本来就按站点时区存成了字符串，直接去重就是</summary>
-    private async Task<List<(int, HeartPointReason, string)>> HeartbeatDaysAsync(List<int> owners, CancellationToken cancellationToken) {
+    private async Task<List<(int, HeartPointReason, string)>> HeartbeatDaysAsync(
+        List<int> owners,
+        int dailyLimit,
+        CancellationToken cancellationToken) {
         var rows = await db.Heartbeats
             .Where(beat => beat.UserId != null && owners.Contains(beat.UserId.Value))
-            .Select(beat => new { UserId = beat.UserId!.Value, beat.ClickDay })
-            .Distinct()
+            .GroupBy(beat => new { UserId = beat.UserId!.Value, beat.ClickDay })
+            .Select(group => new { group.Key.UserId, group.Key.ClickDay, Count = group.Count() })
             .ToListAsync(cancellationToken);
 
-        return [.. rows.Select(row => (row.UserId, HeartPointReason.DailyHeartbeat, row.ClickDay))];
+        var days = new List<(int, HeartPointReason, string)>(rows.Count);
+        foreach (var row in rows) {
+            days.Add((row.UserId, HeartPointReason.DailyHeartbeat, row.ClickDay));
+            if (row.Count >= dailyLimit) {
+                days.Add((row.UserId, HeartPointReason.DailyHeartbeatFull, row.ClickDay));
+            }
+        }
+
+        return days;
     }
 
     private async Task<List<(int, HeartPointReason, string)>> MomentDaysAsync(List<int> owners, CancellationToken cancellationToken) {

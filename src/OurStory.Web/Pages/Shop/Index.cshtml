@@ -34,18 +34,47 @@
             }
         </div>
 
-        @if (User.IsOwner())
-        {
-            <div class="shop-links">
+        <div class="shop-links">
+            @if (User.IsOwner())
+            {
                 <a class="shop-link" href="/shop/warehouse">
                     @Icon("package")心愿仓库
                 </a>
                 <a class="shop-link" href="/admin/shop/publish">
                     @Icon("plus")发布心愿
                 </a>
-            </div>
-        }
+            }
+
+            <button class="shop-link is-help" type="button" data-help-open>
+                @Icon("circle-alert")使用帮助
+            </button>
+        </div>
     </header>
+
+    <section class="shop-help" id="shop-help" aria-labelledby="shop-help-title">
+        <h2 id="shop-help-title">@Icon("store")心意商城 · 使用说明</h2>
+
+        <ol>
+            <li>
+                <b>Step 1</b>
+                <span>攒心意 —— 每天想你、分享点滴、记录纪念日都能获得心意</span>
+            </li>
+            <li>
+                <b>Step 2</b>
+                <span>挂心愿 —— 在后台「发布心愿」，写下你愿意为对方做的事</span>
+            </li>
+            <li>
+                <b>Step 3</b>
+                <span>换心愿 —— 在这里兑换对方发布的心愿（不能兑换自己发布的）</span>
+            </li>
+            <li>
+                <b>Step 4</b>
+                <span>用心愿 —— 到「心愿仓库」发起使用，对方完成并确认后，这份心愿才算完成</span>
+            </li>
+        </ol>
+
+        <p>温馨提示：心愿发布后不能修改或删除；已使用、已过期的心愿也无法恢复</p>
+    </section>
 
     @if (!string.IsNullOrEmpty(Model.Flash))
     {

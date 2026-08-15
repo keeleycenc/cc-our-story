@@ -132,6 +132,40 @@ public class HeartPointServiceTests {
     }
 
     [Fact]
+    public async Task 想你点满当天拿双倍() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+
+        var first = await service.AwardDailyAsync(boyId, HeartPointReason.DailyHeartbeat, "2026-08-15");
+        var full = await service.AwardDailyAsync(boyId, HeartPointReason.DailyHeartbeatFull, "2026-08-15");
+        var again = await service.AwardDailyAsync(boyId, HeartPointReason.DailyHeartbeatFull, "2026-08-15");
+
+        Assert.Equal(2, first);
+        Assert.Equal(2, full);
+        Assert.Equal(0, again);
+        Assert.Equal(4, await service.GetBalanceAsync(boyId));
+    }
+
+    [Fact]
+    public async Task 初始心意也补记点满那一份() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+
+        // 上限设成 3：8-01 点满了，8-02 只点了两下
+        harness.Db.Heartbeats.AddRange(
+            Beat(boyId, "2026-08-01"), Beat(boyId, "2026-08-01"), Beat(boyId, "2026-08-01"),
+            Beat(boyId, "2026-08-02"), Beat(boyId, "2026-08-02"));
+        _ = await harness.Db.SaveChangesAsync();
+
+        var result = await Service(harness, new SiteSettings { HeartbeatDailyLimit = 3 }).BackfillAsync();
+
+        // 8-01 给两份、8-02 给一份
+        Assert.Equal(3, result.Entries);
+        Assert.Equal(6, result.Total);
+    }
+
+    [Fact]
     public async Task 奖励配成零时不记流水() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();

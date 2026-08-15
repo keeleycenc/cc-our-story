@@ -890,6 +890,29 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .cover-picker > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px }
 .cover-picker .upload-drop { margin-top: 10px }
 
+.admin-moment-item.is-tappable { cursor: pointer }
+.admin-moment-item.is-tappable:hover { border-color: var(--pink); background: var(--surface) }
+.admin-moment-item.is-tappable:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px }
+.admin-moment-item.is-waiting { cursor: default }
+.admin-moment-item.is-waiting:hover { border-color: var(--line-strong) }
+
+.admin-tap-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: var(--pink-soft);
+    color: var(--pink-dark);
+    font-size: 11px;
+    white-space: nowrap;
+    transition: transform .18s;
+}
+
+.admin-moment-item.is-waiting .admin-tap-hint { background: var(--surface-muted); color: var(--faint) }
+.admin-moment-item.is-tappable:not(.is-waiting):hover .admin-tap-hint { transform: translateX(3px) }
+
 .admin-preset-name { overflow: hidden; font: 400 16px var(--serif); text-overflow: ellipsis; white-space: nowrap }
 .admin-preset-desc { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap }
 .admin-preset-list .admin-moment-item.is-off { opacity: .58 }

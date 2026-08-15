@@ -105,6 +105,30 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
     }
 
     /// <summary>
+    /// 处理一个卡片动作
+    /// </summary>
+    /// <param name="card">这一张卡片</param>
+    /// <returns>能去就返回目标地址，去不了就返回要提示的那句话</returns>
+    public (string? Url, string? Tip) CardAction(ShopItemCard card) {
+        ArgumentNullException.ThrowIfNull(card);
+
+        var me = User.Role();
+        var isSeller = card.SellerRole == me;
+        var isBuyer = card.BuyerRole == me;
+
+        return card.Status switch {
+            ShopItemStatus.Listed when !isSeller => ("/shop", null),
+            ShopItemStatus.Listed => (null, $"「{card.Title}」是你发布的，等待对方兑换吧"),
+            ShopItemStatus.Redeemed when isBuyer => ("/shop/warehouse", null),
+            ShopItemStatus.Redeemed => (null, $"「{card.Title}」已经被 {card.BuyerName} 兑换啦，正在 TA 的心愿仓库中"),
+            ShopItemStatus.PendingConfirm when isSeller => ("/shop/warehouse", null),
+            ShopItemStatus.PendingConfirm => (null, $"已经发起使用，等待 {card.SellerName} 完成并确认"),
+            ShopItemStatus.Used => (null, $"「{card.Title}」已经用掉了，这一份心意兑现过了。"),
+            _ => (null, $"「{card.Title}」已经过期啦")
+        };
+    }
+
+    /// <summary>
     /// 拼当前筛选下的地址，页面上的筛选按钮用它
     /// </summary>
     public string FilterUrl(UserRole? seller, ShopItemStatus? status) {

@@ -47,14 +47,137 @@
     </div>
 </div>
 
+
 <div class="admin-panel">
     <div class="admin-toolbar">
-        <h2 style="margin:0">@Icon("tag") 心愿预设</h2>
+        <h2 style="margin:0">@Icon("store") 已发布的心愿</h2>
 
         <a class="btn" href="/admin/shop/publish">
             @Icon("plus")发布心愿
         </a>
     </div>
+
+    <p class="admin-panel-hint">
+        这里展示所有已发布心愿及当前状态
+    </p>
+
+    <div class="admin-shop-toolbar">
+        <div class="admin-filter" aria-label="按发布者筛选">
+            <span>发布者</span>
+
+            @foreach (var (value, label) in sellers)
+            {
+                <a class="@(Model.Seller == value ? "is-active" : null)"
+                   href="@Model.FilterUrl(value, Model.Status)">
+                    @label
+                </a>
+            }
+        </div>
+
+        <div class="admin-filter" aria-label="按状态筛选">
+            <span>状态</span>
+
+            @foreach (var (value, label) in states)
+            {
+                <a class="@(Model.Status == value ? "is-active" : null)"
+                   href="@Model.FilterUrl(Model.Seller, value)">
+                    @label
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (Model.Items.Items.Count > 0)
+    {
+        <div class="admin-moment-list">
+            @foreach (var item in Model.Items.Items)
+            {
+                var (goUrl, goTip) = Model.CardAction(item);
+                <article class="admin-moment-item is-tappable@(goUrl is null ? " is-waiting" : null)"
+                         role="button"
+                         tabindex="0"
+                         data-shop-go="@goUrl"
+                         data-shop-tip="@goTip"
+                         aria-label="@item.Title：@(goUrl is null ? goTip : "去前台处理")">
+                    <div class="admin-moment-summary">
+                        <div class="admin-moment-title">
+                            <span class="admin-preset-name">
+                                @item.Title
+                            </span>
+
+                            <span class="tag is-@ShopDisplay.StatusTone(item.Status)">
+                                @Icon(ShopDisplay.StatusIcon(item.Status))
+                                @ShopDisplay.StatusName(item.Status)
+                            </span>
+
+                            @if (item.IsPrivate)
+                            {
+                                <span class="tag is-locked">
+                                    @Icon("lock")仅双方可见
+                                </span>
+                            }
+                        </div>
+
+                        <div class="admin-moment-meta">
+                            <span>
+                                @Icon("coins")@item.Price 心意
+                            </span>
+
+                            <span>
+                                @Icon("user-round")@item.SellerName 发布
+                            </span>
+
+                            @if (item.BuyerName is not null)
+                            {
+                                <span>
+                                    @Icon("hand-heart")@item.BuyerName 已兑换
+                                </span>
+                            }
+
+                            <span>
+                                @Icon("check")@ShopDisplay.RedeemName(item.RedeemMode)
+                            </span>
+
+                            <span>
+                                @Icon("calendar-days")@item.ListedAt.ToString("yyyy-MM-dd") 发布
+                            </span>
+
+                            @if (item.DaysLeft is { } left)
+                            {
+                                <span>
+                                    @Icon("clock")还剩 @left 天
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <span class="admin-tap-hint">
+                        @if (goUrl is null)
+                        {
+                            @Icon("clock")<span>等待对方</span>
+                        }
+                        else
+                        {
+                            @Icon("arrow-right")<span>去处理</span>
+                        }
+                    </span>
+                </article>
+            }
+        </div>
+
+        <partial name="_Pagination" model="pager" />
+    }
+    else
+    {
+        <div class="admin-empty-state">
+            @Icon("store")
+            <h2>还没有发布心愿</h2>
+            <p>写下一个想为对方实现的心愿，等 TA 用心意把它带走吧</p>
+        </div>
+    }
+</div>
+<div class="admin-panel">
+    <h2>@Icon("tag")心愿预设</h2>
 
     <p class="admin-panel-hint">
         可以把常用的心愿保存为预设，发布时直接带入名称、描述、封面和使用方式。
@@ -214,111 +337,5 @@
         <p class="admin-empty">
             还没有心愿预设，可以在上方创建一个。
         </p>
-    }
-</div>
-
-<div class="admin-panel">
-    <h2>@Icon("store")已发布的心愿</h2>
-
-    <p class="admin-panel-hint">
-        这里展示所有已发布心愿及当前状态。心愿发布后不可修改、删除或主动下架。
-    </p>
-
-    <div class="admin-shop-toolbar">
-        <div class="admin-filter" aria-label="按发布者筛选">
-            <span>发布者</span>
-
-            @foreach (var (value, label) in sellers)
-            {
-                <a class="@(Model.Seller == value ? "is-active" : null)"
-                   href="@Model.FilterUrl(value, Model.Status)">
-                    @label
-                </a>
-            }
-        </div>
-
-        <div class="admin-filter" aria-label="按状态筛选">
-            <span>状态</span>
-
-            @foreach (var (value, label) in states)
-            {
-                <a class="@(Model.Status == value ? "is-active" : null)"
-                   href="@Model.FilterUrl(Model.Seller, value)">
-                    @label
-                </a>
-            }
-        </div>
-    </div>
-
-    @if (Model.Items.Items.Count > 0)
-    {
-        <div class="admin-moment-list">
-            @foreach (var item in Model.Items.Items)
-            {
-                <article class="admin-moment-item">
-                    <div class="admin-moment-summary">
-                        <div class="admin-moment-title">
-                            <span class="admin-preset-name">
-                                @item.Title
-                            </span>
-
-                            <span class="tag is-@ShopDisplay.StatusTone(item.Status)">
-                                @Icon(ShopDisplay.StatusIcon(item.Status))
-                                @ShopDisplay.StatusName(item.Status)
-                            </span>
-
-                            @if (item.IsPrivate)
-                            {
-                                <span class="tag is-locked">
-                                    @Icon("lock")仅双方可见
-                                </span>
-                            }
-                        </div>
-
-                        <div class="admin-moment-meta">
-                            <span>
-                                @Icon("coins")@item.Price 心意
-                            </span>
-
-                            <span>
-                                @Icon("user-round")@item.SellerName 发布
-                            </span>
-
-                            @if (item.BuyerName is not null)
-                            {
-                                <span>
-                                    @Icon("hand-heart")@item.BuyerName 已兑换
-                                </span>
-                            }
-
-                            <span>
-                                @Icon("check")@ShopDisplay.RedeemName(item.RedeemMode)
-                            </span>
-
-                            <span>
-                                @Icon("calendar-days")@item.ListedAt.ToString("yyyy-MM-dd") 发布
-                            </span>
-
-                            @if (item.DaysLeft is { } left)
-                            {
-                                <span>
-                                    @Icon("clock")还剩 @left 天
-                                </span>
-                            }
-                        </div>
-                    </div>
-                </article>
-            }
-        </div>
-
-        <partial name="_Pagination" model="pager" />
-    }
-    else
-    {
-        <div class="admin-empty-state">
-            @Icon("store")
-            <h2>还没有发布心愿</h2>
-            <p>把想为对方做的事写成一个心愿，发布后就可以用心意兑换。</p>
-        </div>
     }
 </div>

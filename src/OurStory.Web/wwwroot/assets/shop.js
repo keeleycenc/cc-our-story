@@ -1,6 +1,49 @@
 (function () {
   'use strict';
 
+  const helpButton = document.querySelector('[data-help-open]');
+  const helpPanel = document.getElementById('shop-help');
+  if (helpButton && helpPanel) {
+    let shell = null;
+
+    const closeHelp = () => {
+      if (!shell) return;
+      shell.classList.remove('is-open');
+      document.body.classList.remove('modal-open');
+      helpButton.focus();
+    };
+
+    helpButton.addEventListener('click', () => {
+      if (!shell) {
+        shell = document.createElement('div');
+        shell.className = 'shop-dialog';
+        shell.innerHTML =
+          '<div class="shop-dialog-mask" data-help-close></div>' +
+          '<div class="shop-dialog-card is-help" role="dialog" aria-modal="true"' +
+          ' aria-labelledby="shop-help-title"></div>';
+
+        const card = shell.querySelector('.shop-dialog-card');
+        card.appendChild(helpPanel);
+
+        const actions = document.createElement('div');
+        actions.className = 'shop-dialog-actions';
+        actions.innerHTML = '<button class="shop-buy" type="button" data-help-ok>知道啦</button>';
+        card.appendChild(actions);
+
+        document.body.appendChild(shell);
+        shell.querySelector('[data-help-close]').addEventListener('click', closeHelp);
+        shell.querySelector('[data-help-ok]').addEventListener('click', closeHelp);
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') closeHelp();
+        });
+      }
+
+      shell.classList.add('is-open');
+      document.body.classList.add('modal-open');
+      shell.querySelector('[data-help-ok]').focus();
+    });
+  }
+
   const forms = document.querySelectorAll('form[data-confirm], form[data-confirm-title]');
   if (forms.length === 0) return;
 

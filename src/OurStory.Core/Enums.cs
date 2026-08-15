@@ -113,7 +113,12 @@ public enum HeartPointReason {
     /// <summary>
     /// 兑换心愿，心意直接销毁
     /// </summary>
-    Purchase = 3
+    Purchase = 3,
+
+    /// <summary>
+    /// 当天把想你点满
+    /// </summary>
+    DailyHeartbeatFull = 4
 }
 
 /// <summary>

@@ -61,6 +61,45 @@
 
 .shop-flash.is-bad { background: var(--danger-soft); color: var(--danger-strong) }
 
+/* 1.1 使用说明 ------------------------------------------------------------ */
+.shop-link.is-help { background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); cursor: pointer }
+.shop-link.is-help:hover { border-color: var(--pink); color: var(--pink-dark) }
+:root:not(.has-js) .shop-link.is-help { display: none }
+
+.shop-help {
+    max-width: 620px;
+    margin: 0 auto 40px;
+    padding: 26px 28px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--surface);
+    text-align: left;
+}
+
+:root.has-js .shop-help { display: none }
+:root.has-js .shop-dialog .shop-help { display: block; margin: 0; padding: 0; border: 0; background: none; max-width: none }
+
+.shop-help h2 { display: flex; align-items: center; gap: 8px; font: 400 20px var(--serif); margin-bottom: 18px }
+.shop-help h2 .icon { color: var(--pink-dark) }
+.shop-help ol { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none }
+.shop-help li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 12px }
+
+.shop-help li > b {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--pink-soft);
+    color: var(--pink-dark);
+    font: 700 10px Arial;
+    letter-spacing: .06em;
+    white-space: nowrap;
+}
+
+.shop-help li > span { color: var(--muted); font-size: 12px; line-height: 1.85 }
+.shop-help > p { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--faint); font-size: 11px; line-height: 1.8 }
+
+.shop-dialog-card.is-help { width: min(560px, 100%); text-align: left }
+.shop-dialog-card.is-help .shop-dialog-actions { margin-top: 22px }
+
 /* 2. 筛选 ---------------------------------------------------------------- */
 .shop-filter {
     display: flex;
