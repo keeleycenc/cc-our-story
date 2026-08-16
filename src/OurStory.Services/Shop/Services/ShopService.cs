@@ -280,7 +280,7 @@ internal class ShopService(
         item.UpdatedAt = now;
         _ = await db.SaveChangesAsync(cancellationToken);
 
-        return ShopActionResult.Ok($"「{item.Title}」已退回心愿仓库，可稍后再使用");
+        return ShopActionResult.Ok($"「{item.Title}」已退回心愿仓库");
     }
 
     public async Task<int> SweepExpiredAsync(CancellationToken cancellationToken = default) {

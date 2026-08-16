@@ -862,13 +862,14 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     width: 100%;
+    max-width: 900px;
     gap: 12px 16px;
     margin-bottom: 18px;
 }
 
 .admin-filter {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: 34px minmax(0, 1fr);
     align-items: center;
     gap: 8px;
 }
@@ -893,7 +894,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-filter select:hover { border-color: var(--pink) }
 .admin-filter select:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
 .admin-shop-toolbar noscript { grid-column: 1 / -1 }
-.admin-shop-toolbar noscript .btn { margin-left: 41px }
+.admin-shop-toolbar noscript .btn { margin-left: 42px }
 
 .tag.is-listed { background: var(--pink-soft); color: var(--pink-dark) }
 .tag.is-redeemed { background: var(--card-mint); color: var(--ink) }
