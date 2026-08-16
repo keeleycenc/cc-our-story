@@ -166,6 +166,36 @@ public class HeartPointServiceTests {
     }
 
     [Fact]
+    public async Task 每天来看看只给一次() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+
+        var first = await service.AwardDailyAsync(boyId, HeartPointReason.DailyVisit, "2026-08-15");
+        var again = await service.AwardDailyAsync(boyId, HeartPointReason.DailyVisit, "2026-08-15");
+        var tomorrow = await service.AwardDailyAsync(boyId, HeartPointReason.DailyVisit, "2026-08-16");
+
+        Assert.Equal(3, first);
+        Assert.Equal(0, again);
+        Assert.Equal(3, tomorrow);
+        Assert.Equal(6, await service.GetBalanceAsync(boyId));
+    }
+
+    [Fact]
+    public async Task 来看看和想你各算各的() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+
+        _ = await service.AwardDailyAsync(boyId, HeartPointReason.DailyVisit, "2026-08-15");
+        _ = await service.AwardDailyAsync(boyId, HeartPointReason.DailyHeartbeat, "2026-08-15");
+        _ = await service.AwardDailyAsync(boyId, HeartPointReason.DailyHeartbeatFull, "2026-08-15");
+
+        Assert.Equal(7, await service.GetBalanceAsync(boyId));
+        Assert.Equal(3, await harness.Db.HeartPointEntries.CountAsync());
+    }
+
+    [Fact]
     public async Task 奖励配成零时不记流水() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();

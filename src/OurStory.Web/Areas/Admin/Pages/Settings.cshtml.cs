@@ -84,6 +84,7 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             HeartbeatDailyLimit = site.HeartbeatDailyLimit,
             CommentsRequireMail = site.CommentsRequireMail,
             AllowGuestComments = site.AllowGuestComments,
+            RewardVisit = site.RewardVisit,
             RewardHeartbeat = site.RewardHeartbeat,
             RewardMoment = site.RewardMoment,
             RewardAnniversary = site.RewardAnniversary,
@@ -128,6 +129,7 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
                 return Page();
             }
 
+            site.RewardVisit = Input.RewardVisit;
             site.RewardHeartbeat = Input.RewardHeartbeat;
             site.RewardMoment = Input.RewardMoment;
             site.RewardAnniversary = Input.RewardAnniversary;
@@ -145,10 +147,9 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
 
         await settings.SaveAsync(site, cancellationToken);
 
-        // 时区和附件存储落在配置文件里，写不进去（比如只读挂载）就照实说，
-        // 别让人以为改好了
+        // 时区和附件存储落在配置文件里，写不进去（比如只读挂载）提示
         if (!configuration.Update(SaveRuntimeOptions, out var error)) {
-            Error = $"内容已经保存，但 {configuration.FilePath} 写不进去：{error}";
+            Error = $"内容已经保存，但 {configuration.FilePath} 无法写入：{error}";
             return Page();
         }
 
@@ -160,10 +161,11 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     /// 心意规则的范围检查，都合规就返回 null
     /// </summary>
     private string? HeartRuleError() {
-        if (!InRange(Input.RewardHeartbeat, 0, 100)
+        if (!InRange(Input.RewardVisit, 0, 100)
+            || !InRange(Input.RewardHeartbeat, 0, 100)
             || !InRange(Input.RewardMoment, 0, 100)
             || !InRange(Input.RewardAnniversary, 0, 100)) {
-            return "三档心意奖励都要在 0 到 100 之间。";
+            return "四档心意奖励都要在 0 到 100 之间。";
         }
 
         if (!InRange(Input.ShopPriceMin, 1, 99999) || !InRange(Input.ShopPriceMax, 1, 99999)) {
@@ -350,6 +352,11 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         public bool AllowGuestComments { get; set; } = true;
 
         #region boy 特有
+
+        /// <summary>
+        /// 获取或设置当天第一次打开站点给多少心意
+        /// </summary>
+        public int RewardVisit { get; set; } = 3;
 
         /// <summary>
         /// 获取或设置当天第一次想你给多少心意

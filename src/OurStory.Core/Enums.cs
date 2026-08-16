@@ -118,7 +118,12 @@ public enum HeartPointReason {
     /// <summary>
     /// 当天把想你点满
     /// </summary>
-    DailyHeartbeatFull = 4
+    DailyHeartbeatFull = 4,
+
+    /// <summary>
+    /// 当天第一次来看看
+    /// </summary>
+    DailyVisit = 5
 }
 
 /// <summary>

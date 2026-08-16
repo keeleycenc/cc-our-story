@@ -95,6 +95,11 @@ public class SiteSettings {
     public int HeartbeatDailyLimit { get; set; } = 99;
 
     /// <summary>
+    /// 获取或设置当天第一次打开站点能拿到多少心意
+    /// </summary>
+    public int RewardVisit { get; set; } = 3;
+
+    /// <summary>
     /// 获取或设置当天第一次想你能拿到多少心意
     /// </summary>
     public int RewardHeartbeat { get; set; } = 2;
@@ -233,6 +238,10 @@ public static class SettingKeys {
     /// 表示 HeartbeatDailyLimit
     /// </summary>
     public const string HeartbeatDailyLimit = "heartbeat.dailyLimit";
+    /// <summary>
+    /// 表示 RewardVisit
+    /// </summary>
+    public const string RewardVisit = "heart.reward.visit";
     /// <summary>
     /// 表示 RewardHeartbeat
     /// </summary>

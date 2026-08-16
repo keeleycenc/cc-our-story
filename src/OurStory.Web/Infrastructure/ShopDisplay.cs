@@ -62,18 +62,20 @@ public static class ShopDisplay {
     /// 获取一条心意流水的名称
     /// </summary>
     public static string ReasonName(HeartPointReason reason) => reason switch {
+        HeartPointReason.DailyVisit => "每天都上线，爱你不掉线",
         HeartPointReason.DailyHeartbeat => "每多想你一次，就多喜欢你一点",
         HeartPointReason.DailyHeartbeatFull => "今天也没什么特别，只是想了你好多次",
         HeartPointReason.MomentPublished => "点点滴滴",
         HeartPointReason.AnniversaryPublished => "纪念日",
         HeartPointReason.Purchase => "兑换心愿",
-        _ => "心意"
+        _ => "藏在心里的爱"
     };
 
     /// <summary>
     /// 获取一条心意流水的图标
     /// </summary>
     public static string ReasonIcon(HeartPointReason reason) => reason switch {
+        HeartPointReason.DailyVisit => "sun",
         HeartPointReason.DailyHeartbeat => "heart",
         HeartPointReason.DailyHeartbeatFull => "sparkles",
         HeartPointReason.MomentPublished => "camera",

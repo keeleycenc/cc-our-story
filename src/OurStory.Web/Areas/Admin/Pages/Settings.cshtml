@@ -168,9 +168,15 @@
 
             <div class="field-grid">
                 <label class="field">
+                    <span>每日来访</span>
+                    <input asp-for="Input.RewardVisit" type="number" min="0" max="100">
+                    <small>每日首次访问站点，就会收到一份心意</small>
+                </label>
+
+                <label class="field">
                     <span>每日首次想你</span>
                     <input asp-for="Input.RewardHeartbeat" type="number" min="0" max="100">
-                    <small>每天首次互动时获得一次奖励。</small>
+                    <small>每天第一次想起对方时，送上一份心意</small>
                 </label>
 
                 <label class="field">
@@ -182,7 +188,7 @@
                 <label class="field">
                     <span>发布纪念日</span>
                     <input asp-for="Input.RewardAnniversary" type="number" min="0" max="100">
-                    <small>纪念日正式发布后获得，每天最多一次。</small>
+                    <small>纪念日正式发布后获得，每天最多一次</small>
                 </label>
 
                 <label class="field">
@@ -193,19 +199,19 @@
                 <label class="field">
                     <span>心愿最高价格</span>
                     <input asp-for="Input.ShopPriceMax" type="number" min="1" max="99999">
-                    <small>用于限制单个心愿可设置的最高价格。</small>
+                    <small>用于限制单个心愿可设置的最高价格</small>
                 </label>
 
                 <label class="field">
                     <span>默认上架天数</span>
                     <input asp-for="Input.ShopListingDays" type="number" min="1" max="3650">
-                    <small>新发布的心愿默认保持上架的天数。</small>
+                    <small>新发布的心愿默认保持上架的天数</small>
                 </label>
 
                 <label class="field">
                     <span>默认有效天数</span>
                     <input asp-for="Input.ShopValidDays" type="number" min="1" max="3650">
-                    <small>兑换后的默认使用期限，发布时可单独调整。</small>
+                    <small>兑换后的默认使用期限，发布时可单独调整</small>
                 </label>
             </div>
         </div>

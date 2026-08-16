@@ -48,6 +48,7 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
             [SettingKeys.CommentsRequireMail] = settings.CommentsRequireMail ? "1" : "0",
             [SettingKeys.AllowGuestComments] = settings.AllowGuestComments ? "1" : "0",
             [SettingKeys.HeartbeatDailyLimit] = settings.HeartbeatDailyLimit.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.RewardVisit] = settings.RewardVisit.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.RewardHeartbeat] = settings.RewardHeartbeat.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.RewardMoment] = settings.RewardMoment.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.RewardAnniversary] = settings.RewardAnniversary.ToString(CultureInfo.InvariantCulture),
@@ -125,6 +126,7 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
         settings.CommentsRequireMail = Flag(raw, SettingKeys.CommentsRequireMail, settings.CommentsRequireMail);
         settings.AllowGuestComments = Flag(raw, SettingKeys.AllowGuestComments, settings.AllowGuestComments);
 
+        settings.RewardVisit = Math.Clamp(Number(raw, SettingKeys.RewardVisit, settings.RewardVisit), 0, 100);
         settings.RewardHeartbeat = Math.Clamp(Number(raw, SettingKeys.RewardHeartbeat, settings.RewardHeartbeat), 0, 100);
         settings.RewardMoment = Math.Clamp(Number(raw, SettingKeys.RewardMoment, settings.RewardMoment), 0, 100);
         settings.RewardAnniversary = Math.Clamp(Number(raw, SettingKeys.RewardAnniversary, settings.RewardAnniversary), 0, 100);

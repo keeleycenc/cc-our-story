@@ -68,6 +68,7 @@ builder.Services.Configure<WebEncoderOptions>(options =>
     options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 
 builder.Services.AddSingleton<AssetVersionProvider>();
+builder.Services.AddSingleton<DailyVisitLedger>();
 builder.Services.AddSingleton<CoverThumbnails>();
 builder.Services.AddScoped<HeartbeatTokenService>();
 builder.Services.AddScoped<VisitorIdentityAccessor>();
@@ -111,7 +112,7 @@ app.UseStaticFiles(new StaticFileOptions {
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseDailyVisitReward();
 app.MapRazorPages();
 app.MapHeartbeatEndpoints();
 app.MapThumbnailEndpoints();

@@ -167,6 +167,7 @@ internal class HeartPointService(
         AmountOf(await settings.GetAsync(cancellationToken), reason);
 
     private static int AmountOf(SiteSettings site, HeartPointReason reason) => reason switch {
+        HeartPointReason.DailyVisit => site.RewardVisit,
         HeartPointReason.DailyHeartbeat => site.RewardHeartbeat,
         HeartPointReason.DailyHeartbeatFull => site.RewardHeartbeat,
         HeartPointReason.MomentPublished => site.RewardMoment,
@@ -175,6 +176,7 @@ internal class HeartPointService(
     };
 
     private static string SourceKeyOf(HeartPointReason reason, string day) => reason switch {
+        HeartPointReason.DailyVisit => $"visit:{day}",
         HeartPointReason.DailyHeartbeat => $"heartbeat:{day}",
         HeartPointReason.DailyHeartbeatFull => $"heartbeat-full:{day}",
         HeartPointReason.MomentPublished => $"moment:{day}",
@@ -183,6 +185,7 @@ internal class HeartPointService(
     };
 
     private static string NoteOf(HeartPointReason reason) => reason switch {
+        HeartPointReason.DailyVisit => "每日赴约",
         HeartPointReason.DailyHeartbeat => "今天想你了",
         HeartPointReason.DailyHeartbeatFull => "今天想了你好多次",
         HeartPointReason.MomentPublished => "写下一条点点滴滴",
