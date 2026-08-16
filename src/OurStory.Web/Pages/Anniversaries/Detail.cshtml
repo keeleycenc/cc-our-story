@@ -16,13 +16,18 @@
                 {
                     <span>@Icon("history")每年重逢</span>
                 }
+                <span>@Icon("calendar-days")@item.CalendarName</span>
                 @if (item.IsPrivate)
                 {
                     <span class="is-private">@Icon("lock")仅情侣可见</span>
                 }
                 <span class="anniversary-author">@Icon("user-round")由 @item.AuthorName 记录</span>
             </div>
-            <time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">@item.OriginalDate.ToString("yyyy 年 MM 月 dd 日")</time>
+            <time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">公历 @item.OriginalDate.ToString("yyyy 年 MM 月 dd 日")</time>
+            @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+            {
+                <span class="anniversary-story-lunar">@item.LunarDate.DisplayText</span>
+            }
             <h1>@item.Title</h1>
             <p>@(item.IsToday ? "就在今天" : item.NextDate is null ? "一次被好好收藏的日子" : $"下一次还有 {item.DaysUntil} 天")</p>
         </header>
@@ -45,7 +50,11 @@
 
             <aside class="anniversary-story-facts">
                 <a class="anniversary-facts-back" href="/anniversaries">@Icon("arrow-left")返回纪念日</a>
-                <div><span>最初日期</span><strong>@item.OriginalDate.ToString("yyyy.MM.dd")</strong></div>
+                <div><span>公历日期</span><strong>@item.OriginalDate.ToString("yyyy.MM.dd")</strong></div>
+                @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+                {
+                    <div><span>原农历日期</span><strong>@item.LunarDate.ShortText</strong></div>
+                }
                 @if (item.NextDate is not null)
                 {
                     <div><span>下一次</span><strong>@item.NextDate.Value.ToString("yyyy.MM.dd")</strong></div>

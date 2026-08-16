@@ -32,7 +32,11 @@
                             }
                         </div>
                         <div class="admin-moment-meta">
-                            <span>@Icon("calendar-days")@item.OriginalDate.ToString("yyyy-MM-dd")</span>
+                            <span>@Icon("calendar-days")公历 @item.OriginalDate.ToString("yyyy-MM-dd")</span>
+                            @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+                            {
+                                <span class="tag">@item.LunarDate.ShortText</span>
+                            }
                             <span>@Icon("user-round")由 @item.AuthorName 记录</span>
                             <span>@Icon("tag")@IndexModel.KindName(item.Kind)</span>
                             <span>@(item.RepeatYearly ? "每年重复" : "仅一次")</span>

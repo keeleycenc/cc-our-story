@@ -32,14 +32,14 @@ public static class AnniversaryTimeline {
         } else if (anniversary.AnniversaryDate >= today) {
             // 首次发生日还没到时，不能为了“每年重复”把它回算到更早的年份。
             nextDate = anniversary.AnniversaryDate;
+        } else if (anniversary.CalendarType == AnniversaryCalendarType.Lunar) {
+            nextDate = NextLunarDate(anniversary.AnniversaryDate, today);
         } else {
             var candidate = InYear(anniversary.AnniversaryDate, today.Year);
             nextDate = candidate >= today ? candidate : InYear(anniversary.AnniversaryDate, today.Year + 1);
         }
 
-        var years = nextDate is null
-            ? Math.Max(0, today.Year - anniversary.AnniversaryDate.Year)
-            : Math.Max(0, nextDate.Value.Year - anniversary.AnniversaryDate.Year);
+        var years = YearsBetween(anniversary, today, nextDate);
 
         return new AnniversaryOccurrence(
             anniversary.Id,
@@ -48,6 +48,7 @@ public static class AnniversaryTimeline {
             anniversary.NoteHtml,
             anniversary.CoverUrl ?? string.Empty,
             anniversary.Kind,
+            anniversary.CalendarType,
             anniversary.AnniversaryDate,
             nextDate,
             nextDate is null ? null : nextDate.Value.DayNumber - today.DayNumber,
@@ -55,6 +56,53 @@ public static class AnniversaryTimeline {
             anniversary.RepeatYearly,
             anniversary.IsPrivate,
             authorName);
+    }
+
+    /// <summary>
+    /// 判断一条纪念日是否会在指定公历日期发生
+    /// </summary>
+    public static bool OccursOn(AnniversaryOccurrence item, DateOnly date) {
+        ArgumentNullException.ThrowIfNull(item);
+        if (date < item.OriginalDate) {
+            return false;
+        }
+
+        if (!item.RepeatYearly) {
+            return date == item.OriginalDate;
+        }
+
+        if (item.CalendarType == AnniversaryCalendarType.Solar) {
+            return InYear(item.OriginalDate, date.Year) == date;
+        }
+
+        var originalLunar = ChineseLunarCalendar.FromSolar(item.OriginalDate);
+        var dateLunar = ChineseLunarCalendar.FromSolar(date);
+        return ChineseLunarCalendar.RecurrenceInYear(originalLunar, dateLunar.Year) == date;
+    }
+
+    private static DateOnly NextLunarDate(DateOnly originalDate, DateOnly today) {
+        var originalLunar = ChineseLunarCalendar.FromSolar(originalDate);
+        var todayLunarYear = ChineseLunarCalendar.FromSolar(today).Year;
+        for (var year = todayLunarYear; year <= Math.Min(todayLunarYear + 2, ChineseLunarCalendar.MaximumYear); year++) {
+            var candidate = ChineseLunarCalendar.RecurrenceInYear(originalLunar, year);
+            if (candidate >= today) {
+                return candidate;
+            }
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(today), "已超出可计算的农历日期范围。");
+    }
+
+    private static int YearsBetween(Anniversary anniversary, DateOnly today, DateOnly? nextDate) {
+        if (anniversary.CalendarType == AnniversaryCalendarType.Lunar) {
+            var originalYear = ChineseLunarCalendar.FromSolar(anniversary.AnniversaryDate).Year;
+            var comparison = nextDate ?? today;
+            return Math.Max(0, ChineseLunarCalendar.FromSolar(comparison).Year - originalYear);
+        }
+
+        return nextDate is null
+            ? Math.Max(0, today.Year - anniversary.AnniversaryDate.Year)
+            : Math.Max(0, nextDate.Value.Year - anniversary.AnniversaryDate.Year);
     }
 
     private static DateOnly InYear(DateOnly date, int year) {

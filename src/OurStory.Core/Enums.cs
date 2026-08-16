@@ -92,6 +92,21 @@ public enum AnniversaryKind {
 }
 
 /// <summary>
+/// 纪念日遵循的历法
+/// </summary>
+public enum AnniversaryCalendarType {
+    /// <summary>
+    /// 公历（阳历）
+    /// </summary>
+    Solar = 0,
+
+    /// <summary>
+    /// 中国农历
+    /// </summary>
+    Lunar = 1
+}
+
+/// <summary>
 /// 表示一条心意流水来源
 /// </summary>
 public enum HeartPointReason {

@@ -21,6 +21,11 @@ public class AnniversaryEditModel {
     public DateOnly AnniversaryDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     /// <summary>
+    /// 获取或设置纪念日遵循的历法；日期字段本身始终是换算后的公历日期
+    /// </summary>
+    public AnniversaryCalendarType CalendarType { get; set; } = AnniversaryCalendarType.Solar;
+
+    /// <summary>
     /// 获取或设置简短故事
     /// </summary>
     public string? Note { get; set; }

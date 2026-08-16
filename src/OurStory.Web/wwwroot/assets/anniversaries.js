@@ -62,13 +62,16 @@
     titleRow.className = 'timeline-title-row';
     titleRow.append(linkedTitle(item), text('span', '', item.kindName));
     if (item.repeatYearly) titleRow.append(text('em', '', '每年提醒'));
+    if (item.calendarType === 'lunar') titleRow.append(text('em', '', '农历'));
     if (item.isPrivate) titleRow.append(text('em', 'privacy-tag', '私密'));
 
-    const date = text('time', '', formatDate(item.originalDate));
+    const date = text('time', '', '公历 ' + formatDate(item.originalDate));
     date.dateTime = item.originalDate;
     const meta = document.createElement('div');
     meta.className = 'anniversary-meta';
-    meta.append(date, text('span', '', '由 ' + item.authorName + ' 记录'));
+    meta.append(date);
+    if (item.lunarDate) meta.append(text('span', 'anniversary-lunar-date', item.lunarDate));
+    meta.append(text('span', '', '由 ' + item.authorName + ' 记录'));
     const note = text('p', 'timeline-note', item.summary || '这段回忆还没有写下描述。');
     copy.append(titleRow, meta, note);
 
@@ -91,6 +94,7 @@
     const titleRow = document.createElement('div');
     titleRow.className = 'upcoming-title-row';
     titleRow.append(linkedTitle(item), text('span', '', item.kindName));
+    if (item.calendarType === 'lunar') titleRow.append(text('span', '', '农历'));
     if (item.isPrivate) titleRow.append(text('em', 'privacy-tag', '私密'));
     copy.append(
       titleRow,
@@ -170,7 +174,6 @@
   const calendar = document.querySelector('[data-anniversary-calendar]');
   if (!calendar) return;
 
-  const dataElement = calendar.querySelector('[data-calendar-data]');
   const yearSelect = calendar.querySelector('[data-calendar-year]');
   const monthSelect = calendar.querySelector('[data-calendar-month]');
   const grid = calendar.querySelector('[data-calendar-grid]');
@@ -179,43 +182,16 @@
   const agendaCount = calendar.querySelector('[data-calendar-agenda-count]');
   const agendaPanel = calendar.querySelector('.memory-calendar-agenda');
   const agenda = calendar.querySelector('[data-calendar-agenda]');
-  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-  const todayParts = calendar.dataset.today.split('-').map(Number);
-  const today = { year: todayParts[0], month: todayParts[1], day: todayParts[2] };
-  const items = JSON.parse(dataElement.textContent || '[]').map((item) => {
-    const parts = item.originalDate.split('-').map(Number);
-    return { ...item, year: parts[0], month: parts[1], day: parts[2] };
-  });
+  const modeButtons = Array.from(calendar.querySelectorAll('[data-calendar-mode]'));
+  const todayKey = calendar.dataset.today;
+  let mode = 'solar';
+  let payload = null;
+  let selectedSolarDate = todayKey;
+  let loading = false;
 
-  let viewYear = today.year;
-  let viewMonth = today.month;
-  let selectedDay = today.day;
-  let minimumYear = Math.min(today.year, ...items.map((item) => item.year));
-  let maximumYear = Math.max(today.year + 10, ...items.map((item) => item.year));
-
-  const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
-
-  const shiftMonth = (year, month, delta) => {
-    const moved = new Date(year, month - 1 + delta, 1);
-    return { year: moved.getFullYear(), month: moved.getMonth() + 1 };
-  };
-
-  const recordsFor = (year, month, day) => items
-    .filter((item) => {
-      if (!item.repeatYearly) {
-        return item.year === year && item.month === month && item.day === day;
-      }
-
-      if (year < item.year || item.month !== month) return false;
-      const recurringDay = Math.min(item.day, daysInMonth(year, month));
-      return recurringDay === day;
-    })
-    .sort((left, right) => left.title.localeCompare(right.title, 'zh-CN'));
-
-  const fillYearOptions = () => {
-    const selected = viewYear;
+  const fillYearOptions = (selected, minimum, maximum) => {
     yearSelect.replaceChildren();
-    for (let year = minimumYear; year <= maximumYear; year += 1) {
+    for (let year = minimum; year <= maximum; year += 1) {
       const option = text('option', '', year + ' 年');
       option.value = String(year);
       yearSelect.append(option);
@@ -223,20 +199,22 @@
     yearSelect.value = String(selected);
   };
 
-  const ensureYear = (year) => {
-    if (year < minimumYear) minimumYear = year;
-    if (year > maximumYear) maximumYear = year;
-    fillYearOptions();
+  const fillMonthOptions = (months, selected) => {
+    monthSelect.replaceChildren(...months.map((item) => {
+      const option = text('option', '', item.label);
+      option.value = item.value;
+      return option;
+    }));
+    monthSelect.value = selected;
   };
 
-  const renderAgenda = () => {
-    const records = recordsFor(viewYear, viewMonth, selectedDay);
-    const selectedDate = new Date(viewYear, viewMonth - 1, selectedDay);
-    const isToday = viewYear === today.year && viewMonth === today.month && selectedDay === today.day;
-    agendaPanel.classList.toggle('is-today', isToday);
-    agendaWeekday.textContent = isToday ? '今天 · ' + weekdays[selectedDate.getDay()] : weekdays[selectedDate.getDay()];
-    agendaDate.textContent = viewYear + ' 年 ' + viewMonth + ' 月 ' + selectedDay + ' 日';
-    agendaCount.textContent = records.length ? records.length + ' 条纪念日' : '这一天还没有记录';
+  const renderAgenda = (cell) => {
+    const records = cell.records || [];
+    agendaPanel.classList.toggle('is-today', cell.isToday);
+    agendaWeekday.textContent = cell.isToday ? '今天 · ' + cell.weekday : cell.weekday;
+    agendaDate.textContent = mode === 'lunar' ? cell.lunarLabel : cell.solarLabel;
+    const companion = mode === 'lunar' ? cell.solarLabel : cell.lunarLabel;
+    agendaCount.textContent = companion + ' · ' + (records.length ? records.length + ' 条纪念日' : '暂无纪念日');
     agenda.replaceChildren();
 
     if (!records.length) {
@@ -258,6 +236,7 @@
 
       const labels = [item.kindName];
       if (item.repeatYearly) labels.push('每年重复');
+      labels.push(item.calendarName);
       if (item.isPrivate) labels.push('私密');
 
       const copy = document.createElement('span');
@@ -273,31 +252,37 @@
     });
   };
 
-  /** 画一个日期格子；越界的日期用相邻月份补齐，点一下就翻过去。 */
-  const buildDay = (year, month, day, outside) => {
-    const records = recordsFor(year, month, day);
-    const weekday = new Date(year, month - 1, day).getDay();
+  /** 画一个日期格子；主历法在上，另一套历法作为小字一直留着。 */
+  const buildDay = (cell) => {
+    const records = cell.records || [];
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'calendar-day';
     button.setAttribute('role', 'gridcell');
-    button.setAttribute('aria-label', year + '年' + month + '月' + day + '日，'
+    button.setAttribute('aria-label', cell.solarLabel + '，' + cell.lunarLabel + '，'
       + (records.length ? records.length + '条纪念日' : '没有纪念日'));
-    if (weekday === 0 || weekday === 6) button.classList.add('is-weekend');
-    if (outside) button.classList.add('is-outside');
+    if (cell.weekend) button.classList.add('is-weekend');
+    if (cell.outside) button.classList.add('is-outside');
     if (records.length) button.classList.add('has-records');
-    if (year === today.year && month === today.month && day === today.day) button.classList.add('is-today');
-    if (!outside && day === selectedDay) button.classList.add('is-selected');
-    button.append(text('span', 'calendar-day-number', String(day)));
+    if (cell.isToday) button.classList.add('is-today');
+    if (cell.solarDate === selectedSolarDate) button.classList.add('is-selected');
+    const dateCopy = document.createElement('span');
+    dateCopy.className = 'calendar-day-date';
+    dateCopy.append(text('span', 'calendar-day-number', cell.primary), text('small', 'calendar-day-secondary', cell.secondary));
+    button.append(dateCopy);
+    if (records.length) {
+      const count = text('span', 'calendar-day-count', String(records.length));
+      count.setAttribute('aria-label', records.length + ' 条纪念日');
+      button.append(count);
+    }
 
-    if (records.length && outside) {
+    if (records.length && cell.outside) {
       const dots = document.createElement('span');
       dots.className = 'calendar-day-dots';
-      records.slice(0, 3).forEach((item) => dots.append(text('i', 'kind-' + item.kind, '')));
+      records.slice(0, 4).forEach((item) => dots.append(text('i', 'kind-' + item.kind, '')));
       button.append(dots);
     } else if (records.length) {
-      // 格子只有两行的高度：装得下就都列出来，装不下就留一条加一句「还有几个」。
-      const visible = records.length > 2 ? records.slice(0, 1) : records;
+      const visible = records.slice(0, 4);
       const recordList = document.createElement('span');
       recordList.className = 'calendar-day-records';
       visible.forEach((item) => {
@@ -307,81 +292,91 @@
         entry.append(text('i', '', ''), text('b', '', item.title));
         recordList.append(entry);
       });
-      if (records.length > visible.length) {
-        recordList.append(text('span', 'calendar-day-more', '还有 ' + (records.length - visible.length) + ' 个'));
-      }
 
       button.append(recordList);
     }
 
-    button.addEventListener('click', () => {
-      if (outside) {
-        viewYear = year;
-        viewMonth = month;
+    button.addEventListener('click', async () => {
+      selectedSolarDate = cell.solarDate;
+      if (cell.outside) {
+        await requestMonth(mode === 'lunar'
+          ? { year: cell.lunarYear, month: cell.lunarMonth, leap: cell.lunarLeap }
+          : { year: cell.solarYear, month: cell.solarMonth, leap: false });
+        return;
       }
 
-      selectedDay = day;
-      renderCalendar();
+      grid.querySelectorAll('.calendar-day.is-selected').forEach((item) => item.classList.remove('is-selected'));
+      button.classList.add('is-selected');
+      renderAgenda(cell);
     });
     return button;
   };
 
   const renderCalendar = () => {
-    ensureYear(viewYear);
-    yearSelect.value = String(viewYear);
-    monthSelect.value = String(viewMonth);
-    selectedDay = Math.min(selectedDay, daysInMonth(viewYear, viewMonth));
+    fillYearOptions(payload.year, payload.minimumYear, payload.maximumYear);
+    fillMonthOptions(payload.months, payload.monthKey);
+    modeButtons.forEach((button) => {
+      const active = button.dataset.calendarMode === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
 
-    const leadingBlanks = (new Date(viewYear, viewMonth - 1, 1).getDay() + 6) % 7;
-    const monthDays = daysInMonth(viewYear, viewMonth);
-    // 至少五行：二月刚好从周一开始时只要四行，月历会突然矮一截，翻月份时跳得很难看。
-    const rows = Math.max(5, Math.ceil((leadingBlanks + monthDays) / 7));
-    const previous = shiftMonth(viewYear, viewMonth, -1);
-    const following = shiftMonth(viewYear, viewMonth, 1);
-    const previousDays = daysInMonth(previous.year, previous.month);
-    const cells = [];
+    let selected = payload.cells.find((cell) => cell.solarDate === selectedSolarDate && !cell.outside);
+    if (!selected) selected = payload.cells.find((cell) => cell.isToday && !cell.outside);
+    if (!selected) selected = payload.cells.find((cell) => cell.records.length && !cell.outside);
+    if (!selected) selected = payload.cells.find((cell) => !cell.outside);
+    selectedSolarDate = selected.solarDate;
+    grid.style.setProperty('--calendar-rows', String(payload.rows));
+    grid.replaceChildren(...payload.cells.map(buildDay));
+    grid.setAttribute('aria-label', payload.year + '年' + monthSelect.options[monthSelect.selectedIndex].textContent + (mode === 'lunar' ? '农历' : '公历') + '纪念日日历');
+    renderAgenda(selected);
+  };
 
-    for (let index = 0; index < rows * 7; index += 1) {
-      const day = index - leadingBlanks + 1;
-      if (day < 1) {
-        cells.push(buildDay(previous.year, previous.month, previousDays + day, true));
-      } else if (day > monthDays) {
-        cells.push(buildDay(following.year, following.month, day - monthDays, true));
-      } else {
-        cells.push(buildDay(viewYear, viewMonth, day, false));
-      }
+  const requestMonth = async (target) => {
+    if (loading) return;
+    loading = true;
+    calendar.setAttribute('aria-busy', 'true');
+    const url = new URL(calendar.dataset.calendarUrl, window.location.origin);
+    url.searchParams.set('calendar', mode);
+    if (target && target.year) url.searchParams.set('year', target.year);
+    if (target && target.month) url.searchParams.set('month', target.month);
+    if (target && target.leap) url.searchParams.set('leap', 'true');
+    try {
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      payload = await response.json();
+      renderCalendar();
+    } catch (_) {
+      agenda.replaceChildren(text('p', 'calendar-agenda-empty', '日历暂时加载失败，请稍后再试。'));
+    } finally {
+      loading = false;
+      calendar.setAttribute('aria-busy', 'false');
     }
-
-    grid.style.setProperty('--calendar-rows', String(rows));
-    grid.replaceChildren(...cells);
-    grid.setAttribute('aria-label', viewYear + '年' + viewMonth + '月纪念日日历');
-    renderAgenda();
   };
 
-  const firstRecordedDay = (year, month) => {
-    const count = daysInMonth(year, month);
-    for (let day = 1; day <= count; day += 1) {
-      if (recordsFor(year, month, day).length) return day;
-    }
-    return 1;
-  };
-
-  const moveTo = (year, month, preferToday) => {
-    while (month < 1) { year -= 1; month += 12; }
-    while (month > 12) { year += 1; month -= 12; }
-    viewYear = year;
-    viewMonth = month;
-    selectedDay = preferToday && year === today.year && month === today.month
-      ? today.day
-      : firstRecordedDay(year, month);
-    renderCalendar();
-  };
-
-  fillYearOptions();
-  yearSelect.addEventListener('change', () => moveTo(Number(yearSelect.value), viewMonth, false));
-  monthSelect.addEventListener('change', () => moveTo(viewYear, Number(monthSelect.value), false));
-  calendar.querySelector('[data-calendar-previous]').addEventListener('click', () => moveTo(viewYear, viewMonth - 1, false));
-  calendar.querySelector('[data-calendar-next]').addEventListener('click', () => moveTo(viewYear, viewMonth + 1, false));
-  calendar.querySelector('[data-calendar-today]').addEventListener('click', () => moveTo(today.year, today.month, true));
-  renderCalendar();
+  const selectedCell = () => payload && payload.cells.find((cell) => cell.solarDate === selectedSolarDate);
+  modeButtons.forEach((button) => button.addEventListener('click', () => {
+    const nextMode = button.dataset.calendarMode;
+    if (nextMode === mode) return;
+    const cell = selectedCell();
+    mode = nextMode;
+    requestMonth(cell && mode === 'lunar'
+      ? { year: cell.lunarYear, month: cell.lunarMonth, leap: cell.lunarLeap }
+      : cell ? { year: cell.solarYear, month: cell.solarMonth, leap: false } : null);
+  }));
+  yearSelect.addEventListener('change', () => {
+    const key = monthSelect.value.split('-');
+    requestMonth({ year: Number(yearSelect.value), month: Number(key[0]), leap: key.length === 2 });
+  });
+  monthSelect.addEventListener('change', () => {
+    const key = monthSelect.value.split('-');
+    requestMonth({ year: Number(yearSelect.value), month: Number(key[0]), leap: key.length === 2 });
+  });
+  calendar.querySelector('[data-calendar-previous]').addEventListener('click', () => requestMonth(payload.previous));
+  calendar.querySelector('[data-calendar-next]').addEventListener('click', () => requestMonth(payload.next));
+  calendar.querySelector('[data-calendar-today]').addEventListener('click', () => {
+    selectedSolarDate = todayKey;
+    requestMonth(null);
+  });
+  requestMonth(null);
 }());

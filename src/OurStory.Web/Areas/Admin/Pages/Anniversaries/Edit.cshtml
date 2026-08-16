@@ -1,5 +1,6 @@
 @page "/admin/anniversaries/edit/{id:int?}"
 @model OurStory.Web.Areas.Admin.Pages.Anniversaries.EditModel
+@using OurStory.Core.Time
 @{
     ViewData["ActiveMenu"] = "anniversaries";
     ViewData["Eyebrow"] = Model.IsNew ? "NEW ANNIVERSARY" : "EDIT ANNIVERSARY";
@@ -37,11 +38,59 @@
                 <h2>@Icon("calendar-heart")@(Model.IsNew ? "添加纪念日" : "编辑纪念日")</h2>
                 <p class="admin-panel-hint">记录值得回看的日期和故事</p>
 
-                <partial name="_DateField" model="@(DateFieldModel.Date(
-                    "Input.AnniversaryDate",
-                    "日期",
-                    Model.Input.AnniversaryDate,
-                    required: true))" />
+                <fieldset class="anniversary-calendar-field" data-anniversary-calendar-editor data-lunar-year-url="@Url.Page(null, "LunarYear")">
+                    <legend>日期类型</legend>
+                    <div class="calendar-type-choices">
+                        <label>
+                            <input asp-for="Input.CalendarType" type="radio" value="Solar">
+                            <span><strong>公历</strong><small>社会国际通用</small></span>
+                        </label>
+                        <label>
+                            <input asp-for="Input.CalendarType" type="radio" value="Lunar">
+                            <span><strong>农历</strong><small>中国传统文化</small></span>
+                        </label>
+                    </div>
+
+                    <div data-solar-date>
+                        <partial name="_DateField" model="@(DateFieldModel.Date(
+                            "Input.AnniversaryDate",
+                            "公历日期",
+                            Model.Input.AnniversaryDate,
+                            required: true,
+                            hint: "前台主日期统一显示为公历"))" />
+                    </div>
+
+                    <div class="lunar-date-fields" data-lunar-date>
+                        <label class="field">
+                            <span>农历年份</span>
+                            <select asp-for="Input.LunarYear" data-lunar-year>
+                                @for (var year = ChineseLunarCalendar.MinimumYear; year <= ChineseLunarCalendar.MaximumYear; year++)
+                                {
+                                    <option value="@year">@year 年</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>农历月份</span>
+                            <select asp-for="Input.LunarMonthKey" data-lunar-month>
+                                @foreach (var month in EditModel.LunarMonths(Model.Input.LunarYear))
+                                {
+                                    <option value="@month.Value" data-days="@month.Days">@month.Label</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>农历日期</span>
+                            <select asp-for="Input.LunarDay" data-lunar-day>
+                                @for (var day = 1; day <= 30; day++)
+                                {
+                                    <option value="@day">@ChineseLunarCalendar.DayName(day)</option>
+                                }
+                            </select>
+                        </label>
+                        <small>保存后会自动换算成对应公历日期</small>
+                    </div>
+                </fieldset>
                 <label class="field">
                     <span>分类</span>
                     <select asp-for="Input.Kind">

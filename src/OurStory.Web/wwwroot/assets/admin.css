@@ -728,6 +728,22 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .admin-empty-state p { margin-top: 5px; font-size: 12px }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
 .anniversary-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px }
+.anniversary-calendar-field { display: grid; gap: 12px; margin: 0 0 16px; padding: 0; border: 0 }
+.anniversary-calendar-field > legend { margin-bottom: 7px; color: var(--muted); font-size: 12px }
+.calendar-type-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.calendar-type-choices label { position: relative; display: block; cursor: pointer }
+.calendar-type-choices input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+.calendar-type-choices span { display: grid; min-height: 62px; align-content: center; gap: 3px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft) }
+.calendar-type-choices strong { color: var(--ink); font-size: 13px; font-weight: 500 }
+.calendar-type-choices small { color: var(--faint); font-size: 10px; line-height: 1.5 }
+.calendar-type-choices input:checked + span { border-color: var(--pink); background: var(--pink-soft); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pink) 12%, transparent) }
+.calendar-type-choices input:checked + span strong { color: var(--pink-dark) }
+.calendar-type-choices input:focus-visible + span { outline: 2px solid var(--pink); outline-offset: 2px }
+.lunar-date-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px }
+.lunar-date-fields > .field { margin: 0 }
+.lunar-date-fields > .field:first-child { grid-column: 1 / -1 }
+.lunar-date-fields > small { grid-column: 1 / -1; color: var(--faint); font-size: 10px; line-height: 1.6 }
+.anniversary-calendar-field [hidden] { display: none }
 .anniversary-options .field-check { align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft) }
 .anniversary-options .field-check span { display: grid; gap: 2px }
 .anniversary-options .field-check strong { color: var(--ink); font-size: 13px; font-weight: 400 }
@@ -1295,6 +1311,9 @@ body.auth-page {
 
 @media (max-width: 560px) {
     .heart-balance-grid { grid-template-columns: minmax(0, 1fr) }
+    .lunar-date-fields { grid-template-columns: 1fr }
+    .lunar-date-fields > .field:first-child { grid-column: auto }
+    .lunar-date-fields > small { grid-column: auto }
 }
 
 @media (max-width: 760px) {

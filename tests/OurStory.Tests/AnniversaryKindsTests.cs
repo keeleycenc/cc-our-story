@@ -27,5 +27,7 @@ public class AnniversaryKindsTests {
         Assert.Equal(1, (int)AnniversaryKind.Birthday);
         Assert.Equal(2, (int)AnniversaryKind.Milestone);
         Assert.Equal(3, (int)AnniversaryKind.Custom);
+        Assert.Equal(0, (int)AnniversaryCalendarType.Solar);
+        Assert.Equal(1, (int)AnniversaryCalendarType.Lunar);
     }
 }

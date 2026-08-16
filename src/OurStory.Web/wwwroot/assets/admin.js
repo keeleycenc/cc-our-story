@@ -289,6 +289,59 @@
     }
   });
 
+  document.querySelectorAll('[data-anniversary-calendar-editor]').forEach((editor) => {
+    const radios = Array.from(editor.querySelectorAll('input[name="Input.CalendarType"]'));
+    const solar = editor.querySelector('[data-solar-date]');
+    const lunar = editor.querySelector('[data-lunar-date]');
+    const year = editor.querySelector('[data-lunar-year]');
+    const month = editor.querySelector('[data-lunar-month]');
+    const day = editor.querySelector('[data-lunar-day]');
+    if (!radios.length || !solar || !lunar || !year || !month || !day) return;
+
+    const setMode = () => {
+      const selected = radios.find((radio) => radio.checked);
+      const isLunar = selected && selected.value === 'Lunar';
+      solar.hidden = isLunar;
+      lunar.hidden = !isLunar;
+    };
+
+    const fillDays = () => {
+      const chosen = month.options[month.selectedIndex];
+      const count = Number(chosen ? chosen.dataset.days : 30) || 30;
+      const selected = Math.min(Number(day.value || 1), count);
+      Array.from(day.options).forEach((option) => { option.hidden = Number(option.value) > count; });
+      day.value = String(selected);
+    };
+
+    const loadYear = async () => {
+      const previous = month.value;
+      const url = new URL(editor.dataset.lunarYearUrl, window.location.origin);
+      url.searchParams.set('year', year.value);
+      try {
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const payload = await response.json();
+        month.replaceChildren(...payload.months.map((item) => {
+          const option = document.createElement('option');
+          option.value = item.value;
+          option.textContent = item.label;
+          option.dataset.days = String(item.days);
+          return option;
+        }));
+        month.value = Array.from(month.options).some((option) => option.value === previous) ? previous : '1';
+        fillDays();
+      } catch (_) {
+        // 保留上一组月份；服务端保存时仍会再次校验，不让错误日期进入数据库。
+      }
+    };
+
+    radios.forEach((radio) => radio.addEventListener('change', setMode));
+    year.addEventListener('change', loadYear);
+    month.addEventListener('change', fillDays);
+    setMode();
+    fillDays();
+  });
+
   /* 上传：图片库和正文插图共用这一套。
      一次能选好几张，但仍旧一张一张地传 —— 服务端一次只收一张，
      而且这样进度是准的，坏了也知道是坏在第几张 */

@@ -103,6 +103,7 @@ internal class AnniversaryService(
     private void Copy(AnniversaryEditModel model, Anniversary item) {
         item.Title = model.Title.Trim();
         item.AnniversaryDate = model.AnniversaryDate;
+        item.CalendarType = model.CalendarType;
         item.Note = string.IsNullOrWhiteSpace(model.Note) ? null : model.Note.Trim();
         item.NoteHtml = markdown.ToHtml(item.Note);
         item.CoverUrl = Trim(model.CoverUrl) ?? NullIfEmpty(HtmlText.FirstImage(item.NoteHtml));

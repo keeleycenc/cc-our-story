@@ -24,6 +24,11 @@ public class Anniversary {
     public DateOnly AnniversaryDate { get; set; }
 
     /// <summary>
+    /// 获取或设置纪念日每年遵循的历法；实际日期始终以公历日期存储
+    /// </summary>
+    public AnniversaryCalendarType CalendarType { get; set; } = AnniversaryCalendarType.Solar;
+
+    /// <summary>
     /// 获取或设置简短故事
     /// </summary>
     public string? Note { get; set; }

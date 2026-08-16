@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using OurStory.Core.Text;
+using OurStory.Core.Time;
 
 namespace OurStory.Core.Models;
 
@@ -16,6 +17,7 @@ public sealed record AnniversaryOccurrence(
     string NoteHtml,
     string CoverUrl,
     AnniversaryKind Kind,
+    AnniversaryCalendarType CalendarType,
     DateOnly OriginalDate,
     DateOnly? NextDate,
     int? DaysUntil,
@@ -23,6 +25,21 @@ public sealed record AnniversaryOccurrence(
     bool RepeatYearly,
     bool IsPrivate,
     string AuthorName) {
+
+    /// <summary>
+    /// 获取原始日期对应的农历日期
+    /// </summary>
+    public ChineseLunarDate LunarDate => ChineseLunarCalendar.FromSolar(OriginalDate);
+
+    /// <summary>
+    /// 获取统一用于主界面展示的公历日期
+    /// </summary>
+    public string SolarDateText => OriginalDate.ToString("yyyy.MM.dd");
+
+    /// <summary>
+    /// 获取日期原本采用的历法名称
+    /// </summary>
+    public string CalendarName => CalendarType == AnniversaryCalendarType.Lunar ? "农历" : "公历";
 
     /// <summary>
     /// 获取纪念日是否恰好是今天

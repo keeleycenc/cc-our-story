@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OurStory.Core;
 using OurStory.Services.Anniversaries;
@@ -50,6 +51,24 @@ public class AnniversaryEditPageTests {
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/admin/anniversaries", redirect.Url);
         Assert.Equal("纪念日已更新。", page.TempData["Flash"]);
+    }
+
+    [Fact]
+    public async Task 农历日期保存时换算为公历() {
+        await using var db = TestDoubles.Database(nameof(农历日期保存时换算为公历));
+        var service = Service(db);
+        var page = Page(service);
+        page.Input = Input("农历生日");
+        page.Input.CalendarType = AnniversaryCalendarType.Lunar;
+        page.Input.LunarYear = 2026;
+        page.Input.LunarMonthKey = "7";
+        page.Input.LunarDay = 7;
+
+        _ = await page.OnPostAsync(null, default);
+
+        var created = await db.Anniversaries.SingleAsync();
+        Assert.Equal(AnniversaryCalendarType.Lunar, created.CalendarType);
+        Assert.Equal(Core.Time.ChineseLunarCalendar.ToSolar(new Core.Time.ChineseLunarDate(2026, 7, 7)), created.AnniversaryDate);
     }
 
     private static AnniversaryEditPage Page(IAnniversaryService service) {

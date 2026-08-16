@@ -4,6 +4,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using OurStory.Core;
 using OurStory.Core.Entities;
 
 namespace OurStory.Data.Configurations;
@@ -19,6 +20,7 @@ public class AnniversaryConfiguration : IEntityTypeConfiguration<Anniversary> {
         _ = builder.ToTable("anniversaries");
         _ = builder.HasKey(item => item.Id);
         _ = builder.Property(item => item.Title).HasMaxLength(80).IsRequired();
+        _ = builder.Property(item => item.CalendarType).HasDefaultValue(AnniversaryCalendarType.Solar);
         _ = builder.Property(item => item.CoverUrl).HasMaxLength(500);
         _ = builder.HasOne(item => item.Author)
             .WithMany()

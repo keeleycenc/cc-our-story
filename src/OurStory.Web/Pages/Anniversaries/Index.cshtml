@@ -26,18 +26,6 @@
         .ToArray();
     string[] weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
     var todayWeekday = weekdayNames[(int)Model.Today.DayOfWeek];
-    var calendarItems = Model.Items.Select(item => new {
-        id = item.Id,
-        title = item.Title,
-        url = item.Url,
-        originalDate = item.OriginalDate.ToString("yyyy-MM-dd"),
-        kind = item.Kind.ToString().ToLowerInvariant(),
-        kindName = IndexModel.KindName(item.Kind),
-        kindIcon = IndexModel.KindIcon(item.Kind),
-        repeatYearly = item.RepeatYearly,
-        isPrivate = item.IsPrivate,
-        authorName = item.AuthorName
-    }).ToArray();
 }
 <main id="main" class="memory-page">
     <header class="page-heading memory-page-header">
@@ -72,6 +60,10 @@
                                 <span class="memory-today-row">
                                     <strong>@item.Title</strong>
                                     <em>@IndexModel.KindName(item.Kind)</em>
+                                    @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+                                    {
+                                        <em>农历</em>
+                                    }
                                     @if (item.IsPrivate)
                                     {
                                         <em class="privacy-tag">@Icon("lock")私密</em>
@@ -163,7 +155,14 @@
                                             <em class="privacy-tag">@Icon("lock")私密</em>
                                         }
                                     </div>
-                                    <div class="anniversary-meta"><time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">@item.OriginalDate.ToString("yyyy.MM.dd")</time><span>由 @item.AuthorName 记录</span></div>
+                                    <div class="anniversary-meta">
+                                        <time datetime="@item.OriginalDate.ToString("yyyy-MM-dd")">公历 @item.SolarDateText</time>
+                                        @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+                                        {
+                                            <span class="anniversary-lunar-date">@item.LunarDate.ShortText</span>
+                                        }
+                                        <span>由 @item.AuthorName 记录</span>
+                                    </div>
                                     <p class="timeline-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还没有写下描述。")</p>
                                 </div>
                                 <strong class="timeline-day">第 @dayNumber 天</strong>
@@ -210,6 +209,10 @@
                                     <div class="upcoming-title-row">
                                         <h3><a href="@item.Url">@item.Title</a></h3>
                                         <span>@IndexModel.KindName(item.Kind)</span>
+                                        @if (item.CalendarType == AnniversaryCalendarType.Lunar)
+                                        {
+                                            <span>农历</span>
+                                        }
                                         @if (item.IsPrivate)
                                         {
                                             <em class="privacy-tag">@Icon("lock")私密</em>
@@ -235,15 +238,19 @@
         </section>
     </div>
 
-    @if (calendarItems.Length > 0)
+    @if (Model.Items.Count > 0)
     {
-        <section class="memory-calendar" data-anniversary-calendar data-today="@Model.Today.ToString("yyyy-MM-dd")" aria-labelledby="calendar-title">
+        <section class="memory-calendar" data-anniversary-calendar data-today="@Model.Today.ToString("yyyy-MM-dd")" data-calendar-url="@Url.Page(null, "Calendar")" aria-labelledby="calendar-title">
             <header class="memory-section-header memory-calendar-header">
                 <div>
                     <p>CALENDAR</p>
                     <h2 id="calendar-title">纪念日日历</h2>
                 </div>
                 <div class="memory-calendar-controls" aria-label="切换日历月份">
+                    <div class="calendar-mode-switch" role="group" aria-label="日历历法">
+                        <button type="button" class="is-active" data-calendar-mode="solar" aria-pressed="true">公历</button>
+                        <button type="button" data-calendar-mode="lunar" aria-pressed="false">农历</button>
+                    </div>
                     <div class="calendar-stepper">
                         <button class="calendar-step" type="button" data-calendar-previous aria-label="上一个月">@Icon("chevron-left")</button>
                         <span class="calendar-select">
@@ -251,12 +258,7 @@
                             @Icon("chevron-down")
                         </span>
                         <span class="calendar-select">
-                            <select data-calendar-month aria-label="选择月份">
-                                @for (var month = 1; month <= 12; month++)
-                                {
-                                    <option value="@month">@month 月</option>
-                                }
-                            </select>
+                            <select data-calendar-month aria-label="选择月份"></select>
                             @Icon("chevron-down")
                         </span>
                         <button class="calendar-step" type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
@@ -280,7 +282,6 @@
                     <div data-calendar-agenda></div>
                 </aside>
             </div>
-            <script type="application/json" data-calendar-data>@Html.Raw(System.Text.Json.JsonSerializer.Serialize(calendarItems))</script>
         </section>
     }
 

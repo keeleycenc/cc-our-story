@@ -47,7 +47,26 @@ public class AnniversaryServiceTests {
         Assert.Equal("第一次旅行", created.Title);
         Assert.Equal("看到了海", created.Note);
         Assert.False(created.RepeatYearly);
+        Assert.Equal(AnniversaryCalendarType.Solar, created.CalendarType);
         Assert.Equal(1, await db.Anniversaries.CountAsync());
+    }
+
+    [Fact]
+    public async Task 创建农历纪念日会保留历法类型() {
+        await using var db = TestDoubles.Database(nameof(创建农历纪念日会保留历法类型));
+        var service = Service(db);
+        var solarDate = Core.Time.ChineseLunarCalendar.ToSolar(new Core.Time.ChineseLunarDate(2026, 7, 7));
+
+        var created = await service.CreateAsync(new AnniversaryEditModel {
+            Title = "七夕",
+            AnniversaryDate = solarDate,
+            CalendarType = AnniversaryCalendarType.Lunar,
+            RepeatYearly = true
+        }, null);
+
+        Assert.Equal(AnniversaryCalendarType.Lunar, created.CalendarType);
+        Assert.Equal(solarDate, created.AnniversaryDate);
+        Assert.Equal("农历七月初七", (await service.GetOccurrenceAsync(created.Id, true))!.LunarDate.ShortText);
     }
 
     [Fact]
