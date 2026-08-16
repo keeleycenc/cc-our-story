@@ -52,6 +52,18 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
     public ShopItemStatus? Status { get; private set; }
 
     /// <summary>
+    /// 获取一个值，指示当前是否只看已经因过期结束的心愿
+    /// </summary>
+    public bool IsEnded { get; private set; }
+
+    /// <summary>
+    /// 获取状态下拉框和分页地址使用的筛选值
+    /// </summary>
+    public string StatusFilter => IsEnded
+        ? "ended"
+        : Status?.ToString().ToLowerInvariant() ?? string.Empty;
+
+    /// <summary>
     /// 获取或设置保存预设失败时的原因
     /// </summary>
     public string? Error { get; private set; }
@@ -121,17 +133,17 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
 
         return card.Status switch {
             ShopItemStatus.Listed when !isSeller =>
-                ShopCardAction.Go("/shop", "立即兑换"),
+                ShopCardAction.Go($"/shop?focus={card.Id}", "立即兑换"),
 
             ShopItemStatus.Listed =>
                 ShopCardAction.Wait(
                     "等待兑换",
                     Waiting,
-                    $"「{card.Title}」已发布，正在等待其他用户兑换"
+                    $"「{card.Title}」已发布，正在等待对方兑换"
                 ),
 
             ShopItemStatus.Redeemed when isBuyer =>
-                ShopCardAction.Go("/shop/warehouse", "前往使用"),
+                ShopCardAction.Go($"/shop/warehouse?focus={card.Id}", "前往使用"),
 
             ShopItemStatus.Redeemed =>
                 ShopCardAction.Wait(
@@ -141,7 +153,7 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
                 ),
 
             ShopItemStatus.PendingConfirm when isSeller =>
-                ShopCardAction.Go("/shop/warehouse", "前往确认"),
+                ShopCardAction.Go($"/shop/warehouse?focus={card.Id}", "前往确认"),
 
             ShopItemStatus.PendingConfirm =>
                 ShopCardAction.Wait(
@@ -168,7 +180,7 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
                 ShopCardAction.Done(
                     "已结束",
                     Finished,
-                    $"「{card.Title}」已过期，无法恢复，可重新发布"
+                    $"「{card.Title}」已过期，无法恢复"
                 )
         };
     }
@@ -208,16 +220,16 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
     }
 
     /// <summary>
-    /// 拼当前筛选下的地址，页面上的筛选按钮用它
+    /// 拼当前筛选下的地址，分页继续沿用它
     /// </summary>
-    public string FilterUrl(UserRole? seller, ShopItemStatus? status) {
+    public string FilterUrl(UserRole? seller, string? status) {
         var query = new List<string>(2);
         if (seller is { } role) {
             query.Add($"seller={role.ToString().ToLowerInvariant()}");
         }
 
-        if (status is { } value) {
-            query.Add($"status={value.ToString().ToLowerInvariant()}");
+        if (!string.IsNullOrWhiteSpace(status)) {
+            query.Add($"status={Uri.EscapeDataString(status)}");
         }
 
         return query.Count == 0 ? "/admin/shop" : $"/admin/shop?{string.Join('&', query)}";
@@ -225,11 +237,14 @@ public class IndexModel(IShopService shop, IHeartPointService heartPoints) : Pag
 
     private async Task LoadAsync(string? seller, string? status, CancellationToken cancellationToken) {
         Seller = ParseSeller(seller);
-        Status = Enum.TryParse<ShopItemStatus>(status, ignoreCase: true, out var parsed) ? parsed : null;
+        IsEnded = string.Equals(status, "ended", StringComparison.OrdinalIgnoreCase);
+        Status = !IsEnded && Enum.TryParse<ShopItemStatus>(status, ignoreCase: true, out var parsed)
+            ? parsed
+            : null;
 
         var page = Request.PageNumber();
         Items = await shop.GetPageAsync(
-            new ShopQuery(page, PageSize, Seller, Status),
+            new ShopQuery(page, PageSize, Seller, Status, IsEnded),
             new ShopViewer(User.Role(), User.UserId()),
             cancellationToken);
 

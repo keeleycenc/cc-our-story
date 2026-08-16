@@ -8,7 +8,7 @@
     var pager = new PaginationModel(
         Model.Items.Page,
         Model.Items.TotalPages,
-        Model.FilterUrl(Model.Seller, Model.Status));
+        Model.FilterUrl(Model.Seller, Model.StatusFilter));
 
     var sellers = new (UserRole? Value, string Label)[]
     {
@@ -17,13 +17,14 @@
         (UserRole.Girl, Model.Balances.FirstOrDefault(item => item.Role == UserRole.Girl)?.Name ?? "女主")
     };
 
-    var states = new (ShopItemStatus? Value, string Label)[]
+    var states = new (string Value, string Label)[]
     {
-        (null, "全部"),
-        (ShopItemStatus.Listed, "上架中"),
-        (ShopItemStatus.Redeemed, "待使用"),
-        (ShopItemStatus.PendingConfirm, "待确认"),
-        (ShopItemStatus.Used, "已使用")
+        (string.Empty, "全部"),
+        ("listed", "上架中"),
+        ("redeemed", "待使用"),
+        ("pendingconfirm", "待确认"),
+        ("used", "已完成"),
+        ("ended", "已结束")
     };
 }
 
@@ -61,31 +62,34 @@
         这里展示所有已发布心愿及当前状态
     </p>
 
-    <div class="admin-shop-toolbar">
-        <div class="admin-filter" aria-label="按发布者筛选">
+    <form class="admin-shop-toolbar"
+          method="get"
+          data-shop-filter-form>
+        <label class="admin-filter">
             <span>发布者</span>
+            <select name="seller" aria-label="按发布者筛选">
+                @foreach (var (value, label) in sellers)
+                {
+                    var key = value?.ToString().ToLowerInvariant() ?? string.Empty;
+                    <option value="@key" selected="@(Model.Seller == value)">@label</option>
+                }
+            </select>
+        </label>
 
-            @foreach (var (value, label) in sellers)
-            {
-                <a class="@(Model.Seller == value ? "is-active" : null)"
-                   href="@Model.FilterUrl(value, Model.Status)">
-                    @label
-                </a>
-            }
-        </div>
-
-        <div class="admin-filter" aria-label="按状态筛选">
+        <label class="admin-filter">
             <span>状态</span>
+            <select name="status" aria-label="按状态筛选">
+                @foreach (var (value, label) in states)
+                {
+                    <option value="@value" selected="@(Model.StatusFilter == value)">@label</option>
+                }
+            </select>
+        </label>
 
-            @foreach (var (value, label) in states)
-            {
-                <a class="@(Model.Status == value ? "is-active" : null)"
-                   href="@Model.FilterUrl(Model.Seller, value)">
-                    @label
-                </a>
-            }
-        </div>
-    </div>
+        <noscript>
+            <button class="btn btn-small" type="submit">应用筛选</button>
+        </noscript>
+    </form>
 
     @if (Model.Items.Items.Count > 0)
     {

@@ -1,6 +1,20 @@
 (function () {
   'use strict';
 
+  const stage = document.querySelector('[data-shop-focus]');
+  if (stage) {
+    const target = document.getElementById('wish-' + stage.dataset.shopFocus);
+    if (target) {
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      window.requestAnimationFrame(() => {
+        target.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+        target.classList.add('is-focused');
+        window.setTimeout(() => target.classList.remove('is-focused'), 2600);
+      });
+    }
+  }
+
   const helpButton = document.querySelector('[data-help-open]');
   const helpPanel = document.getElementById('shop-help');
   if (helpButton && helpPanel) {

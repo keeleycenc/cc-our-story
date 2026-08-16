@@ -10,7 +10,7 @@
     var waiting = Model.Promises.Count(item => item.Status == ShopItemStatus.PendingConfirm);
 }
 
-<main class="content-page shop-page" id="main">
+<main class="content-page shop-page" id="main"@(Model.Focus is { } focus ? Html.Raw($" data-shop-focus=\"{focus}\"") : null)>
     <header class="page-heading shop-heading">
         <p>MY WAREHOUSE</p>
         <h1>心愿仓库</h1>
@@ -68,7 +68,7 @@
             <div class="shop-list">
                 @foreach (var item in Model.Promises.Where(value => value.Status == ShopItemStatus.PendingConfirm))
                 {
-                    <article class="shop-row is-pending">
+                    <article class="shop-row is-pending" id="wish-@item.Id">
                         <span class="shop-row-mark">
                             @Icon("hourglass")
                         </span>
@@ -138,7 +138,7 @@
             <div class="shop-list">
                 @foreach (var item in Model.Holdings)
                 {
-                    <article class="shop-row@(item.IsFinal ? " is-done" : "")">
+                    <article class="shop-row@(item.IsFinal ? " is-done" : "")" id="wish-@item.Id">
                         <span class="shop-row-mark">
                             @Icon(ShopDisplay.StatusIcon(item.Status))
                         </span>

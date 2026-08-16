@@ -309,6 +309,13 @@
 .shop-row-actions { display: flex; align-items: center; gap: 8px }
 .shop-row-actions form { margin: 0 }
 
+.shop-card.is-focused, .shop-row.is-focused { animation: wish-flash 2.6s ease-out }
+
+@keyframes wish-flash {
+    0%, 35% { box-shadow: 0 0 0 3px var(--pink) }
+    100% { box-shadow: 0 0 0 3px transparent }
+}
+
 /* 5. 心意账单 ------------------------------------------------------------ */
 .ledger-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none }
 

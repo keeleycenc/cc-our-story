@@ -93,7 +93,13 @@ public class ShopPresetEditModel {
 /// <param name="PageSize">每页几件</param>
 /// <param name="Seller">只看某个人发布的，null 表示不限</param>
 /// <param name="Status">只看某个状态的，null 表示不限</param>
-public sealed record ShopQuery(int Page = 1, int PageSize = 12, UserRole? Seller = null, ShopItemStatus? Status = null);
+/// <param name="EndedOnly">是否只看已经因过期结束的心愿</param>
+public sealed record ShopQuery(
+    int Page = 1,
+    int PageSize = 12,
+    UserRole? Seller = null,
+    ShopItemStatus? Status = null,
+    bool EndedOnly = false);
 
 /// <summary>
 /// 谁在看这个商城

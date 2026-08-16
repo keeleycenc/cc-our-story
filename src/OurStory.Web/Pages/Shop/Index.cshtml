@@ -15,7 +15,7 @@
     };
 }
 
-<main class="content-page shop-page" id="main">
+<main class="content-page shop-page" id="main"@(Model.Focus is { } focus ? Html.Raw($" data-shop-focus=\"{focus}\"") : null)>
     <header class="page-heading shop-heading">
         <p>HEART SHOP</p>
         <h1>心意商城</h1>
@@ -107,7 +107,7 @@
             {
                 var buyable = Model.CanBuy(item);
 
-                <article class="shop-card@(item.IsFinal ? " is-done" : "")">
+                <article class="shop-card@(item.IsFinal ? " is-done" : "")" id="wish-@item.Id">
                     @* 未设置封面时，根据心愿 ID 使用固定的默认样式。 *@
                     <div class="shop-cover tone-@ShopDisplay.CoverTone(item.Id)" @(item.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                         @if (item.CoverUrl.Length > 0)

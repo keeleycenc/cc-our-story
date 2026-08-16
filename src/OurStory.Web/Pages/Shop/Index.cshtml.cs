@@ -48,6 +48,11 @@ public class IndexModel(
     public int OnSaleCount { get; private set; }
 
     /// <summary>
+    /// 获取要定位过去的心愿 ID，为空表示这次不用定位
+    /// </summary>
+    public int? Focus { get; private set; }
+
+    /// <summary>
     /// 获取或设置操作之后要说的一句话
     /// </summary>
     public string? Flash { get; private set; }
@@ -60,10 +65,10 @@ public class IndexModel(
     /// <summary>
     /// 处理 GET 请求
     /// </summary>
-    public async Task OnGetAsync(string? seller, CancellationToken cancellationToken) {
+    public async Task OnGetAsync(string? seller, int? focus, CancellationToken cancellationToken) {
         Flash = TempData["Flash"] as string;
         Error = TempData["ShopError"] as string;
-        await LoadAsync(seller, cancellationToken);
+        await LoadAsync(seller, focus, cancellationToken);
     }
 
     /// <summary>
@@ -114,12 +119,22 @@ public class IndexModel(
         return $"还差 {card.Price - Balance} 心意";
     }
 
-    private async Task LoadAsync(string? seller, CancellationToken cancellationToken) {
+    private async Task LoadAsync(string? seller, int? focus, CancellationToken cancellationToken) {
         Site = await settingsService.GetAsync(cancellationToken);
         Seller = ParseSeller(seller);
 
         var viewer = new ShopViewer(User.Role(), User.UserId());
-        Items = await shop.GetPageAsync(new ShopQuery(Request.PageNumber(), PageSize, Seller), viewer, cancellationToken);
+        var page = Request.PageNumber();
+
+        if (focus is { } wish) {
+            var found = await shop.FindPageAsync(wish, new ShopQuery(1, PageSize, Seller), viewer, cancellationToken);
+            if (found > 0) {
+                page = found;
+                Focus = wish;
+            }
+        }
+
+        Items = await shop.GetPageAsync(new ShopQuery(page, PageSize, Seller), viewer, cancellationToken);
         OnSaleCount = await shop.CountOnSaleAsync(viewer, cancellationToken);
         Balance = User.UserId() is { } id ? await heartPoints.GetBalanceAsync(id, cancellationToken) : 0;
     }

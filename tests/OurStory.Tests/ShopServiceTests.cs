@@ -11,9 +11,10 @@ using Xunit;
 
 namespace OurStory.Tests;
 
-/// <summary>心愿商品的状态机与兑换规则。</summary>
+/// <summary>
+/// 心愿商品的状态机与兑换规则
+/// </summary>
 public class ShopServiceTests {
-    /// <summary>标价必须落在站点设置的区间里。</summary>
     [Fact]
     public async Task 标价超出区间时发布不了() {
         await using var harness = SqliteHarness.Create();
@@ -28,7 +29,6 @@ public class ShopServiceTests {
         Assert.Equal(0, await harness.Db.ShopItems.CountAsync());
     }
 
-    /// <summary>自己发的心愿自己换不走。</summary>
     [Fact]
     public async Task 不能兑换自己发布的心愿() {
         await using var harness = SqliteHarness.Create();
@@ -44,7 +44,6 @@ public class ShopServiceTests {
         Assert.Equal(ShopItemStatus.Listed, (await harness.Db.ShopItems.SingleAsync()).Status);
     }
 
-    /// <summary>心意不够就换不了，也不该扣掉一部分。</summary>
     [Fact]
     public async Task 心意不够时兑换失败() {
         await using var harness = SqliteHarness.Create();
@@ -61,7 +60,6 @@ public class ShopServiceTests {
         Assert.Equal(ShopItemStatus.Listed, (await harness.Db.ShopItems.SingleAsync()).Status);
     }
 
-    /// <summary>兑换成功后心意直接销毁，一分不进发布者的账。</summary>
     [Fact]
     public async Task 兑换只扣买家的心意不给卖家() {
         await using var harness = SqliteHarness.Create();
@@ -82,7 +80,6 @@ public class ShopServiceTests {
         _ = Assert.NotNull(saved.ExpiresAt);
     }
 
-    /// <summary>已经被换走的心愿不会再被换第二次。</summary>
     [Fact]
     public async Task 已兑换的心愿不能再兑换() {
         await using var harness = SqliteHarness.Create();
@@ -99,7 +96,6 @@ public class ShopServiceTests {
         Assert.Equal(70, await Points(harness).GetBalanceAsync(girlId));
     }
 
-    /// <summary>双方确认：持有人发起后进待履约，发布者点头才是已使用。</summary>
     [Fact]
     public async Task 双方确认要走完两步才算用掉() {
         await using var harness = SqliteHarness.Create();
@@ -119,7 +115,6 @@ public class ShopServiceTests {
         Assert.Equal(ShopItemStatus.Used, await StatusAsync(harness, itemId));
     }
 
-    /// <summary>立即使用：持有人按一下当场就是已使用。</summary>
     [Fact]
     public async Task 立即使用一步到位() {
         await using var harness = SqliteHarness.Create();
@@ -133,7 +128,6 @@ public class ShopServiceTests {
         _ = Assert.NotNull((await harness.Db.ShopItems.SingleAsync()).UsedAt);
     }
 
-    /// <summary>进了已使用就回不去了，谁按都一样。</summary>
     [Fact]
     public async Task 已使用之后谁也撤不回() {
         await using var harness = SqliteHarness.Create();
@@ -148,7 +142,6 @@ public class ShopServiceTests {
         Assert.Equal(ShopItemStatus.Used, await StatusAsync(harness, itemId));
     }
 
-    /// <summary>待履约可以退回仓库，两边都能按，退回后还能再发起。</summary>
     [Fact]
     public async Task 待履约可以退回仓库() {
         await using var harness = SqliteHarness.Create();
@@ -165,7 +158,6 @@ public class ShopServiceTests {
         Assert.True((await shop.RequestRedeemAsync(itemId, girlId)).Success);
     }
 
-    /// <summary>上架期满没人兑换就自动下架，之后也换不了了。</summary>
     [Fact]
     public async Task 上架到期自动变成未兑换过期() {
         await using var harness = SqliteHarness.Create();
@@ -187,7 +179,6 @@ public class ShopServiceTests {
         Assert.Equal(100, await Points(harness).GetBalanceAsync(girlId));
     }
 
-    /// <summary>兑换后拖过有效期就作废，待履约的也一样，不能再使用。</summary>
     [Fact]
     public async Task 兑换后到期作废且不能使用() {
         await using var harness = SqliteHarness.Create();
@@ -207,7 +198,6 @@ public class ShopServiceTests {
         Assert.False((await shop.RequestRedeemAsync(itemId, girlId)).Success);
     }
 
-    /// <summary>「仅双方可见」的心愿不出现在访客那一份列表里。</summary>
     [Fact]
     public async Task 访客看不到仅双方可见的心愿() {
         await using var harness = SqliteHarness.Create();
@@ -224,7 +214,87 @@ public class ShopServiceTests {
         Assert.Equal(2, owner.Items.Count);
     }
 
-    /// <summary>删掉预设不该动到已经用它发出去的心愿。</summary>
+    [Fact]
+    public async Task 已结束筛选包含两种过期终态() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var shop = Shop(harness);
+        _ = await shop.PublishAsync(Wish(title: "未兑换过期"), boyId);
+        _ = await shop.PublishAsync(Wish(title: "兑换后过期"), boyId);
+        _ = await shop.PublishAsync(Wish(title: "正常完成"), boyId);
+
+        var items = await harness.Db.ShopItems.ToListAsync();
+        items.Single(item => item.Title == "未兑换过期").Status = ShopItemStatus.ListingExpired;
+        items.Single(item => item.Title == "兑换后过期").Status = ShopItemStatus.Expired;
+        items.Single(item => item.Title == "正常完成").Status = ShopItemStatus.Used;
+        _ = await harness.Db.SaveChangesAsync();
+
+        var result = await shop.GetPageAsync(
+            new ShopQuery(EndedOnly: true),
+            new ShopViewer(UserRole.Girl, girlId));
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.All(result.Items, item =>
+            Assert.Contains(item.Status, new[] { ShopItemStatus.ListingExpired, ShopItemStatus.Expired }));
+    }
+
+    [Fact]
+    public async Task 能算出心愿在商城的第几页() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var shop = Shop(harness);
+        for (var index = 1; index <= 5; index++) {
+            _ = await shop.PublishAsync(Wish(title: $"心愿 {index}"), boyId);
+        }
+
+        var viewer = new ShopViewer(UserRole.Girl, girlId);
+        var query = new ShopQuery(PageSize: 2);
+        var oldest = await harness.Db.ShopItems.AsNoTracking().OrderBy(item => item.Id).FirstAsync();
+
+        var page = await shop.FindPageAsync(oldest.Id, query, viewer);
+
+        Assert.Equal(3, page);
+        var listed = await shop.GetPageAsync(query with { Page = page }, viewer);
+        Assert.Contains(listed.Items, item => item.Id == oldest.Id);
+    }
+
+    [Fact]
+    public async Task 定位已结束的心愿会落到后面的页() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var shop = Shop(harness);
+        for (var index = 1; index <= 5; index++) {
+            _ = await shop.PublishAsync(Wish(title: $"心愿 {index}"), boyId);
+        }
+
+        var newest = await harness.Db.ShopItems.OrderByDescending(item => item.Id).FirstAsync();
+        newest.Status = ShopItemStatus.Used;
+        _ = await harness.Db.SaveChangesAsync();
+
+        var viewer = new ShopViewer(UserRole.Girl, girlId);
+        var query = new ShopQuery(PageSize: 2);
+
+        var page = await shop.FindPageAsync(newest.Id, query, viewer);
+
+        Assert.Equal(3, page);
+        var listed = await shop.GetPageAsync(query with { Page = page }, viewer);
+        Assert.Contains(listed.Items, item => item.Id == newest.Id);
+    }
+
+    [Fact]
+    public async Task 定位不到的心愿返回零() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var shop = Shop(harness);
+        _ = await shop.PublishAsync(Wish(title: "只有我们", isPrivate: true), boyId);
+
+        var secret = await harness.Db.ShopItems.AsNoTracking().SingleAsync();
+
+        Assert.Equal(0, await shop.FindPageAsync(secret.Id, new ShopQuery(), ShopViewer.Guest));
+        Assert.Equal(1, await shop.FindPageAsync(secret.Id, new ShopQuery(), new ShopViewer(UserRole.Girl, girlId)));
+        Assert.Equal(0, await shop.FindPageAsync(secret.Id + 999, new ShopQuery(), new ShopViewer(UserRole.Girl, girlId)));
+    }
+
     [Fact]
     public async Task 删除预设不影响已发布的心愿() {
         await using var harness = SqliteHarness.Create();
@@ -256,7 +326,6 @@ public class ShopServiceTests {
         ValidDays = 30
     };
 
-    /// <summary>发一件、换一件，返回这件心愿的编号。</summary>
     private static async Task<int> RedeemedItemAsync(SqliteHarness harness, int sellerId, int buyerId, ShopRedeemMode mode) {
         await GiveAsync(harness, buyerId, 100);
 
@@ -270,7 +339,6 @@ public class ShopServiceTests {
         return item.Id;
     }
 
-    /// <summary>直接塞一笔进项，省得为了攒心意去点一堆爱心。</summary>
     private static async Task GiveAsync(SqliteHarness harness, int userId, int amount) {
         _ = harness.Db.HeartPointEntries.Add(new HeartPointEntry {
             UserId = userId,

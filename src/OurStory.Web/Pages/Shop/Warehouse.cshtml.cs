@@ -5,6 +5,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OurStory.Core;
 using OurStory.Core.Models;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
@@ -49,6 +50,11 @@ public class WarehouseModel(
     public int Balance { get; private set; }
 
     /// <summary>
+    /// 获取要定位过去的心愿 ID，为空表示这次不用定位
+    /// </summary>
+    public int? Focus { get; private set; }
+
+    /// <summary>
     /// 获取或设置操作之后要说的一句话
     /// </summary>
     public string? Flash { get; private set; }
@@ -61,10 +67,19 @@ public class WarehouseModel(
     /// <summary>
     /// 处理 GET 请求
     /// </summary>
-    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken) {
+    public async Task<IActionResult> OnGetAsync(int? focus, CancellationToken cancellationToken) {
         Flash = TempData["Flash"] as string;
         Error = TempData["ShopError"] as string;
-        return await LoadAsync(cancellationToken);
+
+        var result = await LoadAsync(cancellationToken);
+
+        if (focus is { } wish
+            && (Holdings.Any(item => item.Id == wish)
+                || Promises.Any(item => item.Id == wish && item.Status == ShopItemStatus.PendingConfirm))) {
+            Focus = wish;
+        }
+
+        return result;
     }
 
     /// <summary>

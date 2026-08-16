@@ -21,6 +21,16 @@ public interface IShopService {
     Task<PagedList<ShopItemCard>> GetPageAsync(ShopQuery query, ShopViewer viewer, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步找出某件心愿落在商城列表的第几页
+    /// </summary>
+    /// <param name="itemId">心愿 ID</param>
+    /// <param name="query">筛选条件，页码不参与计算</param>
+    /// <param name="viewer">谁在看</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>异步操作任务结果，页码从 1 开始；这件心愿不在筛选结果里时返回 0</returns>
+    Task<int> FindPageAsync(int itemId, ShopQuery query, ShopViewer viewer, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步获取某个人心愿仓库里的东西，也就是他兑换到手的那些
     /// </summary>
     /// <param name="userId">用户 ID</param>

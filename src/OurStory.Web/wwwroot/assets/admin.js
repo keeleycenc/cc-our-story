@@ -484,6 +484,12 @@
     });
   });
 
+  document.querySelectorAll('[data-shop-filter-form]').forEach((form) => {
+    form.querySelectorAll('select').forEach((select) => {
+      select.addEventListener('change', () => form.requestSubmit());
+    });
+  });
+
   document.querySelectorAll('[data-slider-field]').forEach((field) => {
     const slider = field.querySelector('[data-slider]');
     const output = field.querySelector('[data-slider-value]');

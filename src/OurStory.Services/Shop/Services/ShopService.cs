@@ -18,6 +18,8 @@ internal class ShopService(
     ISettingsService settings,
     IHeartPointService heartPoints,
     SiteClock clock) : IShopService {
+    private const int DefaultPageSize = 12;
+
     public async Task<PagedList<ShopItemCard>> GetPageAsync(ShopQuery query, ShopViewer viewer, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(viewer);
@@ -25,16 +27,8 @@ internal class ShopService(
         _ = await SweepExpiredAsync(cancellationToken);
 
         var page = query.Page < 1 ? 1 : query.Page;
-        var pageSize = query.PageSize < 1 ? 12 : query.PageSize;
-
-        var source = Visible(viewer);
-        if (query.Seller is { } seller) {
-            source = source.Where(item => item.Seller!.Role == seller);
-        }
-
-        if (query.Status is { } status) {
-            source = source.Where(item => item.Status == status);
-        }
+        var pageSize = PageSizeOf(query);
+        var source = Filter(query, viewer);
 
         var total = await source.CountAsync(cancellationToken);
         var items = await source
@@ -51,6 +45,32 @@ internal class ShopService(
 
         var site = await settings.GetAsync(cancellationToken);
         return new PagedList<ShopItemCard>([.. items.Select(item => ToCard(item, site))], page, pageSize, total);
+    }
+
+    public async Task<int> FindPageAsync(int itemId, ShopQuery query, ShopViewer viewer, CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(viewer);
+
+        _ = await SweepExpiredAsync(cancellationToken);
+
+        var source = Filter(query, viewer);
+        var target = await source
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == itemId, cancellationToken);
+
+        if (target is null) {
+            return 0;
+        }
+
+        var group = target.Status == ShopItemStatus.Listed ? 0 : 1;
+        var ahead = await source.CountAsync(
+            item => (item.Status == ShopItemStatus.Listed ? 0 : 1) < group
+                || ((item.Status == ShopItemStatus.Listed ? 0 : 1) == group
+                    && (item.ListedAt > target.ListedAt
+                        || (item.ListedAt == target.ListedAt && item.Id > target.Id))),
+            cancellationToken);
+
+        return (ahead / PageSizeOf(query)) + 1;
     }
 
     public async Task<IReadOnlyList<ShopItemCard>> GetWarehouseAsync(int userId, CancellationToken cancellationToken = default) {
@@ -343,8 +363,27 @@ internal class ShopService(
 
     #region 私有方法
 
+    private static int PageSizeOf(ShopQuery query) => query.PageSize < 1 ? DefaultPageSize : query.PageSize;
+
     private IQueryable<ShopItem> Visible(ShopViewer viewer) =>
         viewer.IsOwner ? db.ShopItems : db.ShopItems.Where(item => !item.IsPrivate);
+
+    private IQueryable<ShopItem> Filter(ShopQuery query, ShopViewer viewer) {
+        var source = Visible(viewer);
+        if (query.Seller is { } seller) {
+            source = source.Where(item => item.Seller!.Role == seller);
+        }
+
+        if (query.EndedOnly) {
+            source = source.Where(item =>
+                item.Status == ShopItemStatus.ListingExpired
+                || item.Status == ShopItemStatus.Expired);
+        } else if (query.Status is { } status) {
+            source = source.Where(item => item.Status == status);
+        }
+
+        return source;
+    }
 
     private async Task<bool> ExpireIfDueAsync(ShopItem item, CancellationToken cancellationToken) {
         if (item.Status is not (ShopItemStatus.Redeemed or ShopItemStatus.PendingConfirm)) {
