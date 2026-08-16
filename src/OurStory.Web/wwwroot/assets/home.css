@@ -132,7 +132,7 @@
 
 .heart > .icon {
     fill: currentColor;
-    stroke-width: 1.5;
+    stroke-width: 1.5px;
     animation: pulse 2s ease-in-out infinite;
     transform-origin: center;
 }
@@ -228,7 +228,7 @@ button.heart.is-capped > .icon { animation: none }
     padding: 3px 8px;
     font-size: 10px;
 }
-.miss-count .icon, .guest-count .icon { font-size: 12px; color: var(--pink); fill: currentColor; stroke-width: 1.4 }
+.miss-count .icon, .guest-count .icon { font-size: 12px; color: var(--pink); fill: currentColor; stroke-width: 1.4px }
 .guest-count .icon { fill: none }
 .miss-count strong, .guest-count strong { display: inline-block; font: 400 13px Georgia, serif; color: var(--ink); font-variant-numeric: tabular-nums }
 .miss-count.is-mine, .love-mark .guest-count.is-mine { border-color: var(--pink); background: var(--pink-softer) }
@@ -268,7 +268,7 @@ button.heart.is-capped > .icon { animation: none }
     color: var(--muted);
 }
 
-.heart-board > p .icon { color: var(--pink); fill: currentColor; stroke-width: 1.4 }
+.heart-board > p .icon { color: var(--pink); fill: currentColor; stroke-width: 1.4px }
 .heart-board b { font-weight: 400; color: var(--pink-dark) }
 .board-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px }
 .board-grid div {
@@ -371,7 +371,7 @@ button.heart.is-capped > .icon { animation: none }
     margin: 0 0 14px;
 }
 
-.together-letter .icon { color: var(--pink); fill: currentColor; stroke-width: 1.4 }
+.together-letter .icon { color: var(--pink); fill: currentColor; stroke-width: 1.4px }
 
 .timer { display: flex; align-items: center; justify-content: center; gap: 15px }
 .timer div { display: flex; align-items: baseline; gap: 5px }
@@ -384,7 +384,7 @@ button.heart.is-capped > .icon { animation: none }
 .float-one { font-size: 42px; left: 9%; top: 29% }
 .float-two { font-size: 28px; right: 12%; top: 40% }
 .float-three { font-size: 26px; right: 22%; bottom: 11% }
-.float .icon { stroke-width: 1.4 }
+.float .icon { stroke-width: 1.4px }
 .float-one .icon { transform: rotate(-18deg) }
 .float-three .icon { transform: rotate(20deg) }
 
@@ -531,7 +531,89 @@ button.heart.is-capped > .icon { animation: none }
 }
 
 .recent-card:hover .recent-cover img { transform: scale(1.04) }
-.cover-placeholder { font-size: 34px; stroke-width: 1.4 }
+.cover-placeholder { font-size: 34px; stroke-width: 1.4px }
+
+.wish-cover {
+    position: relative;
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+.wish-cover.tone-peach { background: var(--card-peach) }
+.wish-cover.tone-mint { background: var(--card-mint) }
+.wish-cover.tone-blue { background: var(--card-blue) }
+.wish-cover.tone-rose { background: var(--card-rose) }
+.wish-cover.tone-lilac { background: var(--card-lilac) }
+.wish-cover.tone-gold { background: var(--card-gold) }
+
+.wish-price {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 5px;
+    padding: 6px 11px;
+    border-radius: 99px;
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+    font-size: 10px;
+}
+
+.wish-price .icon { font-size: 12px }
+.recent-wish-card .recent-body { flex: 1; gap: 10px; padding: 16px 18px 18px }
+
+.wish-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.wish-card-head > strong {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.recent-wish-card .recent-excerpt {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wish-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 11px;
+    border-top: 1px solid var(--line);
+}
+
+.wish-card-foot > .recent-meta { min-width: 0 }
+
+.wish-private {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.wish-private .icon { font-size: 10px }
+
+.wish-card-action {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 5px;
+    color: var(--pink-dark);
+    font-size: 10px;
+}
+
+.wish-card-action .icon { transition: transform .2s }
+.recent-wish-card:hover .wish-card-action .icon { transform: translateX(3px) }
 
 .recent-body { display: flex; flex-direction: column; gap: 7px; padding: 18px 20px 22px }
 
@@ -563,7 +645,7 @@ button.heart.is-capped > .icon { animation: none }
     border-bottom: 1px solid var(--line);
 }
 
-.note-quote { font-size: 26px; color: var(--pink); opacity: .55; margin-bottom: 18px; stroke-width: 1.5 }
+.note-quote { font-size: 26px; color: var(--pink); opacity: .55; margin-bottom: 18px; stroke-width: 1.5px }
 .daily-note p { font-family: var(--serif); font-size: 21px; line-height: 1.8; margin: 0 }
 .daily-note small { display: block; color: var(--faint); font-size: 9px; margin-top: 13px; letter-spacing: .08em }
 

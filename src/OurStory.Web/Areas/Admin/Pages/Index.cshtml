@@ -46,12 +46,8 @@
     </div>
 </div>
 
-@* 余额是流水加出来的，不是某一列上的数字。一行两格，左右各看各的 *@
 <div class="admin-panel">
-    <div class="admin-toolbar">
-        <h2 style="margin:0">@Icon("coins") 彼此的心意</h2>
-        <a class="btn btn-small" href="/admin/shop">@Icon("store")心意商城</a>
-    </div>
+    <h2>@Icon("coins")彼此的心意</h2>
     <div class="heart-balance-grid">
         @foreach (var balance in Model.Balances)
         {
@@ -103,6 +99,11 @@
                 </article>
             }
         </div>
+
+        @if (Model.TotalCount > Model.Recent.Count)
+        {
+            <a class="admin-day-more" href="/admin/moments">@Icon("arrow-right")看看全部 @Model.TotalCount 条记录</a>
+        }
     }
     else
     {

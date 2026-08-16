@@ -452,7 +452,7 @@
         target.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
-      if (status) status.textContent = result.failure ? result.summary : '封面已经填好了。';
+      if (status) status.textContent = result.failure ? result.summary : '已设置封面';
       input.value = '';
     });
   });

@@ -106,6 +106,7 @@
             @foreach (var item in Model.Items.Items)
             {
                 var buyable = Model.CanBuy(item);
+                var description = item.Description.Length > 0 ? item.Description : "这份心愿没有附加说明。";
 
                 <article class="shop-card@(item.IsFinal ? " is-done" : "")" id="wish-@item.Id">
                     @* 未设置封面时，根据心愿 ID 使用固定的默认样式。 *@
@@ -135,13 +136,18 @@
                     </div>
 
                     <div class="shop-body">
-                        <h2>@item.Title</h2>
+                        <div class="shop-title-row">
+                            <h2 title="@item.Title">@item.Title</h2>
 
-                        <p class="shop-desc">
-                            @(item.Description.Length > 0
-                                ? item.Description
-                                : "这份心愿没有附加说明。")
-                        </p>
+                            @if (item.DaysLeft is { } left && item.IsOnSale)
+                            {
+                                <span class="shop-days-left@(item.IsExpiringSoon ? " is-urgent" : null)">
+                                    @Icon("clock")还剩 @left 天
+                                </span>
+                            }
+                        </div>
+
+                        <p class="shop-desc" title="@description">@description</p>
 
                         <div class="shop-meta">
                             <span>
@@ -152,13 +158,14 @@
                                 @Icon("hand-heart")@ShopDisplay.RedeemName(item.RedeemMode)
                             </span>
 
-                            @if (item.DaysLeft is { } left && item.IsOnSale)
-                            {
-                                <span class="@(item.IsExpiringSoon ? "is-urgent" : null)">
-                                    @Icon("clock")还剩 @left 天
-                                </span>
-                            }
-                            else if (item.BuyerName is not null)
+                            <span>
+                                @Icon("calendar-days")<time datetime="@item.ListedAt.ToString("yyyy-MM-ddTHH:mm:ss")"
+                                                              title="@item.ListedAt.ToString("yyyy-MM-dd HH:mm")">
+                                    @item.ListedAt.ToString("yyyy-MM-dd") 发布
+                                </time>
+                            </span>
+
+                            @if (!item.IsOnSale && item.BuyerName is not null)
                             {
                                 <span>
                                     @Icon("ticket")@item.BuyerName 已兑换

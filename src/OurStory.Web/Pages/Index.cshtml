@@ -167,6 +167,55 @@
             </section>
         }
 
+        @if (Model.LatestShopItems.Count > 0)
+        {
+            <section class="recent-moments recent-wishes" aria-labelledby="recent-wishes-title">
+                <div class="section-title">
+                    <div>
+                        <p>LATEST WISHES</p>
+                        <h2 id="recent-wishes-title">最近发布的心愿</h2>
+                    </div>
+                    <a class="section-more" href="/shop">查看全部@(Icon("arrow-right"))</a>
+                </div>
+                <div class="recent-grid">
+                    @foreach (var item in Model.LatestShopItems)
+                    {
+                        var description = item.Description.Length > 0 ? item.Description : "这份心愿没有附加说明。";
+
+                        <a class="recent-card recent-wish-card" href="/shop?focus=@item.Id">
+                            <span class="recent-cover wish-cover tone-@ShopDisplay.CoverTone(item.Id)"@(item.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
+                                @if (item.CoverUrl.Length > 0)
+                                {
+                                    <img src="@Thumbs.For(item.CoverUrl)" alt="@item.Title" loading="lazy" decoding="async">
+                                }
+                                else
+                                {
+                                    @Icon("gift", "cover-placeholder")
+                                }
+                            </span>
+                            <span class="recent-body">
+                                <span class="wish-card-head">
+                                    <strong title="@item.Title">@item.Title</strong>
+                                    <span class="wish-price">@Icon("coins")@item.Price 心意</span>
+                                </span>
+                                <span class="recent-excerpt" title="@description">@description</span>
+                                <span class="wish-card-foot">
+                                    <span class="recent-meta">
+                                        @Icon("user-round")@item.SellerName 发布
+                                        @if (item.IsPrivate)
+                                        {
+                                            <em class="wish-private">@Icon("lock")仅双方可见</em>
+                                        }
+                                    </span>
+                                    <span class="wish-card-action">去看看@(Icon("arrow-right"))</span>
+                                </span>
+                            </span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
         <div class="daily-note">
             @Icon("quote", "note-quote")
             <p>@HtmlLines.WithBreaks(site.DailyNote, Encoder)</p>

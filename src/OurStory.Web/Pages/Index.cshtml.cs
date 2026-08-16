@@ -3,6 +3,7 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using OurStory.Core;
 using OurStory.Core.Models;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Anniversaries;
@@ -52,6 +53,11 @@ public class IndexModel(
     public int ShopCount { get; private set; }
 
     /// <summary>
+    /// 获取或设置首页展示的最新心愿
+    /// </summary>
+    public IReadOnlyList<ShopItemCard> LatestShopItems { get; private set; } = [];
+
+    /// <summary>
     /// 执行 Heartbeat 操作
     /// </summary>
     public HeartbeatSummary Heartbeat { get; private set; } = new();
@@ -79,7 +85,14 @@ public class IndexModel(
         LatestMoments = await moments.GetLatestAsync(3, viewer, cancellationToken);
         MomentsCount = await moments.CountPublishedAsync(cancellationToken);
         AnniversariesCount = await anniversaries.CountForViewerAsync(User.IsOwner(), cancellationToken);
-        ShopCount = await shop.CountOnSaleAsync(new ShopViewer(User.Role(), User.UserId()), cancellationToken);
+
+        var shopViewer = new ShopViewer(User.Role(), User.UserId());
+        var latestShop = await shop.GetPageAsync(
+            new ShopQuery(PageSize: 3, Status: ShopItemStatus.Listed),
+            shopViewer,
+            cancellationToken);
+        LatestShopItems = latestShop.Items;
+        ShopCount = latestShop.TotalCount;
 
         var who = await visitors.GetAsync(cancellationToken);
         Heartbeat = await heartbeats.GetSummaryAsync(who, cancellationToken);
