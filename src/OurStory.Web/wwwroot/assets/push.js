@@ -23,7 +23,7 @@
   const status = panel.querySelector('[data-push-status]');
   const toggle = panel.querySelector('[data-push-toggle]');
   const label = panel.querySelector('[data-push-label]');
-  const testButton = panel.querySelector('[data-push-test]');
+  const spinner = panel.querySelector('[data-push-busy]');
   const sendForm = document.querySelector('[data-push-send]');
 
   const MEMORY = 'cc-push-endpoint';
@@ -89,19 +89,22 @@
     status.dataset.kind = kind || '';
   };
 
-  const LABELS = { busy: '请稍候', off: '开启通知', on: '已开启' };
+  const LABELS = { busy: '请稍候', off: '未开启', on: '已开启' };
   let state = 'busy';
 
   const render = (next, busyLabel) => {
     state = next;
+
+    // 忙的时候转圈挂在标题旁边，开关本身保持原样，不会闪
+    if (spinner) spinner.hidden = next !== 'busy';
     if (!toggle) return;
 
     toggle.dataset.state = next;
     if (label) label.textContent = next === 'busy' ? (busyLabel || LABELS.busy) : LABELS[next];
 
-    toggle.classList.toggle('btn-ghost', next === 'on');
+    toggle.setAttribute('aria-checked', String(next === 'on'));
     toggle.disabled = next === 'busy';
-    toggle.setAttribute('title', next === 'on' ? '点击关闭这台设备的通知' : '');
+    toggle.setAttribute('title', next === 'on' ? '点一下关闭这台设备的通知' : '点一下在这台设备上开启通知');
   };
 
   const busy = (button, on) => {
@@ -142,7 +145,6 @@
       : '当前浏览器暂不支持网页通知，请使用 Chrome、Edge、Firefox 或 Safari 访问。', 'warn');
     render('off');
     if (toggle) toggle.disabled = true;
-    busy(testButton, true);
     return;
   }
 
@@ -153,7 +155,6 @@
         + '可使用 cloudflared 等工具创建临时 HTTPS 隧道，获取可用地址。', 'warn');
     render('off');
     if (toggle) toggle.disabled = true;
-    busy(testButton, true);
     return;
   }
 
@@ -211,7 +212,35 @@
       return;
     }
 
-      say("此浏览器仍保留旧订阅，但服务端已无对应记录（设备可能被移除或数据已清理）", "");
+      /* unknown：浏览器还留着订阅，服务端却查无此条。
+             常见于开启到一半刷新了页面（订阅建好了，但没来得及登记），
+             或者服务端记录被清过。
+      
+             这种订阅谁都没认领，而权限本来就已经给过了，直接补登记到当前账号
+             就是用户想要的结果 —— 不必再让人多点一次 */
+    const claimed = await within(claim(subscription), 8000);
+
+    if (claimed !== TIMED_OUT && claimed && claimed.ok) {
+      remember(subscription.endpoint);
+      render('on');
+      say('已检测到设备历史订阅，现已自动重新登记完成', 'ok');
+      window.location.reload();
+      return;
+    }
+
+      say('检测到本地订阅与服务器数据不同步，请点击开关重新登记以恢复通知功能', '');
+  };
+
+  /* 把手上这份订阅登记到当前账号名下 */
+  const claim = async (subscription) => {
+    const payload = subscription.toJSON();
+
+    return post('/api/push/subscribe', {
+      endpoint: subscription.endpoint,
+      p256dh: payload.keys.p256dh,
+      auth: payload.keys.auth,
+      deviceKey: deviceKey()
+    });
   };
 
   const enable = async () => {
@@ -241,13 +270,7 @@
       applicationServerKey: toBytes(key.key)
     });
 
-    const payload = subscription.toJSON();
-    const result = await post('/api/push/subscribe', {
-      endpoint: subscription.endpoint,
-      p256dh: payload.keys.p256dh,
-      auth: payload.keys.auth,
-      deviceKey: deviceKey()
-    });
+    const result = await claim(subscription);
 
     if (!result.ok) {
       await subscription.unsubscribe().catch(() => {});
@@ -297,19 +320,29 @@
     });
   }
 
-  if (testButton) {
-    testButton.addEventListener('click', async () => {
-      busy(testButton, true);
-      say('正在发送测试通知……', '');
+  document.querySelectorAll('[data-device-test]').forEach((button) => {
+    const card = button.closest('.device-card');
+    const note = card ? card.querySelector('[data-device-note]') : null;
+
+    button.addEventListener('click', async () => {
+      busy(button, true);
+      if (note) {
+        note.textContent = '正在发送……';
+        note.dataset.kind = '';
+        note.hidden = false;
+      }
 
       try {
-        const result = await post('/api/push/test');
-        say(result.message || (result.ok ? '测试通知已发送。' : '测试通知暂未发送成功，请稍后再试。'), result.ok ? 'ok' : 'warn');
+        const result = await post('/api/push/test', { deviceId: Number(button.dataset.deviceTest) });
+        if (note) {
+            note.textContent = result.message || (result.ok ? '发送成功。' : '发送失败。');
+          note.dataset.kind = result.ok ? 'ok' : 'warn';
+        }
       } finally {
-        busy(testButton, false);
+        busy(button, false);
       }
     });
-  }
+  });
 
   if (sendForm) {
     const input = sendForm.querySelector('[data-push-body]');

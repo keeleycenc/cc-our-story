@@ -10,7 +10,7 @@
 @* 这一整块要靠脚本才有意义：授权、退订、试发都是浏览器那头的事。
    data-push 是脚本认这块内容的记号 *@
 <div class="admin-panel" data-push>
-    <h2>@Icon("bell-ring")当前设备</h2>
+    <h2>@Icon("bell-ring")当前设备<span class="push-spinner" data-push-busy hidden aria-hidden="true"></span></h2>
     <p class="admin-panel-hint">
         为了不错过彼此分享的每个瞬间，请分别在手机、平板或电脑上开启通知。
         根据浏览器的安全要求，每台设备都需要由你亲自确认授权。
@@ -23,16 +23,11 @@
 
     <p class="push-status" data-push-status>正在检测当前设备的通知状态……</p>
 
-    <div class="push-actions">
-        <button class="btn push-toggle" type="button" data-push-toggle data-state="busy" disabled>
-            <span class="push-spinner" aria-hidden="true"></span>
-            @Icon("bell", "icon-off")@Icon("bell-ring", "icon-on")<span data-push-label>正在检测</span>
-        </button>
-        <button class="btn btn-ghost push-test" type="button" data-push-test>
-            <span class="push-spinner" aria-hidden="true"></span>
-            @Icon("send", "icon-idle")<span>发送测试</span>
-        </button>
-    </div>
+    <button class="push-switch" type="button" role="switch" aria-checked="false"
+            data-push-toggle data-state="busy" disabled>
+        <span class="push-switch-track"><span class="push-switch-thumb"></span></span>
+        <span class="push-switch-label" data-push-label>正在检测</span>
+    </button>
 </div>
 
 <div class="admin-panel">
@@ -55,11 +50,18 @@
                             <span>@Icon("check")启用于 @device.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
                             <span>@Icon("send")@(device.LastPushedAt is { } pushed ? "最近推送 " + pushed.ToString("MM-dd HH:mm") : "暂无推送记录")</span>
                         </span>
+                        <span class="device-note" data-device-note hidden></span>
                     </div>
-                    <form method="post" asp-page-handler="RemoveDevice">
-                        <input type="hidden" name="deviceId" value="@device.Id">
-                        <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")移除</button>
-                    </form>
+                    <div class="device-actions">
+                        <button class="btn btn-ghost btn-small device-test" type="button" data-device-test="@device.Id">
+                            <span class="push-spinner" aria-hidden="true"></span>
+                            @Icon("send", "icon-idle")<span>发送测试</span>
+                        </button>
+                        <form method="post" asp-page-handler="RemoveDevice">
+                            <input type="hidden" name="deviceId" value="@device.Id">
+                            <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")移除</button>
+                        </form>
+                    </div>
                 </div>
             }
         </div>

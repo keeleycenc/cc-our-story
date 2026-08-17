@@ -96,6 +96,45 @@ public class NotificationServiceTests {
     }
 
     [Fact]
+    public async Task 指定设备的测试只发那一台() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out var sender);
+
+        var phone = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/phone", deviceKey: "phone"));
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/laptop", deviceKey: "laptop"));
+
+        // 设备列表里每张卡片各有一个「发送测试」，按下去只该响这一台
+        var result = await notifications.SendAsync(new NotificationRequest(
+            NotificationTopic.Test,
+            Message(),
+            TargetUserId: boyId,
+            TargetDeviceId: phone.Id));
+
+        Assert.Equal(1, result.Sent);
+        Assert.Equal("https://push.example.com/phone", Assert.Single(sender.Sent).Endpoint);
+    }
+
+    [Fact]
+    public async Task 拿对方的设备编号试也试不动() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out var sender);
+
+        var hers = await notifications.RegisterDeviceAsync(girlId, Registration("https://push.example.com/hers"));
+
+        // 设备编号是从页面上来的，不能光信它：还得是自己名下的才发得动
+        var result = await notifications.SendAsync(new NotificationRequest(
+            NotificationTopic.Test,
+            Message(),
+            TargetUserId: boyId,
+            TargetDeviceId: hers.Id));
+
+        Assert.Equal(0, result.Total);
+        Assert.Empty(sender.Sent);
+    }
+
+    [Fact]
     public async Task 订阅的归属分得清是我的还是没人认领() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();

@@ -193,9 +193,13 @@ internal sealed class NotificationService(
             return PushDeliveryResult.Empty;
         }
 
-        var devices = await db.PushDevices
-            .Where(device => recipients.Contains(device.UserId))
-            .ToListAsync(cancellationToken);
+        var candidates = db.PushDevices.Where(device => recipients.Contains(device.UserId));
+
+        if (request.TargetDeviceId is { } deviceId) {
+            candidates = candidates.Where(device => device.Id == deviceId);
+        }
+
+        var devices = await candidates.ToListAsync(cancellationToken);
 
         if (devices.Count == 0) {
             return PushDeliveryResult.Empty;

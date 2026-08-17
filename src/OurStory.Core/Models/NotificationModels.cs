@@ -22,11 +22,13 @@ public sealed record PushMessage(string Title, string Body, string Url = "/", st
 /// <param name="Message">通知内容</param>
 /// <param name="TargetUserId">只发给这个人；为 null 表示两个人都发</param>
 /// <param name="ExceptUserId">不发给这个人，通常是刚刚做出这个动作的本人</param>
+/// <param name="TargetDeviceId">要发送的目标台设备</param>
 public sealed record NotificationRequest(
     NotificationTopic Topic,
     PushMessage Message,
     int? TargetUserId = null,
-    int? ExceptUserId = null) {
+    int? ExceptUserId = null,
+    long? TargetDeviceId = null) {
 
     /// <summary>
     /// 发给对方：除了自己，剩下那个人

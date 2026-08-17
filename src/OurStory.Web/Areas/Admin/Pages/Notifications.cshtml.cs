@@ -67,7 +67,7 @@ public class NotificationsModel(
     public string? PartnerBlockedReason => !HasPartner
         ? "还没有绑定另一个账号哦"
         : !Partner.Enabled
-            ? $"{PartnerName} 还没开启通知，现在发过去会收不到呢"
+            ? $"{PartnerName} 还没开启通知，将无法接收"
             : Partner.Devices == 0
                 ? $"{PartnerName} 已经开启通知啦，但还没有设备绑定，先去授权一下吧"
                 : null;

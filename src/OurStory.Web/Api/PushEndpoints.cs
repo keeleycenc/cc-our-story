@@ -81,6 +81,7 @@ public static class PushEndpoints {
 
         _ = group.MapPost("/test", async (
             HttpContext context,
+            TestInput input,
             INotificationService notifications,
             ISettingsService settings,
             CancellationToken cancellationToken) => {
@@ -90,14 +91,15 @@ public static class PushEndpoints {
 
                 var site = await settings.GetAsync(cancellationToken);
                 var result = await notifications.SendAsync(
-                    NotificationRequest.ToUser(
+                    new NotificationRequest(
                         NotificationTopic.Test,
-                        userId,
                         new PushMessage(
                             $"{site.SiteTitle} 通知测试",
                             "本条消息用于确认通知通道已正常工作",
                             "/admin/notifications",
-                            "push-test")),
+                            "push-test"),
+                        TargetUserId: userId,
+                        TargetDeviceId: input.DeviceId),
                     cancellationToken);
 
                 return Results.Json(new {
@@ -173,7 +175,7 @@ public static class PushEndpoints {
         }
 
         return result.Total == 0
-            ? "你的账号还没绑定过设备，点下面「在这台设备上开启」就好啦"
+            ? "你的账号还没绑定过设备，点下面「开启通知」就好啦"
             : "设备好像都下线了，重新点一下开启试试吧";
     }
 
@@ -188,4 +190,10 @@ public static class PushEndpoints {
     /// </summary>
     /// <param name="Body">正文</param>
     public sealed record MessageInput(string? Body);
+
+    /// <summary>
+    /// 测试通知要发给哪一台设备
+    /// </summary>
+    /// <param name="DeviceId">目标设备编号；留空表示自己名下的所有设备</param>
+    public sealed record TestInput(long? DeviceId);
 }
