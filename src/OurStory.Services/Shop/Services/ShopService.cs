@@ -9,6 +9,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Shop;
@@ -17,6 +18,7 @@ internal class ShopService(
     OurStoryDbContext db,
     ISettingsService settings,
     IHeartPointService heartPoints,
+    INotificationQueue notifications,
     SiteClock clock) : IShopService {
     private const int DefaultPageSize = 12;
 
@@ -148,6 +150,13 @@ internal class ShopService(
 
         _ = db.ShopItems.Add(item);
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        NotifyCounterparty(
+            sellerId,
+            item,
+            $"{await NameOfAsync(sellerId, cancellationToken)}上架了新的心愿",
+            $"「{item.Title}」{item.Price} 心意，{listingDays} 天内有效");
+
         return ShopActionResult.Ok($"「{item.Title}」已经上架，{listingDays} 天内等对方来兑换。");
     }
 
@@ -200,6 +209,13 @@ internal class ShopService(
         _ = await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        // 事务提交之后才通知
+        NotifyCounterparty(
+            buyerId,
+            item,
+            $"{await NameOfAsync(buyerId, cancellationToken)}兑换了你的心愿",
+            $"「{item.Title}」花掉 {item.Price} 心意，记得履约哦");
+
         return ShopActionResult.Ok($"「{item.Title}」已放入心愿仓库，可在 {item.ValidDays} 天内使用");
     }
 
@@ -223,15 +239,31 @@ internal class ShopService(
         item.RedeemRequestedAt = now;
         item.UpdatedAt = now;
 
+        var name = await NameOfAsync(userId, cancellationToken);
+
         if (item.RedeemMode == ShopRedeemMode.Instant) {
             item.Status = ShopItemStatus.Used;
             item.UsedAt = now;
             _ = await db.SaveChangesAsync(cancellationToken);
+
+            NotifyCounterparty(
+                userId,
+                item,
+                $"{name}用掉了一件心愿",
+                $"「{item.Title}」已经使用");
+
             return ShopActionResult.Ok($"「{item.Title}」已使用");
         }
 
         item.Status = ShopItemStatus.PendingConfirm;
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        NotifyCounterparty(
+            userId,
+            item,
+            $"{name}想使用一件心愿",
+            $"「{item.Title}」等你确认完成");
+
         return ShopActionResult.Ok($"「{item.Title}」已发起使用，待对方确认后完成核销");
     }
 
@@ -254,6 +286,12 @@ internal class ShopService(
         item.UsedAt = now;
         item.UpdatedAt = now;
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        NotifyCounterparty(
+            userId,
+            item,
+            $"{await NameOfAsync(userId, cancellationToken)}已确认",
+            $"「{item.Title}」已经核销，这件事算是做到了");
 
         return ShopActionResult.Ok($"「{item.Title}」已确认完成");
     }
@@ -362,6 +400,32 @@ internal class ShopService(
     }
 
     #region 私有方法
+
+    /// <summary>
+    /// 把一条商城动静告诉这件心愿的另一头
+    /// </summary>
+    /// <remarks>
+    /// 一件心愿只牵扯发布者和兑换者两个人，谁在操作，收件人就是另一个。
+    /// 还没被兑换的心愿只有发布者一头，这时候按「除了我就是对方」来发
+    /// </remarks>
+    private void NotifyCounterparty(int actorId, ShopItem item, string title, string body) {
+        var message = new PushMessage(title, body, "/shop", $"shop-{item.Id}");
+        var target = item.SellerId == actorId ? item.BuyerId : item.SellerId;
+
+        _ = notifications.Enqueue(target is { } id && id != actorId
+            ? NotificationRequest.ToUser(NotificationTopic.Shop, id, message)
+            : NotificationRequest.ToPartner(NotificationTopic.Shop, actorId, message));
+    }
+
+    private async Task<string> NameOfAsync(int userId, CancellationToken cancellationToken) {
+        var site = await settings.GetAsync(cancellationToken);
+        var role = await db.Users
+            .Where(user => user.Id == userId)
+            .Select(user => user.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return site.RoleName(role);
+    }
 
     private static int PageSizeOf(ShopQuery query) => query.PageSize < 1 ? DefaultPageSize : query.PageSize;
 

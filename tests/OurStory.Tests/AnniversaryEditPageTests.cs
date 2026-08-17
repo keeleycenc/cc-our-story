@@ -83,7 +83,7 @@ public class AnniversaryEditPageTests {
     }
 
     private static AnniversaryService Service(Data.OurStoryDbContext db) =>
-        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), new SettingsStub());
+        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), TestDoubles.Notifications(), new SettingsStub());
 
     private static AnniversaryEditPage.InputModel Input(string title) => new() {
         Title = title,

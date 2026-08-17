@@ -5,6 +5,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
@@ -74,6 +75,8 @@ builder.Services.AddScoped<HeartbeatTokenService>();
 builder.Services.AddScoped<VisitorIdentityAccessor>();
 builder.Services.AddScoped<MomentUnlockStore>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<NotificationWorker>();
+builder.Services.AddHostedService<NotificationScheduler>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options => {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -99,7 +102,11 @@ if (!app.Environment.IsDevelopment()) {
 
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 
-app.UseStaticFiles();
+// .webmanifest 不在默认的类型表里，不显式登记的话会被当成未知类型直接 404
+var contentTypes = new FileExtensionContentTypeProvider();
+contentTypes.Mappings[".webmanifest"] = "application/manifest+json";
+
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypes });
 
 // 附件放在数据目录里而不是 wwwroot 里：发布包可以整个覆盖，数据不会被冲掉
 var uploadsRoot = app.Services.GetRequiredService<StoragePaths>().UploadsRoot;
@@ -116,6 +123,7 @@ app.UseDailyVisitReward();
 app.MapRazorPages();
 app.MapHeartbeatEndpoints();
 app.MapThumbnailEndpoints();
+app.MapPushEndpoints();
 
 // 存活探针：容器和反代拿它判断站点还活着。只探数据库连不连得上，
 // 不查任何业务数据，也不渲染页面
@@ -125,6 +133,7 @@ app.MapGet("/healthz", async (OurStoryDbContext db, CancellationToken cancellati
         : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 
 await app.InitializeDatabaseAsync();
+app.EnsurePushKeys();
 
 await app.RunAsync();
 return 0;

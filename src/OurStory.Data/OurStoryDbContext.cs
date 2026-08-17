@@ -60,6 +60,16 @@ public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : Db
     public DbSet<ShopPreset> ShopPresets => Set<ShopPreset>();
 
     /// <summary>
+    /// 执行 PushDevices 操作
+    /// </summary>
+    public DbSet<PushDevice> PushDevices => Set<PushDevice>();
+
+    /// <summary>
+    /// 执行 NotificationSettings 操作
+    /// </summary>
+    public DbSet<NotificationSetting> NotificationSettings => Set<NotificationSetting>();
+
+    /// <summary>
     /// 执行 OnModelCreating 操作
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder) {

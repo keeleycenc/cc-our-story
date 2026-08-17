@@ -52,8 +52,8 @@ public class MomentEditPageTests {
         Assert.Equal("改动已经保存。", page.TempData["Flash"]);
     }
 
-    private static MomentService Service(OurStory.Data.OurStoryDbContext db) =>
-        new(db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Clock());
+    private static MomentService Service(Data.OurStoryDbContext db) =>
+        new(db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Notifications(), TestDoubles.Clock());
 
     private static MomentEditPage Page(IMomentService service) {
         var httpContext = new DefaultHttpContext {

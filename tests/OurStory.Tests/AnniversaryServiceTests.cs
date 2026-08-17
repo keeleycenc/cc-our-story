@@ -125,6 +125,6 @@ public class AnniversaryServiceTests {
         IsPrivate = isPrivate
     };
 
-    private static AnniversaryService Service(OurStory.Data.OurStoryDbContext db) =>
-        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), new SettingsStub());
+    private static AnniversaryService Service(Data.OurStoryDbContext db) =>
+        new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), TestDoubles.Notifications(), new SettingsStub());
 }

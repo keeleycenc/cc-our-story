@@ -22,4 +22,9 @@ public class OurStoryConfiguration {
     /// 获取或设置附件存储参数
     /// </summary>
     public StorageOptions Storage { get; set; } = new();
+
+    /// <summary>
+    /// 获取或设置 Web Push 的 VAPID 身份，首次启动自动生成
+    /// </summary>
+    public PushOptions Push { get; set; } = new();
 }

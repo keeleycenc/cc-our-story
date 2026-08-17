@@ -12,6 +12,7 @@ using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Moments;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Tests;
@@ -35,6 +36,9 @@ internal static class TestDoubles {
 
     /// <summary>心意流水不参与断言时给一份空实现，省得每处都拼一套。</summary>
     public static IHeartPointService NoPoints() => new HeartPointStub();
+
+    /// <summary>只把排队的通知收进列表，不真的往外发。</summary>
+    public static NotificationQueueSpy Notifications() => new();
 }
 
 /// <summary>
@@ -110,6 +114,30 @@ internal sealed class SettingsStub(SiteSettings? settings = null) : ISettingsSer
     public Task SetRawAsync(string key, string value, CancellationToken cancellationToken = default) {
         _raw[key] = value;
         return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// 把排队的通知留在手边，测试可以直接翻这份清单
+/// </summary>
+/// <remarks>发通知是「做完这件事顺带的动静」，不该让业务测试真的去连推送服务。</remarks>
+internal sealed class NotificationQueueSpy : INotificationQueue {
+    /// <summary>按排队顺序记下的所有通知。</summary>
+    public List<NotificationRequest> Sent { get; } = [];
+
+    public bool Enqueue(NotificationRequest request) {
+        Sent.Add(request);
+        return true;
+    }
+
+    public async IAsyncEnumerable<NotificationRequest> ReadAllAsync(
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default) {
+        foreach (var request in Sent) {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return request;
+        }
+
+        await Task.CompletedTask;
     }
 }
 

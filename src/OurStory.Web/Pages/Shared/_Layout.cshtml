@@ -19,6 +19,14 @@
     <meta name="format-detection" content="telephone=no">
     <title>@(string.IsNullOrWhiteSpace(pageTitle) ? site.SiteTitle : pageTitle + " - " + site.SiteTitle)</title>
     <link rel="icon" href="/favicon.ico">
+
+    @* 装成 App 的三件套。iPhone 上必须先「添加到主屏幕」，
+       通知才用得了，所以 apple-touch-icon 这几行不能省 *@
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="@site.SiteTitle">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     @foreach (var style in styles)
     {
         <link rel="stylesheet" href="@Assets.Url(style)">
@@ -91,6 +99,7 @@
     <img alt="">
 </div>
 
+<script src="@Assets.Url("assets/pwa.js")" defer></script>
 @foreach (var script in scripts)
 {
     <script src="@Assets.Url(script)" defer></script>

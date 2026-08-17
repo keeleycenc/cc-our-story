@@ -14,6 +14,7 @@
 		("shop", "/admin/shop", "store", "心意商城", false),
 		("comments", "/admin/comments", "message-circle-heart", "留言", false),
 		("media", "/admin/media", "image", "图片", false),
+		("notifications", "/admin/notifications", "bell", "通知", false),
 		("settings", "/admin/settings", "settings", "站点设置", false),
 		("account", "/admin/account", "key-round", "账号", false)
 	};
@@ -29,6 +30,10 @@
 	<meta name="theme-color" content="#17151b" media="(prefers-color-scheme: dark)">
 	<title>@ViewData["Title"] · @site.SiteTitle 后台</title>
 	<link rel="icon" href="/favicon.ico">
+	<link rel="manifest" href="/manifest.webmanifest">
+	<link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-title" content="@site.SiteTitle">
 	<link rel="stylesheet" href="@Assets.Url("assets/variables.css")">
 	<link rel="stylesheet" href="@Assets.Url("assets/admin.css")">
 	<script>
@@ -129,6 +134,7 @@
 		</div>
 	</div>
 
+	<script src="@Assets.Url("assets/pwa.js")" defer></script>
 	<script src="@Assets.Url("assets/admin.js")" defer></script>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>

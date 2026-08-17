@@ -1,0 +1,153 @@
+@page "/admin/notifications"
+@model OurStory.Web.Areas.Admin.Pages.NotificationsModel
+@inject AssetVersionProvider Assets
+@{
+    ViewData["ActiveMenu"] = "notifications";
+    ViewData["Eyebrow"] = "NOTIFICATIONS";
+    ViewData["Title"] = "通知中心";
+}
+
+@* 这一整块要靠脚本才有意义：授权、退订、试发都是浏览器那头的事。
+   data-push 是脚本认这块内容的记号 *@
+<div class="admin-panel" data-push>
+    <h2>@Icon("bell-ring")当前设备</h2>
+    <p class="admin-panel-hint">
+        为了不错过彼此分享的每个瞬间，请分别在手机、平板或电脑上开启通知。
+        根据浏览器的安全要求，每台设备都需要由你亲自确认授权。
+    </p>
+
+    @if (!Model.IsConfigured)
+    {
+        <p class="admin-error">@Icon("circle-alert")通知服务尚未完成配置，请联系站点管理员检查启动日志。</p>
+    }
+
+    <p class="push-status" data-push-status>正在检测当前设备的通知状态……</p>
+
+    <div class="push-actions">
+        <button class="btn" type="button" data-push-enable>@Icon("bell")开启当前设备通知</button>
+        <button class="btn btn-ghost" type="button" data-push-disable hidden>@Icon("bell-off")关闭当前设备通知</button>
+        <button class="btn btn-ghost" type="button" data-push-test>@Icon("send")发送测试通知</button>
+    </div>
+</div>
+
+<div class="admin-panel">
+    <h2>@Icon("smartphone")接收通知的设备</h2>
+
+    @if (Model.Devices.Count == 0)
+    {
+        <p class="admin-panel-hint" style="margin-bottom:0">尚无设备开启通知，开启后即可及时收到彼此的暖心动态。</p>
+    }
+    else
+    {
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>设备</th>
+                        <th>启用时间</th>
+                        <th>最近推送</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var device in Model.Devices)
+                    {
+                        <tr>
+                            <td>@Icon("smartphone")&nbsp;@device.Name</td>
+                            <td>@device.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@(device.LastPushedAt?.ToString("yyyy-MM-dd HH:mm") ?? "暂无记录")</td>
+                            <td class="is-actions">
+                                <form method="post" asp-page-handler="RemoveDevice">
+                                    <input type="hidden" name="deviceId" value="@device.Id">
+                                    <button class="btn btn-ghost btn-small" type="submit">@Icon("trash-2")移除设备</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<form method="post" class="admin-panel">
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    }
+
+    <h2>@Icon("list-checks")通知偏好</h2>
+    <p class="admin-panel-hint">
+        你和伴侣可以分别选择希望接收的提醒，彼此的设置互不影响。关闭总开关后，本账号将仅接收测试通知。
+    </p>
+
+    <label class="field-check">
+        <input asp-for="Input.Enabled" type="checkbox">
+        <span>接收通知</span>
+    </label>
+
+    <label class="field-check">
+        <input asp-for="Input.Moments" type="checkbox">
+        <span>@Icon("camera")点点滴滴 —— 当伴侣记录新的共同回忆时</span>
+    </label>
+
+    <label class="field-check">
+        <input asp-for="Input.Anniversaries" type="checkbox">
+        <span>@Icon("calendar-heart")纪念日 —— 当伴侣添加新日子，以及纪念日在今天或明天到来时</span>
+    </label>
+
+    <label class="field-check">
+        <input asp-for="Input.Shop" type="checkbox">
+        <span>@Icon("store")心意商城 —— 当心意上架、兑换、等待确认或圆满完成时</span>
+    </label>
+
+    <label class="field-check">
+        <input asp-for="Input.DailyMiss" type="checkbox">
+        <span>@Icon("heart")每日想你 —— 每天在约定的时间送上一份想念提醒</span>
+    </label>
+
+    <div class="field-grid" style="margin-top:18px">
+        <label class="field" style="margin-bottom:0">
+            <span>每日提醒时间</span>
+            <input asp-for="Input.RemindAt" type="time">
+            <small>「每日想你」与当天或次日的纪念日提醒会在此时发送，时间以站点时区为准。</small>
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn" type="submit">@Icon("save")保存设置</button>
+    </div>
+</form>
+
+<div class="admin-panel">
+    <h2>@Icon("send")给@Model.PartnerName送去一句话</h2>
+    <p class="admin-panel-hint">
+        这句话会直接送达@(Model.PartnerName)所有已开启通知的设备，不受分类偏好影响；
+        若对方已关闭通知总开关，则暂时无法收到。
+    </p>
+
+    @if (!Model.HasPartner)
+    {
+        <p class="admin-panel-hint" style="margin-bottom:0">当前尚未添加伴侣账号，完成添加后即可向对方传递心意。</p>
+    }
+    else
+    {
+        <form data-push-send>
+            <label class="field">
+                <span>想对对方说的话</span>
+                <textarea rows="3" maxlength="120" placeholder="今天也很想你，愿你一切都好" data-push-body></textarea>
+                <small>最多 120 字。受设备显示空间影响，锁屏通知可能仅展示前一至两行。</small>
+            </label>
+
+            <p class="push-status" data-push-feedback></p>
+
+            <div class="form-actions" style="margin-top:0">
+                <button class="btn" type="submit">@Icon("send")送达心意</button>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <script src="@Assets.Url("assets/push.js")" defer></script>
+}

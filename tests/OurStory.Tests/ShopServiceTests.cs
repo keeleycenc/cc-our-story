@@ -358,7 +358,7 @@ public class ShopServiceTests {
         new(harness.Db, new SettingsStub(), TestDoubles.Clock());
 
     private static ShopService Shop(SqliteHarness harness) =>
-        new(harness.Db, new SettingsStub(), Points(harness), TestDoubles.Clock());
+        new(harness.Db, new SettingsStub(), Points(harness), TestDoubles.Notifications(), TestDoubles.Clock());
 
     #endregion
 }

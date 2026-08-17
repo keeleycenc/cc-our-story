@@ -11,6 +11,7 @@ using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Moments;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Anniversaries;
@@ -20,6 +21,7 @@ internal class AnniversaryService(
     SiteClock clock,
     IMarkdownRenderer markdown,
     IHeartPointService heartPoints,
+    INotificationQueue notifications,
     ISettingsService settings) : IAnniversaryService {
     public async Task<IReadOnlyList<AnniversaryOccurrence>> GetForViewerAsync(bool isOwner, CancellationToken cancellationToken = default) {
         var query = isOwner ? db.Anniversaries : db.Anniversaries.Where(item => !item.IsPrivate);
@@ -64,6 +66,7 @@ internal class AnniversaryService(
             _ = await heartPoints.AwardDailyAsync(id, HeartPointReason.AnniversaryPublished, clock.TodayKey, cancellationToken);
         }
 
+        await NotifyAsync(item, authorId, cancellationToken);
         return item;
     }
 
@@ -82,6 +85,33 @@ internal class AnniversaryService(
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default) {
         var deleted = await db.Anniversaries.Where(item => item.Id == id).ExecuteDeleteAsync(cancellationToken);
         return deleted > 0;
+    }
+
+    #region 私有方法
+
+    private async Task NotifyAsync(Anniversary item, int? authorId, CancellationToken cancellationToken) {
+        var site = await settings.GetAsync(cancellationToken);
+        var occurrence = AnniversaryTimeline.Calculate(item, clock.Today);
+
+        var when = occurrence.DaysUntil switch {
+            null => $"{occurrence.SolarDateText}，已经过去了",
+            0 => "就是今天",
+            1 => "就在明天",
+            { } days => $"还有 {days} 天"
+        };
+
+        var author = authorId is { } id
+            ? site.RoleName(await db.Users.Where(user => user.Id == id).Select(user => user.Role).FirstOrDefaultAsync(cancellationToken))
+            : "我们";
+
+        _ = notifications.Enqueue(NotificationRequest.ToPartner(
+            NotificationTopic.Anniversary,
+            authorId ?? 0,
+            new PushMessage(
+                $"{author}记下了一个日子",
+                $"{item.Title} · {when}",
+                occurrence.Url,
+                $"anniversary-{item.Id}")));
     }
 
     private static IReadOnlyList<AnniversaryOccurrence> Sort(IEnumerable<AnniversaryOccurrence> items) =>
@@ -115,4 +145,6 @@ internal class AnniversaryService(
     private static string? Trim(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string? NullIfEmpty(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    #endregion
 }

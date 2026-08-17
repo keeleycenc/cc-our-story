@@ -10,6 +10,7 @@ using OurStory.Core.Text;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Moments;
@@ -19,6 +20,7 @@ internal class MomentService(
     ISettingsService settings,
     IMarkdownRenderer markdown,
     IHeartPointService heartPoints,
+    INotificationQueue notifications,
     SiteClock clock) : IMomentService {
     public async Task<PagedList<MomentCard>> GetPageAsync(int page, MomentViewer viewer, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
@@ -159,6 +161,7 @@ internal class MomentService(
         _ = db.Moments.Add(moment);
         _ = await db.SaveChangesAsync(cancellationToken);
         await AwardAsync(moment, cancellationToken);
+        await NotifyAsync(moment, cancellationToken);
         return moment;
     }
 
@@ -175,8 +178,10 @@ internal class MomentService(
         await ApplyAsync(moment, model, cancellationToken);
         _ = await db.SaveChangesAsync(cancellationToken);
 
+        // 只有「草稿转正」才算一次发布
         if (wasDraft) {
             await AwardAsync(moment, cancellationToken);
+            await NotifyAsync(moment, cancellationToken);
         }
 
         return true;
@@ -210,6 +215,39 @@ internal class MomentService(
             HeartPointReason.MomentPublished,
             clock.TodayKey,
             cancellationToken);
+    }
+
+    private async Task NotifyAsync(Moment moment, CancellationToken cancellationToken) {
+        if (moment.Status != MomentStatus.Published) {
+            return;
+        }
+
+        var site = await settings.GetAsync(cancellationToken);
+        var author = site.RoleName(await AuthorRoleAsync(moment.AuthorId, cancellationToken));
+
+        var body = moment.IsProtected
+            ? $"「{moment.Title}」上了锁，打开看看吧"
+            : Preview(moment);
+
+        _ = notifications.Enqueue(NotificationRequest.ToPartner(
+            NotificationTopic.Moment,
+            moment.AuthorId,
+            new PushMessage(
+                $"{author}写了新的点点滴滴",
+                body,
+                $"/moments/{moment.Slug}",
+                $"moment-{moment.Id}")));
+    }
+
+    private async Task<UserRole> AuthorRoleAsync(int authorId, CancellationToken cancellationToken) =>
+        await db.Users
+            .Where(user => user.Id == authorId)
+            .Select(user => user.Role)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    private static string Preview(Moment moment) {
+        var summary = (moment.Summary ?? HtmlText.Excerpt(moment.ContentHtml, 60)).Trim();
+        return summary.Length == 0 ? moment.Title : $"{moment.Title} · {summary}";
     }
 
     private async Task ApplyAsync(Moment moment, MomentEditModel model, CancellationToken cancellationToken) {

@@ -14,6 +14,7 @@ using OurStory.Services.Comments;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Moments;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 using OurStory.Services.Shop;
 using OurStory.Services.Storage;
@@ -59,6 +60,10 @@ public static class ServiceCollectionExtensions {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        _ = services.AddHttpClient(WebPushSender.HttpClientName, client => {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+
         // 两个驱动都建好，用哪个由 FileStorageRouter 按当前配置临时决定
         _ = services.AddSingleton<LocalFileStorage>();
         _ = services.AddSingleton<AliyunOssFileStorage>();
@@ -72,6 +77,11 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IHeartbeatService, HeartbeatService>();
         _ = services.AddScoped<IHeartPointService, HeartPointService>();
         _ = services.AddScoped<IShopService, ShopService>();
+
+        _ = services.AddSingleton<INotificationQueue, NotificationQueue>();
+        _ = services.AddScoped<IWebPushSender, WebPushSender>();
+        _ = services.AddScoped<INotificationService, NotificationService>();
+
         _ = services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
         _ = services.AddSingleton<IMarkdownRenderer, MarkdownRenderer>();
         _ = services.AddScoped<IAttachmentService, AttachmentService>();

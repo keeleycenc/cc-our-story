@@ -1,0 +1,48 @@
+{
+  "name": "CC Our Story",
+  "short_name": "Our Story",
+  "description": "两个人的小宇宙",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffaf8",
+  "theme_color": "#fffaf8",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["lifestyle", "social"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "点点滴滴",
+      "url": "/moments"
+    },
+    {
+      "name": "纪念日",
+      "url": "/anniversaries"
+    },
+    {
+      "name": "心意商城",
+      "url": "/shop"
+    }
+  ]
+}
