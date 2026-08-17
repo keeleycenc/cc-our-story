@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using OurStory.Core;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 
@@ -70,16 +71,19 @@ public interface INotificationService {
     Task<bool> RemoveDeviceAsync(int userId, long deviceId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 异步判断某个推送地址是不是登记在这个人名下
+    /// 异步查询指定推送订阅在服务端的归属
     /// </summary>
     /// <remarks>
-    /// 同一个浏览器只有一份订阅，两个账号轮流登录时它只能归其中一个
+    /// 浏览器仅知晓本地是否存在订阅，无法判断归属。需区分三种结果：
+    /// - Mine：归当前用户
+    /// - Other：归其他账号
+    /// - Unknown：服务端无记录（数据被清理或设备已移除）
     /// </remarks>
-    /// <param name="userId">用户编号</param>
-    /// <param name="endpoint">要查的推送地址</param>
+    /// <param name="userId">用户标识</param>
+    /// <param name="endpoint">推送端点地址</param>
     /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>异步操作任务结果，是这个人的返回 true</returns>
-    Task<bool> OwnsDeviceAsync(int userId, string endpoint, CancellationToken cancellationToken = default);
+    /// <returns>订阅归属状态</returns>
+    Task<PushDeviceOwnership> GetOwnershipAsync(int userId, string endpoint, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 异步预检目标用户的接收就绪状态

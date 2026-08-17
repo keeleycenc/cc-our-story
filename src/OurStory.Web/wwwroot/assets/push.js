@@ -186,7 +186,7 @@
     if (!subscription) {
       remember(null);
       render('off');
-      say('当前设备尚未开启通知，开启后即可接收彼此的动态。', '');
+      say('当前设备尚未开启通知，开启后即可接收彼此的动态', '');
       return;
     }
 
@@ -198,18 +198,23 @@
       return;
     }
 
-    if (owned.mine) {
+    if (owned.state === 'mine') {
       render('on');
       say('当前设备已开启通知，彼此的动态会及时送达', 'ok');
       return;
     }
 
     render('off');
-    say('这台设备上的通知目前登记在另一个账号名下 —— 同一个浏览器只能有一份订阅', 'warn');
+
+    if (owned.state === 'other') {
+      say('这台设备上的通知目前登记在另一个账号名下 —— 同一个浏览器只能有一份订阅', 'warn');
+      return;
+    }
+
+      say("此浏览器仍保留旧订阅，但服务端已无对应记录（设备可能被移除或数据已清理）", "");
   };
 
   const enable = async () => {
-    // 权限框必须在这一帧里弹出来，前面不能有任何 await
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       say(permission === 'denied'

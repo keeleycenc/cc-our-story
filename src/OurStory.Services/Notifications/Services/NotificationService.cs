@@ -126,12 +126,20 @@ internal sealed class NotificationService(
         return deleted > 0;
     }
 
-    public Task<bool> OwnsDeviceAsync(int userId, string endpoint, CancellationToken cancellationToken = default) =>
-        string.IsNullOrWhiteSpace(endpoint)
-            ? Task.FromResult(false)
-            : db.PushDevices.AnyAsync(
-                device => device.UserId == userId && device.Endpoint == endpoint,
-                cancellationToken);
+    public async Task<PushDeviceOwnership> GetOwnershipAsync(int userId, string endpoint, CancellationToken cancellationToken = default) {
+        if (string.IsNullOrWhiteSpace(endpoint)) {
+            return PushDeviceOwnership.Unknown;
+        }
+
+        var owner = await db.PushDevices
+            .Where(device => device.Endpoint == endpoint)
+            .Select(device => (int?)device.UserId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return owner is null
+            ? PushDeviceOwnership.Unknown
+            : owner == userId ? PushDeviceOwnership.Mine : PushDeviceOwnership.Other;
+    }
 
     public async Task<IReadOnlyList<PushDeviceCard>> GetDevicesAsync(
         int userId,

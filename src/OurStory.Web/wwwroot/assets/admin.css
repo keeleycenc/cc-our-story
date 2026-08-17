@@ -834,26 +834,11 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .notify-options.is-off { opacity: .45 }
 .notify-options.is-off .notify-option { cursor: default; pointer-events: none }
 
-.notify-time { justify-content: space-between; gap: 16px; cursor: default }
-.notify-time > span { flex: 1 }
+.notify-time { cursor: default; padding-bottom: 2px }
 .notify-time:hover { background: none }
+.notify-time > span { padding-left: 27px }
 
-.notify-time > input[type="time"] {
-    flex: none;
-    width: 130px;
-    padding: 9px 12px;
-    border: 1px solid var(--line-strong);
-    border-radius: 10px;
-    background: var(--surface);
-    color: var(--ink);
-    font: 13px var(--sans);
-}
-
-.notify-time > input[type="time"]:focus {
-    outline: none;
-    border-color: var(--pink);
-    box-shadow: 0 0 0 3px var(--pink-soft);
-}
+.notify-time-field { margin: 0 12px 6px 39px; max-width: 220px }
 
 .device-current {
     margin-left: 8px;
@@ -870,8 +855,8 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     .device-body { flex-basis: calc(100% - 50px) }
     .device-card form { margin-left: auto }
     .push-actions > .btn { flex: 1 1 0; min-width: 0; justify-content: center }
-    .notify-time { flex-wrap: wrap }
-    .notify-time > input[type="time"] { margin-left: auto }
+    .notify-time > span { padding-left: 0 }
+    .notify-time-field { margin-left: 12px; max-width: none }
 }
 
 .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px }

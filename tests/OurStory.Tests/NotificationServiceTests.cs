@@ -96,6 +96,29 @@ public class NotificationServiceTests {
     }
 
     [Fact]
+    public async Task 订阅的归属分得清是我的还是没人认领() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        const string endpoint = "https://push.example.com/send/one";
+
+        // 服务端记录被清空过，浏览器却还留着上次的订阅 —— 这时候谁的都不是，
+        // 不能说成「在对方名下」，那会让人以为被抢走了
+        Assert.Equal(PushDeviceOwnership.Unknown, await notifications.GetOwnershipAsync(boyId, endpoint));
+
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration(endpoint));
+        Assert.Equal(PushDeviceOwnership.Mine, await notifications.GetOwnershipAsync(boyId, endpoint));
+
+        // 同一个浏览器换成另一个账号开启，订阅就跟着走了
+        Assert.Equal(PushDeviceOwnership.Other, await notifications.GetOwnershipAsync(girlId, endpoint));
+
+        // 从列表里移除之后，又变回谁的都不是
+        _ = await notifications.RemoveDeviceAsync(boyId, endpoint);
+        Assert.Equal(PushDeviceOwnership.Unknown, await notifications.GetOwnershipAsync(boyId, endpoint));
+    }
+
+    [Fact]
     public async Task 对方开着通知并且有设备才算准备好() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();

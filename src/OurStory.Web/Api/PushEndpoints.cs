@@ -58,9 +58,11 @@ public static class PushEndpoints {
                     return Results.Unauthorized();
                 }
 
+                var ownership = await notifications.GetOwnershipAsync(userId, input.Endpoint ?? string.Empty, cancellationToken);
+
                 return Results.Json(new {
                     ok = true,
-                    mine = await notifications.OwnsDeviceAsync(userId, input.Endpoint ?? string.Empty, cancellationToken)
+                    state = ownership.ToString().ToLowerInvariant()
                 });
             });
 
