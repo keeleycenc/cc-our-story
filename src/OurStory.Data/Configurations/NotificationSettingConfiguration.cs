@@ -22,7 +22,6 @@ public class NotificationSettingConfiguration : IEntityTypeConfiguration<Notific
         _ = builder.HasKey(setting => setting.UserId);
         _ = builder.Property(setting => setting.UserId).ValueGeneratedNever();
 
-        _ = builder.Property(setting => setting.LastDailyMissOn).HasMaxLength(10).IsRequired();
         _ = builder.Property(setting => setting.LastAnniversaryOn).HasMaxLength(10).IsRequired();
 
         _ = builder.HasOne(setting => setting.User)

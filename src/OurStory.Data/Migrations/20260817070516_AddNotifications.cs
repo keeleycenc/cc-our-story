@@ -19,9 +19,8 @@ namespace OurStory.Data.Migrations
                     Moments = table.Column<bool>(type: "INTEGER", nullable: false),
                     Anniversaries = table.Column<bool>(type: "INTEGER", nullable: false),
                     Shop = table.Column<bool>(type: "INTEGER", nullable: false),
-                    DailyMiss = table.Column<bool>(type: "INTEGER", nullable: false),
+                    MissYou = table.Column<bool>(type: "INTEGER", nullable: false),
                     RemindMinutes = table.Column<int>(type: "INTEGER", nullable: false),
-                    LastDailyMissOn = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     LastAnniversaryOn = table.Column<string>(type: "TEXT", maxLength: 10, nullable: false),
                     UpdatedAt = table.Column<long>(type: "INTEGER", nullable: false)
                 },
@@ -43,6 +42,7 @@ namespace OurStory.Data.Migrations
                     Id = table.Column<long>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeviceKey = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
                     Endpoint = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
                     P256dh = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
                     Auth = table.Column<string>(type: "TEXT", maxLength: 48, nullable: false),
@@ -62,6 +62,12 @@ namespace OurStory.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_push_devices_DeviceKey",
+                table: "push_devices",
+                column: "DeviceKey",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_push_devices_Endpoint",

@@ -729,6 +729,151 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .push-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
 
+/* 开启和关闭是同一个按钮，图标跟着 data-state 换：
+   先都藏起来，再放出该露的那一个。忙的时候两个都不露，位置让给转圈 */
+.push-toggle .icon-on, .push-toggle .icon-off { display: none }
+.push-toggle[data-state="on"] .icon-on { display: inline-flex }
+.push-toggle[data-state="off"] .icon-off { display: inline-flex }
+
+/* 三种状态字数不一样，宽度定死，切换时按钮不会自己跳一下 */
+.push-toggle { min-width: 150px; justify-content: center }
+.push-test, .push-send { min-width: 128px; justify-content: center }
+
+/* 忙的时候转个圈顶掉图标：只把按钮变灰，看不出到底在不在做事 */
+.push-spinner {
+    display: none;
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    /* 缺一个口，转起来才看得出在动 */
+    border-top-color: transparent;
+    border-radius: 50%;
+    opacity: .75;
+    animation: push-spin .7s linear infinite;
+}
+
+.push-toggle[data-state="busy"] .push-spinner,
+.btn.is-busy .push-spinner { display: inline-block }
+.btn.is-busy .icon-idle { display: none }
+
+@keyframes push-spin { to { transform: rotate(360deg) } }
+
+@media (prefers-reduced-motion: reduce) {
+    .push-spinner { animation-duration: 2.4s }
+}
+
+.device-list { display: grid; gap: 10px }
+
+.device-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-soft);
+}
+
+.device-card:hover { border-color: var(--line-strong); background: var(--surface) }
+
+.device-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--pink-soft);
+    color: var(--pink-dark);
+}
+
+.device-body { min-width: 0; flex: 1 }
+.device-body > strong { display: block; overflow: hidden; font: 400 15px var(--serif); text-overflow: ellipsis; white-space: nowrap }
+
+.device-body > span {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 6px;
+    color: var(--faint);
+    font-size: 12px;
+}
+
+.device-body > span > span { display: inline-flex; align-items: center; gap: 5px }
+.device-body .icon { font-size: 13px }
+.device-card form { flex: none; margin: 0 }
+
+.notify-options { display: grid; gap: 2px }
+
+.notify-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.notify-option:hover { background: var(--surface-muted) }
+
+.notify-option > input {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    accent-color: var(--pink-dark);
+}
+
+.notify-option > span { min-width: 0 }
+.notify-option strong { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 400 }
+.notify-option strong .icon { color: var(--pink-dark) }
+.notify-option small { display: block; margin-top: 5px; color: var(--faint); font-size: 12px; line-height: 1.7 }
+
+.notify-options.is-off { opacity: .45 }
+.notify-options.is-off .notify-option { cursor: default; pointer-events: none }
+
+.notify-time { justify-content: space-between; gap: 16px; cursor: default }
+.notify-time > span { flex: 1 }
+.notify-time:hover { background: none }
+
+.notify-time > input[type="time"] {
+    flex: none;
+    width: 130px;
+    padding: 9px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    font: 13px var(--sans);
+}
+
+.notify-time > input[type="time"]:focus {
+    outline: none;
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px var(--pink-soft);
+}
+
+.device-current {
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--pink-soft);
+    color: var(--pink-dark);
+    font: 400 11px var(--sans);
+    vertical-align: middle;
+}
+
+@media (max-width: 640px) {
+    .device-card { flex-wrap: wrap }
+    .device-body { flex-basis: calc(100% - 50px) }
+    .device-card form { margin-left: auto }
+    .push-actions > .btn { flex: 1 1 0; min-width: 0; justify-content: center }
+    .notify-time { flex-wrap: wrap }
+    .notify-time > input[type="time"] { margin-left: auto }
+}
+
 .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px }
 
 .admin-empty-state { padding: 52px 20px; text-align: center; color: var(--muted) }

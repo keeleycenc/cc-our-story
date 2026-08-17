@@ -55,7 +55,7 @@ internal sealed class NotificationService(
         setting.Moments = preferences.Moments;
         setting.Anniversaries = preferences.Anniversaries;
         setting.Shop = preferences.Shop;
-        setting.DailyMiss = preferences.DailyMiss;
+        setting.MissYou = preferences.MissYou;
         setting.RemindMinutes = Math.Clamp(preferences.RemindMinutes, 0, 1439);
         setting.UpdatedAt = SiteClock.UtcNow;
 
@@ -79,15 +79,27 @@ internal sealed class NotificationService(
 
         EnsureSubject(siteOrigin);
 
+        var key = (registration.DeviceKey ?? string.Empty).Trim();
         var now = SiteClock.UtcNow;
-        var device = await db.PushDevices.FirstOrDefaultAsync(item => item.Endpoint == endpoint, cancellationToken);
+
+        var device = key.Length > 0
+            ? await db.PushDevices.FirstOrDefaultAsync(item => item.DeviceKey == key, cancellationToken)
+            : null;
+
+        device ??= await db.PushDevices.FirstOrDefaultAsync(item => item.Endpoint == endpoint, cancellationToken);
+
+        if (device is null && (registration.PreviousEndpoint ?? string.Empty).Trim() is { Length: > 0 } previous) {
+            device = await db.PushDevices.FirstOrDefaultAsync(item => item.Endpoint == previous, cancellationToken);
+        }
 
         if (device is null) {
-            device = new PushDevice { Endpoint = endpoint, CreatedAt = now };
+            device = new PushDevice { CreatedAt = now };
             _ = db.PushDevices.Add(device);
         }
 
         device.UserId = userId;
+        device.DeviceKey = key.Length > 0 ? key : Guid.NewGuid().ToString("n");
+        device.Endpoint = endpoint;
         device.P256dh = registration.P256dh.Trim();
         device.Auth = registration.Auth.Trim();
         device.DeviceName = DeviceNames.Guess(registration.UserAgent);
@@ -114,6 +126,13 @@ internal sealed class NotificationService(
         return deleted > 0;
     }
 
+    public Task<bool> OwnsDeviceAsync(int userId, string endpoint, CancellationToken cancellationToken = default) =>
+        string.IsNullOrWhiteSpace(endpoint)
+            ? Task.FromResult(false)
+            : db.PushDevices.AnyAsync(
+                device => device.UserId == userId && device.Endpoint == endpoint,
+                cancellationToken);
+
     public async Task<IReadOnlyList<PushDeviceCard>> GetDevicesAsync(
         int userId,
         CancellationToken cancellationToken = default) {
@@ -126,9 +145,22 @@ internal sealed class NotificationService(
 
         return [.. devices.Select(device => new PushDeviceCard(
             device.Id,
+            device.DeviceKey,
             device.DeviceName,
             clock.ToLocal(device.CreatedAt),
             device.LastPushedAt is { } pushed ? clock.ToLocal(pushed) : null))];
+    }
+
+    public async Task<PartnerReadiness> GetPartnerReadinessAsync(int userId, CancellationToken cancellationToken = default) {
+        if (await GetPartnerIdAsync(userId, cancellationToken) is not { } partnerId) {
+            return PartnerReadiness.None;
+        }
+
+        var enabled = await db.NotificationSettings
+            .AnyAsync(setting => setting.UserId == partnerId && setting.Enabled, cancellationToken);
+
+        var devices = await db.PushDevices.CountAsync(device => device.UserId == partnerId, cancellationToken);
+        return new PartnerReadiness(enabled, devices);
     }
 
     public async Task<int?> GetPartnerIdAsync(int userId, CancellationToken cancellationToken = default) {

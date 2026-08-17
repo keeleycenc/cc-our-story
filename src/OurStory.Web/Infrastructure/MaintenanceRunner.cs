@@ -100,6 +100,7 @@ public static class MaintenanceRunner {
 
             直接启动站点：
               OurStory.Web
+              --lan [端口]                         同时听局域网，同 Wi-Fi 下移动端可访问
 
             维护命令（执行完就退出，不会启动站点）：
               --list-accounts                     列出所有账号

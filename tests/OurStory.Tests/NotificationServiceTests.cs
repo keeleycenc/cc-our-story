@@ -33,6 +33,95 @@ public class NotificationServiceTests {
     }
 
     [Fact]
+    public async Task 撤销权限再重新授权不会多出一台设备() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        const string key = "same-browser";
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/a", deviceKey: key));
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/b", deviceKey: key));
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/c", deviceKey: key));
+
+        var device = await harness.Db.PushDevices.SingleAsync();
+        Assert.Equal("https://push.example.com/c", device.Endpoint);
+    }
+
+    [Fact]
+    public async Task 不同浏览器各算一台设备() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/chrome", deviceKey: "chrome"));
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/edge", deviceKey: "edge"));
+
+        Assert.Equal(2, await harness.Db.PushDevices.CountAsync());
+    }
+
+    [Fact]
+    public async Task 浏览器换发订阅时靠老地址认回同一台() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/old", deviceKey: "browser"));
+
+        _ = await notifications.RegisterDeviceAsync(
+            boyId,
+            new PushDeviceRegistration(
+                "https://push.example.com/new",
+                P256dh,
+                Auth,
+                PreviousEndpoint: "https://push.example.com/old"));
+
+        var device = await harness.Db.PushDevices.SingleAsync();
+        Assert.Equal("https://push.example.com/new", device.Endpoint);
+    }
+
+    [Fact]
+    public async Task 没带设备编号时会补一个() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        // 浏览器存不了本地数据时不能让编号是空的，否则唯一索引会把第二台挡在门外
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/one"));
+        _ = await notifications.RegisterDeviceAsync(boyId, Registration("https://push.example.com/two"));
+
+        var keys = await harness.Db.PushDevices.Select(device => device.DeviceKey).ToListAsync();
+        Assert.Equal(2, keys.Count);
+        Assert.All(keys, key => Assert.NotEmpty(key));
+        Assert.Equal(2, keys.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public async Task 对方开着通知并且有设备才算准备好() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var notifications = Service(harness, out _);
+
+        // 一次都没进过通知设置：还没开通
+        Assert.False((await notifications.GetPartnerReadinessAsync(boyId)).CanReceive);
+
+        // 开了总开关，但一台设备都没授权，照样收不到
+        await notifications.SaveSettingAsync(girlId, new NotificationPreferences { Enabled = true });
+        var noDevice = await notifications.GetPartnerReadinessAsync(boyId);
+        Assert.True(noDevice.Enabled);
+        Assert.Equal(0, noDevice.Devices);
+        Assert.False(noDevice.CanReceive);
+
+        _ = await notifications.RegisterDeviceAsync(girlId, Registration("https://push.example.com/girl"));
+        var ready = await notifications.GetPartnerReadinessAsync(boyId);
+        Assert.True(ready.CanReceive);
+        Assert.Equal(1, ready.Devices);
+
+        // 对方把总开关关掉，立刻就不算准备好了
+        await notifications.SaveSettingAsync(girlId, new NotificationPreferences { Enabled = false });
+        Assert.False((await notifications.GetPartnerReadinessAsync(boyId)).CanReceive);
+    }
+
+    [Fact]
     public async Task 换人登录时设备跟着改归属() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();
@@ -301,8 +390,11 @@ public class NotificationServiceTests {
     /// <summary>订阅里的 auth 是 16 字节随机串，测试里内容无所谓，长度得对。</summary>
     private static readonly string Auth = Base64Url.EncodeToString(new byte[16]);
 
-    private static PushDeviceRegistration Registration(string endpoint, string? userAgent = null) =>
-        new(endpoint, P256dh, Auth, userAgent);
+    private static PushDeviceRegistration Registration(
+        string endpoint,
+        string? userAgent = null,
+        string? deviceKey = null) =>
+        new(endpoint, P256dh, Auth, DeviceKey: deviceKey, UserAgent: userAgent);
 
     private static PushMessage Message() => new("标题", "正文");
 

@@ -57,6 +57,22 @@ public class NotificationsModel(
     public bool HasPartner { get; private set; }
 
     /// <summary>
+    /// 获取对方那头的通知状态：开没开、有几台设备
+    /// </summary>
+    public PartnerReadiness Partner { get; private set; } = PartnerReadiness.None;
+
+    /// <summary>
+    /// 获取对方当前收不到通知的原因；能收到时是 null
+    /// </summary>
+    public string? PartnerBlockedReason => !HasPartner
+        ? "还没有绑定另一个账号哦"
+        : !Partner.Enabled
+            ? $"{PartnerName} 还没开启通知，现在发过去会收不到呢"
+            : Partner.Devices == 0
+                ? $"{PartnerName} 已经开启通知啦，但还没有设备绑定，先去授权一下吧"
+                : null;
+
+    /// <summary>
     /// 处理 GET 请求
     /// </summary>
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken) {
@@ -72,7 +88,7 @@ public class NotificationsModel(
             Moments = preferences.Moments,
             Anniversaries = preferences.Anniversaries,
             Shop = preferences.Shop,
-            DailyMiss = preferences.DailyMiss,
+            MissYou = preferences.MissYou,
             RemindAt = ToText(preferences.RemindMinutes)
         };
 
@@ -101,7 +117,7 @@ public class NotificationsModel(
                 Moments = Input.Moments,
                 Anniversaries = Input.Anniversaries,
                 Shop = Input.Shop,
-                DailyMiss = Input.DailyMiss,
+                MissYou = Input.MissYou,
                 RemindMinutes = ToMinutes(Input.RemindAt)
             },
             cancellationToken);
@@ -119,8 +135,8 @@ public class NotificationsModel(
         }
 
         TempData["Flash"] = await notifications.RemoveDeviceAsync(userId, deviceId, cancellationToken)
-            ? "这台设备已经不再接收通知。"
-            : "没找到这台设备，可能已经被移除了。";
+            ? "这台设备已经不再接收通知啦"
+            : "没找到这台设备，可能已经被移除啦";
 
         return RedirectToPage();
     }
@@ -138,6 +154,7 @@ public class NotificationsModel(
         // 只有两行用户，「对方」就是另一个身份
         var site = await settings.GetAsync(cancellationToken);
         PartnerName = site.RoleName(User.Role() == UserRole.Boy ? UserRole.Girl : UserRole.Boy);
+        Partner = await notifications.GetPartnerReadinessAsync(userId, cancellationToken);
     }
 
     private static string ToText(int minutes) =>
@@ -175,12 +192,12 @@ public class NotificationsModel(
         public bool Shop { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置是否接收每日想你的提醒
+        /// 获取或设置对方点了想你时要不要提醒
         /// </summary>
-        public bool DailyMiss { get; set; } = true;
+        public bool MissYou { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置每日提醒时间，形如 21:00，按站点时区理解
+        /// 获取或设置纪念日提醒时间，形如 21:00，按站点时区理解
         /// </summary>
         [Required(ErrorMessage = "提醒时间不能为空")]
         [RegularExpression(@"^([01]\d|2[0-3]):[0-5]\d$", ErrorMessage = "提醒时间要写成 21:00 这样")]

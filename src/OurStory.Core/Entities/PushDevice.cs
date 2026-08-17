@@ -27,11 +27,14 @@ public class PushDevice {
     public User? User { get; set; }
 
     /// <summary>
+    /// 获取或设置这台设备的固定编号，由浏览器第一次开启时随机生成并记在本地
+    /// </summary>
+    public string DeviceKey { get; set; } = string.Empty;
+
+    /// <summary>
     /// 获取或设置推送服务给的投递地址
     /// </summary>
-    /// <remarks>
-    /// 每台设备一个，全表唯一：同一台设备重新授权会拿到同一个地址
-    /// </remarks>
+    /// <remarks>同一台设备重新授权时会换一个新的，登记时原地覆盖</remarks>
     public string Endpoint { get; set; } = string.Empty;
 
     /// <summary>

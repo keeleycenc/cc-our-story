@@ -4,26 +4,18 @@
 
 using Microsoft.EntityFrameworkCore;
 using OurStory.Core;
-using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Notifications;
-using OurStory.Services.Settings;
 
 namespace OurStory.Web.Infrastructure;
 
 /// <summary>
-/// 到点提醒：每天的「想你」，以及今天 / 明天有纪念日
+/// 到点提醒：今天或者明天有要过的日子
 /// </summary>
-/// <remarks>
-/// 每分钟醒一次，看看有没有人的提醒时间刚好到了。两个人的站点，这点开销可以忽略。
-///
-/// 「今天发过没有」记在各自的偏好那一行里，不是记在内存里：
-/// 站点半夜重启、或者刚好在提醒时间前后重启，都不会漏发，也不会重复打扰
-/// </remarks>
-public sealed class NotificationScheduler(
+internal sealed class NotificationScheduler(
     IServiceScopeFactory scopes,
     ILogger<NotificationScheduler> logger) : BackgroundService {
     /// <summary>
@@ -32,7 +24,7 @@ public sealed class NotificationScheduler(
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
     /// <summary>
-    /// 迟到多久就不再补发。站点停了一整天再开机，昨晚那条「想你」已经没意义了
+    /// 迟到多久就不再补发。站点停了一整天再开机，昨晚那条提醒已经没意义了
     /// </summary>
     private const int GraceMinutes = 30;
 
@@ -46,8 +38,7 @@ public sealed class NotificationScheduler(
             try {
                 await TickAsync(stoppingToken);
             } catch (Exception exception) when (exception is not OperationCanceledException) {
-                // 定时这一趟出错不能把循环带走，否则之后所有提醒都没了
-                logger.LogError(exception, "检查每日提醒时出错。");
+                logger.LogError(exception, "检查纪念日提醒时出错");
             }
         }
     }
@@ -71,62 +62,29 @@ public sealed class NotificationScheduler(
 
         var due = await db.NotificationSettings
             .Where(setting => setting.Enabled
+                && setting.Anniversaries
+                && setting.LastAnniversaryOn != today
                 && setting.RemindMinutes <= minutes
-                && setting.RemindMinutes >= minutes - GraceMinutes
-                && (setting.DailyMiss || setting.Anniversaries))
+                && setting.RemindMinutes >= minutes - GraceMinutes)
             .ToListAsync(cancellationToken);
 
         if (due.Count == 0) {
             return;
         }
 
-        var site = await provider.GetRequiredService<ISettingsService>().GetAsync(cancellationToken);
+        var anniversaries = await provider.GetRequiredService<IAnniversaryService>().GetAllAsync(cancellationToken);
+        var message = Upcoming(anniversaries);
         var queue = provider.GetRequiredService<INotificationQueue>();
 
-        // 纪念日对两个人是同一份，最多查一次
-        IReadOnlyList<AnniversaryOccurrence>? anniversaries = null;
-
         foreach (var setting in due) {
-            if (setting.DailyMiss && setting.LastDailyMissOn != today) {
-                setting.LastDailyMissOn = today;
-                _ = queue.Enqueue(await DailyMissAsync(db, site, setting.UserId, cancellationToken));
-            }
-
-            if (!setting.Anniversaries || setting.LastAnniversaryOn == today) {
-                continue;
-            }
-
             setting.LastAnniversaryOn = today;
-            anniversaries ??= await provider.GetRequiredService<IAnniversaryService>().GetAllAsync(cancellationToken);
 
-            if (Upcoming(anniversaries) is { } message) {
+            if (message is not null) {
                 _ = queue.Enqueue(NotificationRequest.ToUser(NotificationTopic.Anniversary, setting.UserId, message));
             }
         }
 
         _ = await db.SaveChangesAsync(cancellationToken);
-    }
-
-    private static async Task<NotificationRequest> DailyMissAsync(
-        OurStoryDbContext db,
-        SiteSettings site,
-        int userId,
-        CancellationToken cancellationToken) {
-        var role = await db.Users
-            .Where(user => user.Id != userId && (user.Role == UserRole.Boy || user.Role == UserRole.Girl))
-            .Select(user => user.Role)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var partner = role == UserRole.Guest ? "对方" : site.RoleName(role);
-
-        return NotificationRequest.ToUser(
-            NotificationTopic.DailyMiss,
-            userId,
-            new PushMessage(
-                $"今天想{partner}了吗",
-                "回首页点一下想你，让这一天也留下记号",
-                "/",
-                "daily-miss"));
     }
 
     private static PushMessage? Upcoming(IReadOnlyList<AnniversaryOccurrence> anniversaries) {

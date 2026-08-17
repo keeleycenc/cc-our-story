@@ -76,7 +76,8 @@
         body: JSON.stringify({
           endpoint: fresh.endpoint,
           p256dh: json.keys.p256dh,
-          auth: json.keys.auth
+          auth: json.keys.auth,
+          previousEndpoint: event.oldSubscription ? event.oldSubscription.endpoint : null
         })
       });
     })());

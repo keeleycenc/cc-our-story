@@ -11,7 +11,7 @@ using OurStory.Data;
 namespace OurStory.Data.Migrations
 {
     [DbContext(typeof(OurStoryDbContext))]
-    [Migration("20260817012407_AddNotifications")]
+    [Migration("20260817070516_AddNotifications")]
     partial class AddNotifications
     {
         /// <inheritdoc />
@@ -293,9 +293,6 @@ namespace OurStory.Data.Migrations
                     b.Property<bool>("Anniversaries")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("DailyMiss")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("Enabled")
                         .HasColumnType("INTEGER");
 
@@ -304,10 +301,8 @@ namespace OurStory.Data.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("LastDailyMissOn")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
+                    b.Property<bool>("MissYou")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("Moments")
                         .HasColumnType("INTEGER");
@@ -340,6 +335,11 @@ namespace OurStory.Data.Migrations
                     b.Property<long>("CreatedAt")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DeviceKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DeviceName")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -368,6 +368,9 @@ namespace OurStory.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeviceKey")
+                        .IsUnique();
 
                     b.HasIndex("Endpoint")
                         .IsUnique();

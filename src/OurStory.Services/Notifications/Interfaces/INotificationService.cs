@@ -70,6 +70,30 @@ public interface INotificationService {
     Task<bool> RemoveDeviceAsync(int userId, long deviceId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步判断某个推送地址是不是登记在这个人名下
+    /// </summary>
+    /// <remarks>
+    /// 同一个浏览器只有一份订阅，两个账号轮流登录时它只能归其中一个
+    /// </remarks>
+    /// <param name="userId">用户编号</param>
+    /// <param name="endpoint">要查的推送地址</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>异步操作任务结果，是这个人的返回 true</returns>
+    Task<bool> OwnsDeviceAsync(int userId, string endpoint, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 异步预检目标用户的接收就绪状态
+    /// </summary>
+    /// <remarks>
+    /// 在构建并发送消息载荷之前，预先验证对方是否具备接收条件（通知开关状态及可用设备数）。
+    /// 此检查旨在将发送失败的可能性前置，避免用户在完成消息编辑并触发发送操作后，才因对方不可达而导致操作失败
+    /// </remarks>
+    /// <param name="userId">当前发起请求的用户标识</param>
+    /// <param name="cancellationToken">用于取消异步操作的取消令牌</param>
+    /// <returns>异步操作任务结果，包含目标用户通知启用状态及当前活跃设备数量的任务结果</returns>
+    Task<PartnerReadiness> GetPartnerReadinessAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步列出某个人已经授权的所有设备
     /// </summary>
     /// <param name="userId">用户编号</param>

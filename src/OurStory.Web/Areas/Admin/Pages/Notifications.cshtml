@@ -24,9 +24,14 @@
     <p class="push-status" data-push-status>正在检测当前设备的通知状态……</p>
 
     <div class="push-actions">
-        <button class="btn" type="button" data-push-enable>@Icon("bell")开启当前设备通知</button>
-        <button class="btn btn-ghost" type="button" data-push-disable hidden>@Icon("bell-off")关闭当前设备通知</button>
-        <button class="btn btn-ghost" type="button" data-push-test>@Icon("send")发送测试通知</button>
+        <button class="btn push-toggle" type="button" data-push-toggle data-state="busy" disabled>
+            <span class="push-spinner" aria-hidden="true"></span>
+            @Icon("bell", "icon-off")@Icon("bell-ring", "icon-on")<span data-push-label>正在检测</span>
+        </button>
+        <button class="btn btn-ghost push-test" type="button" data-push-test>
+            <span class="push-spinner" aria-hidden="true"></span>
+            @Icon("send", "icon-idle")<span>发送测试</span>
+        </button>
     </div>
 </div>
 
@@ -35,42 +40,33 @@
 
     @if (Model.Devices.Count == 0)
     {
-        <p class="admin-panel-hint" style="margin-bottom:0">尚无设备开启通知，开启后即可及时收到彼此的暖心动态。</p>
+        <p class="admin-panel-hint" style="margin-bottom:0">尚无设备开启通知，开启后即可及时收到彼此的动态。</p>
     }
     else
     {
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>设备</th>
-                        <th>启用时间</th>
-                        <th>最近推送</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var device in Model.Devices)
-                    {
-                        <tr>
-                            <td>@Icon("smartphone")&nbsp;@device.Name</td>
-                            <td>@device.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>@(device.LastPushedAt?.ToString("yyyy-MM-dd HH:mm") ?? "暂无记录")</td>
-                            <td class="is-actions">
-                                <form method="post" asp-page-handler="RemoveDevice">
-                                    <input type="hidden" name="deviceId" value="@device.Id">
-                                    <button class="btn btn-ghost btn-small" type="submit">@Icon("trash-2")移除设备</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="device-list">
+            @foreach (var device in Model.Devices)
+            {
+                <div class="device-card" data-device-key="@device.Key">
+                    <span class="device-mark">@Icon("smartphone")</span>
+                    <div class="device-body">
+                        <strong>@device.Name<span class="device-current" hidden>本机</span></strong>
+                        <span>
+                            <span>@Icon("check")启用于 @device.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                            <span>@Icon("send")@(device.LastPushedAt is { } pushed ? "最近推送 " + pushed.ToString("MM-dd HH:mm") : "暂无推送记录")</span>
+                        </span>
+                    </div>
+                    <form method="post" asp-page-handler="RemoveDevice">
+                        <input type="hidden" name="deviceId" value="@device.Id">
+                        <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")移除</button>
+                    </form>
+                </div>
+            }
         </div>
     }
 </div>
 
-<form method="post" class="admin-panel">
+<form method="post" class="admin-panel" data-notify-form>
     @if (!string.IsNullOrEmpty(Model.Error))
     {
         <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
@@ -78,39 +74,58 @@
 
     <h2>@Icon("list-checks")通知偏好</h2>
     <p class="admin-panel-hint">
-        你和伴侣可以分别选择希望接收的提醒，彼此的设置互不影响。关闭总开关后，本账号将仅接收测试通知。
+        你和对方可以分别选择希望接收的提醒，彼此的设置互不影响。关闭总开关后，本账号将仅接收测试通知
     </p>
 
-    <label class="field-check">
-        <input asp-for="Input.Enabled" type="checkbox">
-        <span>接收通知</span>
-    </label>
+    <div class="notify-options">
+        <label class="notify-option">
+            <input asp-for="Input.Enabled" type="checkbox" data-notify-master>
+            <span>
+                <strong>接收通知</strong>
+                <small>总开关。关掉之后，下面几项就都不会再打扰你了</small>
+            </span>
+        </label>
+    </div>
 
-    <label class="field-check">
-        <input asp-for="Input.Moments" type="checkbox">
-        <span>@Icon("camera")点点滴滴 —— 当伴侣记录新的共同回忆时</span>
-    </label>
+    <div class="notify-options" data-notify-group>
+        <label class="notify-option">
+            <input asp-for="Input.Moments" type="checkbox">
+            <span>
+                <strong>@Icon("camera")点点滴滴</strong>
+                <small>对方记录下新的一条时提醒我</small>
+            </span>
+        </label>
 
-    <label class="field-check">
-        <input asp-for="Input.Anniversaries" type="checkbox">
-        <span>@Icon("calendar-heart")纪念日 —— 当伴侣添加新日子，以及纪念日在今天或明天到来时</span>
-    </label>
+        <label class="notify-option">
+            <input asp-for="Input.Anniversaries" type="checkbox">
+            <span>
+                <strong>@Icon("calendar-heart")纪念日</strong>
+                <small>对方添加新日子时，以及纪念日在今天或明天到来时</small>
+            </span>
+        </label>
 
-    <label class="field-check">
-        <input asp-for="Input.Shop" type="checkbox">
-        <span>@Icon("store")心意商城 —— 当心意上架、兑换、等待确认或圆满完成时</span>
-    </label>
+        <label class="notify-option">
+            <input asp-for="Input.Shop" type="checkbox">
+            <span>
+                <strong>@Icon("store")心意商城</strong>
+                <small>心意上架、兑换、等待确认或圆满完成时</small>
+            </span>
+        </label>
 
-    <label class="field-check">
-        <input asp-for="Input.DailyMiss" type="checkbox">
-        <span>@Icon("heart")每日想你 —— 每天在约定的时间送上一份想念提醒</span>
-    </label>
+        <label class="notify-option">
+            <input asp-for="Input.MissYou" type="checkbox">
+            <span>
+                <strong>@Icon("heart")想你</strong>
+                <small>对方在首页点了想你之后提醒</small>
+            </span>
+        </label>
 
-    <div class="field-grid" style="margin-top:18px">
-        <label class="field" style="margin-bottom:0">
-            <span>每日提醒时间</span>
+        <label class="notify-option notify-time">
+            <span>
+                <strong>@Icon("clock")纪念日提醒时间</strong>
+                <small>当天或次日有纪念日时，会在这个时刻提醒一次，时间以站点时区为准</small>
+            </span>
             <input asp-for="Input.RemindAt" type="time">
-            <small>「每日想你」与当天或次日的纪念日提醒会在此时发送，时间以站点时区为准。</small>
         </label>
     </div>
 
@@ -120,32 +135,37 @@
 </form>
 
 <div class="admin-panel">
-    <h2>@Icon("send")给@Model.PartnerName送去一句话</h2>
+    <h2>@Icon("send")给@(Model.PartnerName)送去一句话</h2>
     <p class="admin-panel-hint">
-        这句话会直接送达@(Model.PartnerName)所有已开启通知的设备，不受分类偏好影响；
-        若对方已关闭通知总开关，则暂时无法收到。
+        会直接送达@(Model.PartnerName)所有已开启通知的设备，不受分类偏好影响。
     </p>
 
-    @if (!Model.HasPartner)
+    @if (Model.PartnerBlockedReason is { } blocked)
     {
-        <p class="admin-panel-hint" style="margin-bottom:0">当前尚未添加伴侣账号，完成添加后即可向对方传递心意。</p>
+        <p class="push-status" data-kind="warn">@Icon("bell-off")@blocked。</p>
     }
     else
     {
-        <form data-push-send>
-            <label class="field">
-                <span>想对对方说的话</span>
-                <textarea rows="3" maxlength="120" placeholder="今天也很想你，愿你一切都好" data-push-body></textarea>
-                <small>最多 120 字。受设备显示空间影响，锁屏通知可能仅展示前一至两行。</small>
-            </label>
-
-            <p class="push-status" data-push-feedback></p>
-
-            <div class="form-actions" style="margin-top:0">
-                <button class="btn" type="submit">@Icon("send")送达心意</button>
-            </div>
-        </form>
+        <p class="push-status" data-kind="ok">@Icon("bell-ring")@(Model.PartnerName)已开启通知，共 @Model.Partner.Devices 台设备可以收到。</p>
     }
+
+    <form data-push-send>
+        <label class="field">
+            <span>想对对方说的话</span>
+            <textarea rows="3" maxlength="120" placeholder="今天也很想你，愿你一切都好"
+                      data-push-body @(Model.PartnerBlockedReason is null ? null : "disabled")></textarea>
+            <small>最多 120 字。受设备显示空间影响，锁屏通知可能仅展示前一至两行。</small>
+        </label>
+
+        <p class="push-status" data-push-feedback></p>
+
+        <div class="form-actions" style="margin-top:0">
+            <button class="btn push-send" type="submit" @(Model.PartnerBlockedReason is null ? null : "disabled")>
+                <span class="push-spinner" aria-hidden="true"></span>
+                @Icon("send", "icon-idle")<span>送达心意</span>
+            </button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {

@@ -9,6 +9,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Heartbeats;
@@ -17,6 +18,7 @@ internal class HeartbeatService(
     OurStoryDbContext db,
     ISettingsService settings,
     IHeartPointService heartPoints,
+    IMissYouNotifier missYou,
     SiteClock clock) : IHeartbeatService {
     private const int BatchLimit = 20;  // 一次请求最多接受多少个点击
     private const int MaxAgeMs = 120_000;   // 客户端说「多少毫秒之前点的」，最多认到这个值，再早的按这个算
@@ -110,12 +112,22 @@ internal class HeartbeatService(
 
             _ = await db.SaveChangesAsync(cancellationToken);
             await AwardAsync(who, accepted, cancellationToken);
+            await NotifyPartnerAsync(who, accepted.Count, cancellationToken);
         }
 
         return new HeartbeatRecordResult(accepted.Count, accepted.Count < times.Count);
     }
 
     #region 私有方法
+
+    private async Task NotifyPartnerAsync(VisitorIdentity who, int taps, CancellationToken cancellationToken) {
+        if (who.UserId is not { } userId || who.Role is not (UserRole.Boy or UserRole.Girl)) {
+            return;
+        }
+
+        var site = await settings.GetAsync(cancellationToken);
+        missYou.Record(userId, site.RoleName(who.Role), taps);
+    }
 
     private async Task AwardAsync(VisitorIdentity who, List<DateTimeOffset> accepted, CancellationToken cancellationToken) {
         if (who.UserId is not { } userId || who.Role is not (UserRole.Boy or UserRole.Girl)) {

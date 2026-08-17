@@ -40,7 +40,13 @@ public record MaintenanceCommand(MaintenanceAction Action, string UserName = "",
 
     /// <summary>
     /// 这几个开关是给我们自己用的，不能混进 Host 的配置里</summary>
-    private static readonly string[] OwnFlags = [ResetFlag, PasswordFlag, ListFlag, "--help"];
+    private static readonly string[] OwnFlags = [ResetFlag, PasswordFlag, ListFlag, LanBinding.Flag, "--help"];
+
+    /// <summary>
+    /// 后面不跟值的开关。摘除时不能顺手把下一个参数也吃掉
+    /// </summary>
+    /// <remarks><c>--lan</c> 的端口是可选的，跟不跟数字都得认</remarks>
+    private static readonly string[] Standalone = [ListFlag, "--help", "-h"];
 
     /// <summary>
     /// 从命令行里解析出一条维护命令；没有就返回 null，照常启动站点
@@ -78,8 +84,9 @@ public record MaintenanceCommand(MaintenanceAction Action, string UserName = "",
                 continue;
             }
 
-            // 带值的开关要把后面那个值一起吃掉
-            if (args[index] is not ("--help" or "-h") && index + 1 < args.Length && !args[index + 1].StartsWith('-')) {
+            if (!Array.Exists(Standalone, flag => string.Equals(args[index], flag, StringComparison.OrdinalIgnoreCase))
+                && index + 1 < args.Length
+                && !args[index + 1].StartsWith('-')) {
                 index++;
             }
         }

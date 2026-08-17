@@ -34,6 +34,15 @@ builder.Logging.AddFilter(
     builder.Environment.IsDevelopment() ? LogLevel.Information : LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
+// --lan：开发时让同一个 Wi-Fi 下的手机也能打开
+var lanUrl = LanBinding.IsRequested(args)
+    ? LanBinding.Resolve(args, builder.Configuration["urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS"))
+    : null;
+
+if (lanUrl is not null) {
+    _ = builder.WebHost.UseUrls(lanUrl);
+}
+
 builder.Services.AddOurStory(store, loaded.Configuration, store.DataDirectory);
 
 // 密钥落盘，容器重启后登录状态和已解锁的记录都还在
@@ -134,6 +143,13 @@ app.MapGet("/healthz", async (OurStoryDbContext db, CancellationToken cancellati
 
 await app.InitializeDatabaseAsync();
 app.EnsurePushKeys();
+
+if (lanUrl is not null) {
+    var port = LanBinding.PortOf(lanUrl);
+    foreach (var address in LanBinding.LocalAddresses(port)) {
+        app.Logger.LogInformation("移动设备请访问 {Address}", address);
+    }
+}
 
 await app.RunAsync();
 return 0;

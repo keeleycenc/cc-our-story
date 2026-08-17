@@ -13,10 +13,6 @@ namespace OurStory.Web.Api;
 /// <summary>
 /// 通知的接口：登记设备、注销设备、试发一条、给对方发一句话
 /// </summary>
-/// <remarks>
-/// 这几条都只给登录用户用。授权本身必须由用户在页面上点一下才能发起，
-/// 这是浏览器的硬性要求，服务端这边只负责把订阅存下来
-/// </remarks>
 public static class PushEndpoints {
     /// <summary>
     /// 接上通知相关的接口
@@ -26,7 +22,6 @@ public static class PushEndpoints {
 
         var group = app.MapGroup("/api/push").RequireAuthorization();
 
-        // 前端订阅时要拿它当 applicationServerKey，没有密钥就直说，页面好给个提示
         _ = group.MapGet("/key", (INotificationService notifications) =>
             Results.Json(new { ok = notifications.IsConfigured, key = notifications.PublicKey }));
 
@@ -49,9 +44,24 @@ public static class PushEndpoints {
                     return Results.Json(new { ok = true, device = device.DeviceName });
                 } catch (Exception exception) when (exception is ArgumentException or FormatException) {
                     return Results.Json(
-                        new { ok = false, message = "这份订阅看起来不太对，刷新页面再试一次。" },
+                        new { ok = false, message = "订阅凭证无效，请刷新页面重试" },
                         statusCode: StatusCodes.Status400BadRequest);
                 }
+            });
+
+        _ = group.MapPost("/state", async (
+            HttpContext context,
+            EndpointInput input,
+            INotificationService notifications,
+            CancellationToken cancellationToken) => {
+                if (context.User.UserId() is not { } userId) {
+                    return Results.Unauthorized();
+                }
+
+                return Results.Json(new {
+                    ok = true,
+                    mine = await notifications.OwnsDeviceAsync(userId, input.Endpoint ?? string.Empty, cancellationToken)
+                });
             });
 
         _ = group.MapPost("/unsubscribe", async (
@@ -67,7 +77,6 @@ public static class PushEndpoints {
                 return Results.Json(new { ok = removed });
             });
 
-        // 通知测试：只发给自己，而且不看那四个勾，用来确认这条链路本身通不通
         _ = group.MapPost("/test", async (
             HttpContext context,
             INotificationService notifications,
@@ -84,7 +93,7 @@ public static class PushEndpoints {
                         userId,
                         new PushMessage(
                             $"{site.SiteTitle} 通知测试",
-                            "能看到这一条，说明这台设备的通知已经通了。",
+                            "本条消息用于确认通知通道已正常工作",
                             "/admin/notifications",
                             "push-test")),
                     cancellationToken);
@@ -98,8 +107,6 @@ public static class PushEndpoints {
                 });
             });
 
-        // 给对方发一句话：人主动按下的发送键，所以不看对方勾了哪几项，
-        // 但对方把通知总开关关掉时依然收不到
         _ = group.MapPost("/send", async (
             HttpContext context,
             MessageInput input,
@@ -113,12 +120,22 @@ public static class PushEndpoints {
                 var body = (input.Body ?? string.Empty).Trim();
                 if (body.Length == 0) {
                     return Results.Json(
-                        new { ok = false, message = "总得写点什么。" },
+                        new { ok = false, message = "内容不能为空，请填写后再提交" },
                         statusCode: StatusCodes.Status400BadRequest);
                 }
 
                 if (await notifications.GetPartnerIdAsync(userId, cancellationToken) is not { } partnerId) {
-                    return Results.Json(new { ok = false, message = "还没有另一个账号，发不出去。" });
+                    return Results.Json(new { ok = false, message = "缺少接收方账号，无法发送" });
+                }
+
+                var readiness = await notifications.GetPartnerReadinessAsync(userId, cancellationToken);
+                if (!readiness.CanReceive) {
+                    return Results.Json(new {
+                        ok = false,
+                        message = readiness.Enabled
+                            ? "对方暂无可用设备接收通知"
+                            : "对方已关闭通知，当前发送将无法送达"
+                    });
                 }
 
                 var site = await settings.GetAsync(cancellationToken);
@@ -138,24 +155,24 @@ public static class PushEndpoints {
                 return Results.Json(new {
                     ok = result.Sent > 0,
                     message = result.Sent > 0
-                        ? $"已经送到对方的 {result.Sent} 台设备。"
-                        : "对方还没有开启通知，或者没有可用的设备。"
+                        ? $"已送达对方 {result.Sent} 台设备"
+                        : "对方未开启通知或无可用设备"
                 });
             });
     }
 
     private static string Explain(PushDeliveryResult result, bool configured) {
         if (!configured) {
-            return "站点还没有生成通知密钥，看看启动日志里说了什么。";
+            return "站点还没配好通知密钥，去看看启动日志吧";
         }
 
         if (result.Sent > 0) {
-            return $"已经发往 {result.Sent} 台设备，稍等一下就能看到。";
+            return $"已经送到 {result.Sent} 台设备上啦，稍等片刻就能收到";
         }
 
         return result.Total == 0
-            ? "这个账号还没有授权过任何设备，先在下面点「在这台设备上开启」。"
-            : "一台都没发出去，设备可能已经撤销了授权，重新开启一次试试。";
+            ? "你的账号还没绑定过设备，点下面「在这台设备上开启」就好啦"
+            : "设备好像都下线了，重新点一下开启试试吧";
     }
 
     /// <summary>

@@ -161,9 +161,9 @@ public enum NotificationTopic {
     Shop = 2,
 
     /// <summary>
-    /// 每日想你：到点提醒去点一下想你
+    /// 想你：对方在首页点了想你
     /// </summary>
-    DailyMiss = 3,
+    MissYou = 3,
 
     /// <summary>
     /// 对方手动发来的一句话，不受上面四项开关影响

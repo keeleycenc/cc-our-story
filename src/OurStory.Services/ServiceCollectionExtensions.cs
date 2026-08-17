@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IShopService, ShopService>();
 
         _ = services.AddSingleton<INotificationQueue, NotificationQueue>();
+        _ = services.AddSingleton<IMissYouNotifier, MissYouNotifier>();
         _ = services.AddScoped<IWebPushSender, WebPushSender>();
         _ = services.AddScoped<INotificationService, NotificationService>();
 

@@ -47,21 +47,51 @@ public sealed record NotificationRequest(
 /// <param name="Endpoint">推送服务给的投递地址</param>
 /// <param name="P256dh">设备公钥，base64url</param>
 /// <param name="Auth">设备认证密钥，base64url</param>
+/// <param name="DeviceKey">浏览器自己记着的设备编号，认「是不是同一台」全靠它</param>
+/// <param name="PreviousEndpoint">
+/// 换发订阅前的老地址。Service Worker 读不到浏览器的本地存储、拿不出设备编号，
+/// 只能靠这个把新旧两份订阅接上，不然会平白多出一台设备
+/// </param>
 /// <param name="UserAgent">浏览器的 User-Agent，用来给设备起个看得懂的名字</param>
-public sealed record PushDeviceRegistration(string Endpoint, string P256dh, string Auth, string? UserAgent);
+public sealed record PushDeviceRegistration(
+    string Endpoint,
+    string P256dh,
+    string Auth,
+    string? DeviceKey = null,
+    string? PreviousEndpoint = null,
+    string? UserAgent = null);
 
 /// <summary>
 /// 后台设备列表里的一行
 /// </summary>
 /// <param name="Id">设备编号</param>
+/// <param name="Key">设备的固定编号，页面靠它认出哪张卡片是「本机」</param>
 /// <param name="Name">设备名</param>
 /// <param name="CreatedAt">首次授权时间，站点时区</param>
 /// <param name="LastPushedAt">最近一次收到通知的时间，站点时区；从没收到过为 null</param>
 public sealed record PushDeviceCard(
     long Id,
+    string Key,
     string Name,
     DateTime CreatedAt,
     DateTime? LastPushedAt);
+
+/// <summary>
+/// 对方那头准备好了没有
+/// </summary>
+/// <param name="Enabled">对方开着通知总开关</param>
+/// <param name="Devices">对方有几台设备能收到</param>
+public sealed record PartnerReadiness(bool Enabled, int Devices) {
+    /// <summary>
+    /// 获取一个值，指示现在发过去对方能不能收到
+    /// </summary>
+    public bool CanReceive => Enabled && Devices > 0;
+
+    /// <summary>
+    /// 表示还没有另一个账号
+    /// </summary>
+    public static readonly PartnerReadiness None = new(false, 0);
+}
 
 /// <summary>
 /// 一次投递的结果，后台的「通知测试」拿它给人看个交代
@@ -106,12 +136,12 @@ public sealed class NotificationPreferences {
     public bool Shop { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置是否接收每日想你的提醒
+    /// 获取或设置对方点了想你时要不要提醒我
     /// </summary>
-    public bool DailyMiss { get; set; } = true;
+    public bool MissYou { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置每日提醒时刻，从零点算起的分钟数
+    /// 获取或设置纪念日提醒时刻，从零点算起的分钟数
     /// </summary>
     public int RemindMinutes { get; set; } = NotificationSetting.DefaultRemindMinutes;
 
@@ -126,7 +156,7 @@ public sealed class NotificationPreferences {
             Moments = setting.Moments,
             Anniversaries = setting.Anniversaries,
             Shop = setting.Shop,
-            DailyMiss = setting.DailyMiss,
+            MissYou = setting.MissYou,
             RemindMinutes = setting.RemindMinutes
         };
     }

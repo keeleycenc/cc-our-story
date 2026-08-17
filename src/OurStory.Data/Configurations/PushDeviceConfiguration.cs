@@ -19,6 +19,8 @@ public class PushDeviceConfiguration : IEntityTypeConfiguration<PushDevice> {
         _ = builder.ToTable("push_devices");
         _ = builder.HasKey(device => device.Id);
 
+        _ = builder.Property(device => device.DeviceKey).HasMaxLength(64).IsRequired();
+
         // 推送服务给的地址可以很长，Apple 和 FCM 的都在几百字符上下
         _ = builder.Property(device => device.Endpoint).HasMaxLength(500).IsRequired();
         _ = builder.Property(device => device.P256dh).HasMaxLength(120).IsRequired();
@@ -30,7 +32,7 @@ public class PushDeviceConfiguration : IEntityTypeConfiguration<PushDevice> {
             .HasForeignKey(device => device.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // 同一台设备重新授权拿到的还是这个地址，靠唯一索引把它认回来
+        _ = builder.HasIndex(device => device.DeviceKey).IsUnique();
         _ = builder.HasIndex(device => device.Endpoint).IsUnique();
         _ = builder.HasIndex(device => device.UserId);
     }

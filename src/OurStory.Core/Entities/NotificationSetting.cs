@@ -12,7 +12,7 @@ namespace OurStory.Core.Entities;
 /// </remarks>
 public class NotificationSetting {
     /// <summary>
-    /// 默认的每日提醒时间：晚上九点
+    /// 默认的纪念日提醒时间：晚上九点
     /// </summary>
     public const int DefaultRemindMinutes = 21 * 60;
 
@@ -47,31 +47,24 @@ public class NotificationSetting {
     public bool Shop { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置是否接收每日想你的提醒
+    /// 获取或设置对方在首页点了想你时，要不要提醒我
     /// </summary>
-    public bool DailyMiss { get; set; } = true;
+    public bool MissYou { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置每日提醒的时刻，从当天零点算起的分钟数，按站点时区理解
+    /// 获取或设置纪念日提醒的时刻，从当天零点算起的分钟数，按站点时区理解
     /// </summary>
     /// <remarks>
-    /// 「每日想你」和「今天 / 明天有纪念日」这两条到点的提醒共用它，
-    /// 后台只用填一个时间
+    /// 只管「今天 / 明天有纪念日」这一条到点的提醒
     /// </remarks>
     public int RemindMinutes { get; set; } = DefaultRemindMinutes;
 
     /// <summary>
-    /// 获取或设置最近一次发出每日想你提醒的日期，形如 <c>2026-08-17</c>
-    /// </summary>
-    /// <remarks>
-    /// 定时那一头每分钟醒一次，靠这个日期确保一天只发一条；
-    /// 站点重启也不会重复打扰
-    /// </remarks>
-    public string LastDailyMissOn { get; set; } = string.Empty;
-
-    /// <summary>
     /// 获取或设置最近一次发出纪念日提醒的日期，形如 <c>2026-08-17</c>
     /// </summary>
+    /// <remarks>
+    /// 定时那一头每分钟醒一次，靠这个日期确保一天只发一条；站点重启也不会重复打扰
+    /// </remarks>
     public string LastAnniversaryOn { get; set; } = string.Empty;
 
     /// <summary>
@@ -80,11 +73,12 @@ public class NotificationSetting {
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// 这一类通知要不要发给这个人
+    /// 判断该用户是否应收到此类通知
     /// </summary>
     /// <remarks>
-    /// 「对方发来的一句话」和「通知测试」不看那四个勾：
-    /// 前者是人主动按下发送键，后者本来就是用来确认通知通不通的
+    /// 以下两种通知无视那四个勾选开关：
+    /// 1. 「对方发来的一句话」——因为是用户主动按下发送键触发的；
+    /// 2. 「通知测试」——因为它的本意就是确认通知通道是否通畅。
     /// </remarks>
     public bool Allows(NotificationTopic topic) => topic switch {
         NotificationTopic.Test => true,
@@ -92,7 +86,7 @@ public class NotificationSetting {
         NotificationTopic.Moment => Enabled && Moments,
         NotificationTopic.Anniversary => Enabled && Anniversaries,
         NotificationTopic.Shop => Enabled && Shop,
-        NotificationTopic.DailyMiss => Enabled && DailyMiss,
+        NotificationTopic.MissYou => Enabled && MissYou,
         _ => false
     };
 }

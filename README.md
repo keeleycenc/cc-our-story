@@ -85,16 +85,18 @@ CC.OurStory/
 ### 方式一：dotnet watch（开发时用这个）
 
 ```powershell
+# 改 `.cshtml`、`.cs`、`wwwroot` 下的样式脚本都会立刻生效，不用停掉重开，浏览器还会自己刷新
 dotnet watch --project src/OurStory.Web
 ```
 
-打开 <http://localhost:5080>
+打开 <http://localhost:5080>。移动端需要访问的话需加 `--lan` 开启局域网监听：
 
-改 `.cshtml`、`.cs`、`wwwroot` 下的样式脚本都会立刻生效，不用停掉重开，浏览器还会自己刷新
+```powershell
+# 日志会打印内网地址。可指定端口：--lan 8080。Docker 不受此开关影响
+dotnet watch --project src/OurStory.Web --lan
+```
 
-只跑一次不改代码的话，用 `dotnet run --project src/OurStory.Web` 就行 ——但它把 Razor 页面编译进了 dll，改完必须重启才看得到
-
-第一次启动会自动建库，并创建 `boy` / `girl` 两个账号。**口令是随机生成的，只在启动日志里出现这一次**，形如：
+第一次启动会自动建库，并创建 `boy` / `girl` 两个账号。**口令是随机生成的，只在启动日志里出现这一次**
 
 ```text
 warn: OurStory.Web.Infrastructure[0]已创建 Boy 账号：登录名 boy，初始口令 xxxxxxxxxxxxxx —— 这串口令只在这里出现一次，登录后请到后台改掉
@@ -106,21 +108,14 @@ warn: OurStory.Web.Infrastructure[0]已创建 Boy 账号：登录名 boy，初�
 
 ```powershell
 Copy-Item .env.example .env
-```
-
-`.env` 里只有一个对外端口，按需改一下，然后：
-
-```bash
 docker compose up -d --build
 ```
 
-打开 <http://localhost:8080>。两个账号的初始口令是随机生成的，从日志里捞：
+打开 <http://localhost:8080>。两个账号的初始口令是随机生成的，从日志查看：
 
 ```bash
 docker compose logs web
 ```
-
-登录后台就能改站点设置，时区、附件存到哪儿也在里面，不用动容器里的文件
 
 ## 🚀 远端部署
 
@@ -224,15 +219,19 @@ server {
 **需要双方各自操作一遍：**
 
 1. **iOS 强制（Android 和 PC 端跳过此步）**：iPhone/iPad 需先用 Safari 打开站点，点击「分享 → 添加到主屏幕」，之后从主屏幕图标进入
-2. 进入「后台 → 通知」，点击「在这台设备上开启」，浏览器弹出权限框时选择「允许」
+2. 进入「后台 → 通知」，点击「开启通知」，浏览器弹出权限框时选择「允许」
 3. 勾选需要接收的通知项，保存
 
 每台设备（手机、平板、电脑）需单独开通，已开通设备统一列出，可随时移除
+
+命令会输出 `https://xxx.trycloudflare.com`，手机直接访问即可，无需账号或证书。iPhone 需先「添加到主屏幕」再开启通知
 
 ### 注意事项
 
 - **VAPID 密钥**（站点在浏览器端的身份标识）首次启动自动生成，保存在数据目录的 `ourstory.json` 中。**请勿修改**，否则所有已授权设备将集体失效
 - 若配置文件为只读挂载，启动日志会提示通知功能不可用
+- 同一浏览器只存一份推送订阅。多账号切换登录时，订阅归属**最后点开启**的账号，另一账号设备列表会清空——属浏览器限制，非站点问题。通知页会标明当前归属。多人需各自收通知请用不同浏览器
+- **Chrome 首次读取通知状态可能很慢**（要连 Google 的推送服务，网络不通时能卡一两分钟），Edge 走 Windows 通知服务则很快
 
 ## ❓ 忘记口令
 
