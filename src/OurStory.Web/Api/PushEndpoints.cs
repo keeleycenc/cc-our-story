@@ -171,7 +171,7 @@ public static class PushEndpoints {
         }
 
         if (result.Sent > 0) {
-            return $"已经送到 {result.Sent} 台设备上啦，稍等片刻就能收到";
+            return $"已经送到 {result.Sent} 台设备上啦";
         }
 
         return result.Total == 0

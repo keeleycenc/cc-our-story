@@ -10,7 +10,16 @@
 @* 这一整块要靠脚本才有意义：授权、退订、试发都是浏览器那头的事。
    data-push 是脚本认这块内容的记号 *@
 <div class="admin-panel" data-push>
-    <h2>@Icon("bell-ring")当前设备<span class="push-spinner" data-push-busy hidden aria-hidden="true"></span></h2>
+    <div class="panel-head">
+        <h2>@Icon("bell-ring")当前设备<span class="push-spinner" data-push-busy hidden aria-hidden="true"></span></h2>
+
+        <button class="push-switch" type="button" role="switch" aria-checked="false"
+                data-push-toggle data-state="busy" disabled>
+            <span class="push-switch-label" data-push-label>正在检测</span>
+            <span class="push-switch-track"><span class="push-switch-thumb"></span></span>
+        </button>
+    </div>
+
     <p class="admin-panel-hint">
         为了不错过彼此分享的每个瞬间，请分别在手机、平板或电脑上开启通知。
         根据浏览器的安全要求，每台设备都需要由你亲自确认授权。
@@ -22,12 +31,6 @@
     }
 
     <p class="push-status" data-push-status>正在检测当前设备的通知状态……</p>
-
-    <button class="push-switch" type="button" role="switch" aria-checked="false"
-            data-push-toggle data-state="busy" disabled>
-        <span class="push-switch-track"><span class="push-switch-thumb"></span></span>
-        <span class="push-switch-label" data-push-label>正在检测</span>
-    </button>
 </div>
 
 <div class="admin-panel">

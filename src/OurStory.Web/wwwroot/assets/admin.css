@@ -175,7 +175,8 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .admin-panel + .admin-panel { margin-top: 22px }
 
-.admin-panel > h2 {
+.admin-panel > h2,
+.admin-panel > .panel-head > h2 {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -183,7 +184,19 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     font: 400 19px var(--serif);
 }
 
-.admin-panel > h2 .icon { font-size: 17px; color: var(--pink-dark) }
+.admin-panel > h2 .icon,
+.admin-panel > .panel-head > h2 .icon { font-size: 17px; color: var(--pink-dark) }
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.admin-panel > .panel-head > h2 { margin-bottom: 0 }
+
 .admin-panel-hint { margin: -10px 0 18px; color: var(--faint); font-size: 12px }
 
 .admin-vow {
@@ -557,15 +570,20 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     text-align: left;
 }
 
-/* 弹出来的那张日历跟着站点配色走，深色模式下别闪一张白纸出来 */
 :root[data-theme="light"] .field input[type="date"],
-:root[data-theme="light"] .field input[type="datetime-local"] { color-scheme: light }
+:root[data-theme="light"] .field input[type="datetime-local"],
+:root[data-theme="light"] .field input[type="time"],
+:root[data-theme="light"] .field input[type="month"] { color-scheme: light }
 
 :root[data-theme="dark"] .field input[type="date"],
-:root[data-theme="dark"] .field input[type="datetime-local"] { color-scheme: dark }
+:root[data-theme="dark"] .field input[type="datetime-local"],
+:root[data-theme="dark"] .field input[type="time"],
+:root[data-theme="dark"] .field input[type="month"] { color-scheme: dark }
 
 .field input[type="date"]::-webkit-calendar-picker-indicator,
-.field input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
+.field input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.field input[type="time"]::-webkit-calendar-picker-indicator,
+.field input[type="month"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
 
 /* 日期／时间选择器：全站共用 _DateField 这一份，外框自己画，
    里面仍是原生控件，手机上照样能调出系统的滚轮 */
@@ -743,14 +761,16 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .push-status { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.75 }
 .push-status:empty { display: none }
+
+[data-push] > .push-status:last-child { margin-bottom: 0 }
 .push-status[data-kind="ok"] { color: var(--pink-dark) }
 .push-status[data-kind="warn"] { color: var(--danger) }
 
 .push-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
 
-/* 开启 / 关闭做成一个左关右开的开关，状态一眼看得出，不用读按钮上的字 */
 .push-switch {
     display: inline-flex;
+    flex: none;
     align-items: center;
     gap: 11px;
     padding: 0;
@@ -784,29 +804,25 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     transition: transform .2s;
 }
 
-/* 开着的时候滑块滑到右边，轨道也跟着变色 */
 .push-switch[data-state="on"] .push-switch-track { background: var(--pink); border-color: var(--pink) }
 .push-switch[data-state="on"] .push-switch-thumb { transform: translateX(20px) }
 
-.push-switch-label { color: var(--muted) }
+.push-switch-label { color: var(--muted); white-space: nowrap }
 .push-switch[data-state="on"] .push-switch-label { color: var(--pink-dark) }
 
 .push-switch:not(:disabled):hover .push-switch-track { border-color: var(--pink) }
 .push-switch:focus-visible { outline: 2px solid var(--pink); outline-offset: 4px; border-radius: 999px }
 
-/* 忙的时候不许再点，光标也说清楚 */
 .push-switch:disabled { cursor: not-allowed; opacity: .6 }
 
 .push-send { min-width: 128px; justify-content: center }
 
-/* 忙的时候转个圈顶掉图标：只把按钮变灰，看不出到底在不在做事 */
 .push-spinner {
     display: none;
     flex: none;
     width: 14px;
     height: 14px;
     border: 2px solid currentColor;
-    /* 缺一个口，转起来才看得出在动 */
     border-top-color: transparent;
     border-radius: 50%;
     opacity: .75;
