@@ -20,7 +20,7 @@ body.modal-open { overflow: hidden }
 :where(.lightbox, .lightbox *, .lightbox *:before, .lightbox *:after) { box-sizing: border-box }
 :where(.lightbox img) { display: block; max-width: 100% }
 
-/* 图片查看器：遮罩、原图、翻页、缩放，DOM 由 lightbox.js 建 */
+/* 图片查看器：遮罩、轨道、翻页、缩放，DOM 由 lightbox.js 建 */
 .lightbox {
     position: fixed;
     inset: 0;
@@ -88,66 +88,113 @@ body.modal-open { overflow: hidden }
     color: #fff;
     font-size: 22px;
     cursor: pointer;
-    transition: background .2s;
+    transition: background .2s, opacity .2s;
 }
 
 .lightbox-nav:hover { background: rgba(255, 255, 255, .26) }
 .lightbox-nav:focus-visible { outline: 2px solid #fff; outline-offset: 2px }
 .lightbox-nav[hidden] { display: none }
+.lightbox-nav:disabled { opacity: .25; cursor: default }
+.lightbox-nav:disabled:hover { background: rgba(255, 255, 255, .14) }
 .lightbox-nav.is-prev { left: 18px }
 .lightbox-nav.is-next { right: 18px }
 
 .lightbox-stage {
     position: relative;
-    display: grid;
-    place-items: center;
     min-height: 0;
-    padding: 0 14px;
     overflow: hidden;
 }
 
-.lightbox-canvas {
-    position: relative;
-    display: grid;
-    max-width: min(1400px, 100%);
-    max-height: 100%;
+.lightbox-track {
+    display: flex;
+    height: 100%;
     will-change: transform;
 }
 
-.lightbox-canvas img {
-    grid-area: 1 / 1;
-    max-width: 100%;
-    max-height: 78vh;
-    width: auto;
-    height: auto;
+.lightbox-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 0 14px;
+}
+
+.lightbox-frame {
+    position: relative;
+    width: 100%;
+    max-width: min(1400px, 100%);
+    max-height: 100%;
+    aspect-ratio: var(--lightbox-ratio, 3 / 2);
     border-radius: 14px;
+    background: rgba(255, 255, 255, .06);
     box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.lightbox-frame:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg,
+        rgba(255, 255, 255, .04) 30%,
+        rgba(255, 255, 255, .13) 50%,
+        rgba(255, 255, 255, .04) 70%) 0 0 / 220% 100%;
+    animation: lightbox-sheen 1.4s linear infinite;
+}
+
+.lightbox-slide.is-ready .lightbox-frame:before,
+.lightbox-slide.is-full .lightbox-frame:before { display: none }
+
+.lightbox-slide.is-ready .lightbox-frame,
+.lightbox-slide.is-full .lightbox-frame { background: transparent }
+
+.lightbox-frame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     -webkit-user-drag: none;
 }
 
-.lightbox-thumb { filter: blur(3px) }
-.lightbox-thumb[hidden] { display: none }
-.lightbox-full { opacity: 0; transition: opacity .3s ease }
-.lightbox.is-loaded .lightbox-full { opacity: 1 }
-.lightbox.is-loaded .lightbox-thumb { visibility: hidden }
-.lightbox.is-failed .lightbox-canvas { display: none }
+.lightbox-full { opacity: 0; transition: opacity .28s ease }
+.lightbox-slide.is-full .lightbox-full { opacity: 1 }
+.lightbox-slide.is-full .lightbox-preview { visibility: hidden; transition: visibility 0s linear .3s }
+.lightbox-slide.is-failed .lightbox-frame { background: rgba(255, 255, 255, .04) }
+.lightbox-slide.is-failed .lightbox-frame:before { display: none }
 
-/* 尺寸固定，inset + margin:auto 就能居中；transform 留给它自己转圈 */
-.lightbox-spinner {
+.lightbox-hint {
     position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 34px;
-    height: 34px;
-    border: 2px solid rgba(255, 255, 255, .25);
+    left: 18px;
+    bottom: 17px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .45);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: rgba(255, 255, 255, .85);
+    font-size: 11px;
+    letter-spacing: .04em;
+    pointer-events: none;
+}
+
+.lightbox-hint[hidden] { display: none }
+
+.lightbox-dot {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, .3);
     border-top-color: #fff;
     border-radius: 50%;
     animation: lightbox-spin .8s linear infinite;
 }
 
-.lightbox.is-loaded .lightbox-spinner, .lightbox.is-failed .lightbox-spinner { display: none }
-
-.lightbox-failed {
+.lightbox-note {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -160,7 +207,7 @@ body.modal-open { overflow: hidden }
     font-size: 12px;
 }
 
-.lightbox-failed[hidden] { display: none }
+.lightbox-note[hidden] { display: none }
 
 .lightbox-caption {
     margin: 0;
@@ -172,14 +219,21 @@ body.modal-open { overflow: hidden }
 }
 
 .lightbox-caption[hidden] { display: none }
-.lightbox.is-zoomed .lightbox-canvas { cursor: grab }
-.lightbox.is-dragging .lightbox-canvas { cursor: grabbing }
-.lightbox.is-swiping { transition: none }
+.lightbox.is-zoomed .lightbox-frame { cursor: grab; will-change: transform }
+.lightbox.is-dragging .lightbox-frame,
+.lightbox.is-swiping .lightbox-frame { cursor: grabbing }
 
 @keyframes lightbox-spin { to { transform: rotate(360deg) } }
+@keyframes lightbox-sheen { to { background-position: -220% 0 } }
 
 @media (max-width: 640px) {
     .lightbox-nav { display: none }
-    .lightbox-canvas img { max-height: 72vh }
+    .lightbox-slide { padding: 0 10px }
     .lightbox-caption { padding: 10px 16px 18px }
+    .lightbox-hint { left: 14px; top: 76px; bottom: auto }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lightbox-frame:before { animation: none }
+    .lightbox-full { transition: none }
 }

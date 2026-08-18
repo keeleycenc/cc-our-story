@@ -39,6 +39,9 @@ internal static class TestDoubles {
 
     /// <summary>只把排队的通知收进列表，不真的往外发。</summary>
     public static NotificationQueueSpy Notifications() => new();
+
+    /// <summary>时钟归测试管，攒单那类靠计时器的行为不用真的等。</summary>
+    public static FakeTimeProvider Time() => new();
 }
 
 /// <summary>
@@ -160,4 +163,92 @@ internal sealed class HeartPointStub : IHeartPointService {
 
     public Task<bool> IsBackfilledAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(false);
+}
+
+internal sealed class FakeTimeProvider : TimeProvider {
+    private readonly Lock _gate = new();
+    private readonly List<FakeTimer> _timers = [];
+    private DateTimeOffset _now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    /// <summary>当前这一刻，只有 <see cref="Advance"/> 能推动它。</summary>
+    public override DateTimeOffset GetUtcNow() {
+        lock (_gate) {
+            return _now;
+        }
+    }
+
+    /// <summary>建一个听这份时钟的计时器。</summary>
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) {
+        var timer = new FakeTimer(this, callback, state);
+
+        lock (_gate) {
+            _timers.Add(timer);
+        }
+
+        _ = timer.Change(dueTime, period);
+        return timer;
+    }
+
+    /// <summary>
+    /// 把时钟往前拨，路上到点的计时器按先后依次响。
+    /// </summary>
+    /// <param name="span">往前拨多久</param>
+    public void Advance(TimeSpan span) {
+        var target = GetUtcNow() + span;
+
+        // 回调里可能又把自己往后排（每点一下都重新计时），所以一轮一轮地找最近的那个
+        while (Next(target) is { } timer) {
+            lock (_gate) {
+                _now = timer.DueAt!.Value;
+            }
+
+            timer.Fire();
+        }
+
+        lock (_gate) {
+            _now = target;
+        }
+    }
+
+    private void Remove(FakeTimer timer) {
+        lock (_gate) {
+            _ = _timers.Remove(timer);
+        }
+    }
+
+    /// <summary>截止时刻之前最早响的那个计时器；都还没到点就返回 null。</summary>
+    private FakeTimer? Next(DateTimeOffset until) {
+        lock (_gate) {
+            return _timers
+                .Where(timer => timer.DueAt is { } due && due <= until)
+                .OrderBy(timer => timer.DueAt!.Value)
+                .FirstOrDefault();
+        }
+    }
+
+    private sealed class FakeTimer(FakeTimeProvider owner, TimerCallback callback, object? state) : ITimer {
+        private TimeSpan _period = Timeout.InfiniteTimeSpan;
+
+        /// <summary>下次该响的时刻；没排期时为 null。</summary>
+        public DateTimeOffset? DueAt { get; private set; }
+
+        public bool Change(TimeSpan dueTime, TimeSpan period) {
+            _period = period;
+            DueAt = dueTime == Timeout.InfiniteTimeSpan ? null : owner.GetUtcNow() + dueTime;
+            return true;
+        }
+
+        /// <summary>响一次；设了间隔就接着排下一次。</summary>
+        public void Fire() {
+            DueAt = _period == Timeout.InfiniteTimeSpan ? null : DueAt + _period;
+            callback(state);
+        }
+
+        public void Dispose() => owner.Remove(this);
+
+        public ValueTask DisposeAsync() {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
 }
