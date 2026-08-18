@@ -1,7 +1,7 @@
 @page "/"
 @model IndexModel
 @inject System.Text.Encodings.Web.HtmlEncoder Encoder
-@inject CoverThumbnails Thumbs
+@inject MediaUrls Media
 @{
     ViewData["ActiveNav"] = "home";
     ViewData["Bundle"] = "home";
@@ -148,7 +148,7 @@
                             <span class="recent-cover"@(moment.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                                 @if (moment.CoverUrl.Length > 0)
                                 {
-                                    <img src="@Thumbs.For(moment.CoverUrl)" alt="@moment.Title" loading="lazy" decoding="async">
+                                    <img src="@Media.Cover(moment.CoverUrl)" alt="@moment.Title" loading="lazy" decoding="async">
                                 }
                                 else
                                 {
@@ -186,7 +186,7 @@
                             <span class="recent-cover wish-cover tone-@ShopDisplay.CoverTone(item.Id)"@(item.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                                 @if (item.CoverUrl.Length > 0)
                                 {
-                                    <img src="@Thumbs.For(item.CoverUrl)" alt="@item.Title" loading="lazy" decoding="async">
+                                    <img src="@Media.Cover(item.CoverUrl)" alt="@item.Title" loading="lazy" decoding="async">
                                 }
                                 else
                                 {

@@ -5,7 +5,7 @@
     var activeNav = ViewData["ActiveNav"] as string ?? string.Empty;
     // 首页和其它页面的样式 / 脚本不一样，和原主题的资源清单保持一致
     var bundle = ViewData["Bundle"] as string ?? "moments";
-    var styles = new[] { "assets/variables.css", "assets/core.css", $"assets/{bundle}.css" };
+    var styles = new[] { "assets/variables.css", "assets/core.css", "assets/lightbox.css", $"assets/{bundle}.css" };
     var scripts = new[] { "assets/core.js", $"assets/{bundle}.js" };
     var pageTitle = ViewData["Title"] as string;
 }
@@ -94,12 +94,8 @@
     </div>
 </div>
 
-<div class="lightbox" id="lightbox" hidden>
-    <button class="lightbox-close" type="button" aria-label="关闭">@Icon("x")</button>
-    <img alt="">
-</div>
-
 <script src="@Assets.Url("assets/pwa.js")" defer></script>
+<script src="@Assets.Url("assets/lightbox.js")" defer></script>
 @foreach (var script in scripts)
 {
     <script src="@Assets.Url(script)" defer></script>

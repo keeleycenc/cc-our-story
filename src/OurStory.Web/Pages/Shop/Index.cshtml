@@ -1,6 +1,6 @@
 @page "/shop"
 @model OurStory.Web.Pages.Shop.IndexModel
-@inject CoverThumbnails Thumbs
+@inject MediaUrls Media
 @{
     ViewData["Title"] = "心意商城";
     ViewData["ActiveNav"] = "shop";
@@ -113,7 +113,7 @@
                     <div class="shop-cover tone-@ShopDisplay.CoverTone(item.Id)" @(item.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                         @if (item.CoverUrl.Length > 0)
                         {
-                            <img src="@Thumbs.For(item.CoverUrl)"
+                            <img src="@Media.Cover(item.CoverUrl)"
                                  alt="@item.Title"
                                  loading="lazy"
                                  decoding="async">

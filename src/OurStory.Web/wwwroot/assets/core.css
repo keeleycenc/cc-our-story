@@ -190,7 +190,7 @@ img { max-width: 100%; display: block }
 }
 
 .site-footer p { display: inline-flex; align-items: center; gap: 7px; font: italic 13px Georgia; color: #c4bdc5 }
-.footer-heart { color: var(--pink); fill: currentColor; stroke-width: 1.5 }
+.footer-heart { color: var(--pink); fill: currentColor; stroke-width: 1.5px }
 .site-footer > span { font: 8px Arial; letter-spacing: .2em; color: #867f88 }
 .site-footer .logo > span { box-shadow: none }
 
@@ -216,7 +216,7 @@ img { max-width: 100%; display: block }
 .to-top[hidden] { display: none }
 .to-top:hover { transform: translateY(-3px) }
 
-.feature-modal, .lightbox {
+.feature-modal {
     position: fixed;
     inset: 0;
     z-index: 40;
@@ -228,7 +228,7 @@ img { max-width: 100%; display: block }
     backdrop-filter: blur(9px);
 }
 
-.feature-modal[hidden], .lightbox[hidden] { display: none }
+.feature-modal[hidden] { display: none }
 
 .modal-card {
     width: min(420px, 100%);
@@ -270,23 +270,52 @@ img { max-width: 100%; display: block }
     cursor: pointer;
 }
 
-.lightbox { cursor: zoom-out }
-.lightbox img { max-width: min(1100px, 94vw); max-height: 88vh; border-radius: 16px; box-shadow: var(--shadow-lg) }
+/* 正文配图：页面里显示的是压过的一份，点开才去取原图 */
+.article-figure { margin: 30px 0; padding: 0 }
+.article-figure figcaption { margin-top: 10px; text-align: center; font-size: 11px; line-height: 1.7; color: var(--muted) }
 
-.lightbox-close {
-    position: absolute;
-    right: 22px;
-    top: 22px;
-    width: 42px;
-    height: 42px;
+.article-figure-frame {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--surface-muted);
+    cursor: zoom-in;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.article-body .article-figure-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: inherit;
+}
+
+.article-figure-frame:focus-visible { outline: 2px solid var(--pink-dark); outline-offset: 3px }
+
+p > .article-figure-frame { display: inline-block; width: auto; max-width: 100%; vertical-align: middle }
+.article-body p > .article-figure-frame img { width: auto; max-width: 100% }
+
+:root.has-js .article-figure > .article-figure-frame:not(.is-ready) { aspect-ratio: var(--figure-ratio, 3 / 2) }
+
+:root.has-js .article-figure > .article-figure-frame.is-failed {
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, .16);
-    color: #fff;
-    font-size: 20px;
-    cursor: pointer;
+    aspect-ratio: var(--figure-ratio, 3 / 2);
 }
+
+:root.has-js .article-figure-frame.is-failed {
+    cursor: default;
+    font-size: 11px;
+    color: var(--faint);
+}
+
+:root.has-js .article-figure-frame.is-failed:after { content: "这张图没能加载出来" }
+
+/* 图片查看器的样式在 lightbox.css 里，前台和后台各自引一份 */
 
 .will-reveal {
     opacity: 0;

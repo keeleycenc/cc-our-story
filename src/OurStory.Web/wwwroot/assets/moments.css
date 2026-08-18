@@ -99,7 +99,6 @@
 
 .article-body { font-family: var(--serif); font-size: 16px; line-height: 2; color: var(--ink) }
 .article-body img { margin: 30px auto; border-radius: 18px }
-.article-body img.is-zoomable { cursor: zoom-in }
 .article-body a { color: var(--pink-dark); border-bottom: 1px solid }
 .article-body h2, .article-body h3 { line-height: 1.4; margin-top: 2em }
 

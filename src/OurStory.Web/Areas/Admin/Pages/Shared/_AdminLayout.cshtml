@@ -36,6 +36,7 @@
 	<meta name="apple-mobile-web-app-title" content="@site.SiteTitle">
 	<link rel="stylesheet" href="@Assets.Url("assets/variables.css")">
 	<link rel="stylesheet" href="@Assets.Url("assets/admin.css")">
+	<link rel="stylesheet" href="@Assets.Url("assets/lightbox.css")">
 	<script>
 			(function () {
 				var mode = null;
@@ -135,6 +136,7 @@
 	</div>
 
 	<script src="@Assets.Url("assets/pwa.js")" defer></script>
+	<script src="@Assets.Url("assets/lightbox.js")" defer></script>
 	<script src="@Assets.Url("assets/admin.js")" defer></script>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>

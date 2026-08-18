@@ -76,9 +76,37 @@
     });
   }
 
+  const watchCovers = (scope) => {
+    (scope || document).querySelectorAll('[data-cover]:not([data-cover-ready])').forEach((cover) => {
+      cover.dataset.coverReady = '1';
+
+      const image = cover.querySelector('img');
+      if (!image) {
+        cover.classList.add('is-ready');
+        return;
+      }
+
+      const mark = (state) => cover.classList.add(state);
+
+      if (image.complete) {
+        mark(image.naturalWidth > 0 ? 'is-ready' : 'is-failed');
+        return;
+      }
+
+      image.addEventListener('load', () => mark('is-ready'));
+      image.addEventListener('error', () => mark('is-failed'));
+    });
+  };
+
+  window.ccWatchCovers = watchCovers;
+  watchCovers(document);
+
 /* 通用提示弹窗 */
   const modal = document.getElementById('feature-modal');
-  if (!modal) return;
+  if (!modal) {
+    reveal();
+    return;
+  }
 
   const title = modal.querySelector('#modal-title');
   const message = modal.querySelector('#modal-message');
@@ -119,31 +147,10 @@
   modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modal.hidden) close(); });
 
-  /* 封面：图到了再淡入，没到之前由骨架屏占着位置。
-     脚本跑起来时图可能已经在缓存里，这种情况 load 不会再触发，得先问一句 complete */
-  document.querySelectorAll('[data-cover]').forEach((cover) => {
-    const image = cover.querySelector('img');
-    if (!image) {
-      // 没有封面的那种占位格子，别让骨架一直扫下去
-      cover.classList.add('is-ready');
-      return;
-    }
+  function reveal() {
+    const revealTargets = document.querySelectorAll('.feature-card, .moment-entry, .recent-card, .post-card');
+    if (!revealTargets.length || reduceMotion || !('IntersectionObserver' in window)) return;
 
-    const mark = (state) => cover.classList.add(state);
-
-    if (image.complete) {
-      mark(image.naturalWidth > 0 ? 'is-ready' : 'is-failed');
-      return;
-    }
-
-    image.addEventListener('load', () => mark('is-ready'));
-    image.addEventListener('error', () => mark('is-failed'));
-  });
-
-/* 进入视口时淡入。内容默认是可见的，.will-reveal 由 JS 补上，
-     所以没有 JS 时不受影响；再加一个兜底定时器，万一观察器不回调也不会留下空白。 */
-  const revealTargets = document.querySelectorAll('.feature-card, .moment-entry, .recent-card, .post-card');
-  if (revealTargets.length && !reduceMotion && 'IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -164,4 +171,6 @@
       observer.disconnect();
     }, 2500);
   }
+
+  reveal();
 }());

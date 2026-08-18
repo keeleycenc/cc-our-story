@@ -36,7 +36,7 @@
             <div class="anniversary-story-body article-body">
                 @if (item.NoteHtml.Length > 0)
                 {
-                    @Html.Raw(item.NoteHtml)
+                    @Model.Story
                 }
                 else if (item.Note.Length > 0)
                 {

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using OurStory.Services.Storage;
 using SixLabors.ImageSharp;
@@ -30,7 +31,10 @@ public sealed class ThumbnailServiceTests : IDisposable {
         _ = Directory.CreateDirectory(thumbs);
 
         _paths = new StoragePaths(uploads, thumbs, "/uploads");
-        _service = new ThumbnailService(_paths, NullLogger<ThumbnailService>.Instance);
+        _service = new ThumbnailService(
+            _paths,
+            new MemoryCache(new MemoryCacheOptions()),
+            NullLogger<ThumbnailService>.Instance);
     }
 
     /// <summary>长截图会被压成固定尺寸的小图，正是列表卡顿的那个源头。</summary>
@@ -136,6 +140,69 @@ public sealed class ThumbnailServiceTests : IDisposable {
     [Fact]
     public async Task 原图不存在时返回空() =>
         Assert.Null(await _service.EnsureAsync("ourstory/public/2026/08/missing.png"));
+
+    /// <summary>正文那一档不裁，只把过宽的压到限制以内，比例得原样留着。</summary>
+    [Fact]
+    public async Task 正文配图只限宽不裁切() {
+        Write(Key, 3000, 1000);
+
+        var preview = await _service.EnsureAsync(Key, ImageVariant.Preview);
+
+        var info = await Image.IdentifyAsync(preview!);
+        Assert.Equal(ImageVariant.Preview.Width, info.Width);
+        Assert.Equal(ImageVariant.Preview.Width / 3, info.Height);
+    }
+
+    /// <summary>本来就没超宽的别放大，放大只会糊。</summary>
+    [Fact]
+    public async Task 窄图不会被放大() {
+        Write(Key, 600, 400);
+
+        var preview = await _service.EnsureAsync(Key, ImageVariant.Preview);
+
+        var info = await Image.IdentifyAsync(preview!);
+        Assert.Equal(600, info.Width);
+        Assert.Equal(400, info.Height);
+    }
+
+    /// <summary>两档规格各存各的，不能互相顶掉对方那份缓存。</summary>
+    [Fact]
+    public async Task 两档规格各存一份() {
+        Write(Key, 2000, 1500);
+
+        var cover = await _service.EnsureAsync(Key, ImageVariant.Cover);
+        var preview = await _service.EnsureAsync(Key, ImageVariant.Preview);
+
+        Assert.NotEqual(cover, preview);
+        Assert.True(File.Exists(cover));
+        Assert.True(File.Exists(preview));
+    }
+
+    /// <summary>正文里的图要先占好位置，所以得量得出原图尺寸。</summary>
+    [Fact]
+    public async Task 量得出原图尺寸() {
+        Write(Key, 1280, 960);
+
+        var size = await _service.MeasureAsync(Key);
+
+        Assert.Equal(new ImageSize(1280, 960), size);
+    }
+
+    /// <summary>竖着拍的照片报的必须是摆正之后的尺寸，否则占位框会横过来。</summary>
+    [Fact]
+    public async Task 竖拍照片报摆正后的尺寸() {
+        const string key = "ourstory/public/2026/08/portrait.jpg";
+        WriteRotated(key, 1200, 900);
+
+        var size = await _service.MeasureAsync(key);
+
+        Assert.Equal(new ImageSize(900, 1200), size);
+    }
+
+    /// <summary>量不着的交回 null，模板那边退回默认比例。</summary>
+    [Fact]
+    public async Task 原图不在时量不出尺寸() =>
+        Assert.Null(await _service.MeasureAsync("ourstory/public/2026/08/missing.png"));
 
     /// <summary>删掉这次测试用的临时目录。</summary>
     public void Dispose() {

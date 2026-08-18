@@ -1,0 +1,185 @@
+/* 图片查看器的样式，配套 lightbox.js。
+
+   前台和后台两套页面各引各的主样式表，这一份得两边都挂上，
+   所以单独成文件，不塞进 core.css 里。 */
+
+/* 遮罩打开时页面不跟着滚。core.css 里也有同名的一条，后台那边没有，补在这儿 */
+body.modal-open { overflow: hidden }
+
+:where(.lightbox button) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+:where(.lightbox, .lightbox *, .lightbox *:before, .lightbox *:after) { box-sizing: border-box }
+:where(.lightbox img) { display: block; max-width: 100% }
+
+/* 图片查看器：遮罩、原图、翻页、缩放，DOM 由 lightbox.js 建 */
+.lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    touch-action: none;
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.lightbox[hidden] { display: none }
+
+.lightbox:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(16, 12, 18, .93);
+    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(9px);
+    opacity: var(--lightbox-dim, 1);
+}
+
+.lightbox-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    color: rgba(255, 255, 255, .9);
+}
+
+.lightbox-count { font: 700 10px Arial, sans-serif; letter-spacing: .16em }
+.lightbox-tools { display: flex; gap: 8px }
+
+.lightbox-button {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.lightbox-button:hover { background: rgba(255, 255, 255, .26) }
+.lightbox-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px }
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    margin-top: -23px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.lightbox-nav:hover { background: rgba(255, 255, 255, .26) }
+.lightbox-nav:focus-visible { outline: 2px solid #fff; outline-offset: 2px }
+.lightbox-nav[hidden] { display: none }
+.lightbox-nav.is-prev { left: 18px }
+.lightbox-nav.is-next { right: 18px }
+
+.lightbox-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    padding: 0 14px;
+    overflow: hidden;
+}
+
+.lightbox-canvas {
+    position: relative;
+    display: grid;
+    max-width: min(1400px, 100%);
+    max-height: 100%;
+    will-change: transform;
+}
+
+.lightbox-canvas img {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 78vh;
+    width: auto;
+    height: auto;
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    -webkit-user-drag: none;
+}
+
+.lightbox-thumb { filter: blur(3px) }
+.lightbox-thumb[hidden] { display: none }
+.lightbox-full { opacity: 0; transition: opacity .3s ease }
+.lightbox.is-loaded .lightbox-full { opacity: 1 }
+.lightbox.is-loaded .lightbox-thumb { visibility: hidden }
+.lightbox.is-failed .lightbox-canvas { display: none }
+
+/* 尺寸固定，inset + margin:auto 就能居中；transform 留给它自己转圈 */
+.lightbox-spinner {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 34px;
+    height: 34px;
+    border: 2px solid rgba(255, 255, 255, .25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: lightbox-spin .8s linear infinite;
+}
+
+.lightbox.is-loaded .lightbox-spinner, .lightbox.is-failed .lightbox-spinner { display: none }
+
+.lightbox-failed {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    color: rgba(255, 255, 255, .78);
+    font-size: 12px;
+}
+
+.lightbox-failed[hidden] { display: none }
+
+.lightbox-caption {
+    margin: 0;
+    padding: 12px 20px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, .8);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.lightbox-caption[hidden] { display: none }
+.lightbox.is-zoomed .lightbox-canvas { cursor: grab }
+.lightbox.is-dragging .lightbox-canvas { cursor: grabbing }
+.lightbox.is-swiping { transition: none }
+
+@keyframes lightbox-spin { to { transform: rotate(360deg) } }
+
+@media (max-width: 640px) {
+    .lightbox-nav { display: none }
+    .lightbox-canvas img { max-height: 72vh }
+    .lightbox-caption { padding: 10px 16px 18px }
+}

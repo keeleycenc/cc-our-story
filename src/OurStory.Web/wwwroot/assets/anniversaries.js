@@ -24,6 +24,7 @@
   const thumb = (url) => {
     const holder = document.createElement('span');
     holder.className = 'anniversary-thumb';
+    holder.dataset.cover = '';
     const image = document.createElement('img');
     image.src = url;
     image.alt = '';
@@ -142,6 +143,7 @@
         const payload = await response.json();
         const render = type === 'timeline' ? renderTimeline : renderUpcoming;
         payload.items.forEach((item) => content.appendChild(render(item)));
+        if (window.ccWatchCovers) window.ccWatchCovers(content);
         loaded += payload.items.length;
         list.dataset.loaded = String(loaded);
         setProgress();

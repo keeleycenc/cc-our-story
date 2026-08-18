@@ -1,31 +1,6 @@
 (function () {
   'use strict';
 
-/* 图片查看器 */
-  const lightbox = document.getElementById('lightbox');
-  if (lightbox) {
-    const image = lightbox.querySelector('img');
-    const closeLightbox = () => {
-      lightbox.hidden = true;
-      document.body.classList.remove('modal-open');
-      image.removeAttribute('src');
-    };
-    document.querySelectorAll('.article-body img').forEach((img) => {
-      img.classList.add('is-zoomable');
-      img.addEventListener('click', () => {
-        image.src = img.currentSrc || img.src;
-        image.alt = img.alt || '';
-        lightbox.hidden = false;
-        document.body.classList.add('modal-open');
-        lightbox.querySelector('.lightbox-close').focus();
-      });
-    });
-    lightbox.addEventListener('click', closeLightbox);
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !lightbox.hidden) closeLightbox();
-    });
-  }
-
 /* 留言：回复框跟着被回复的那条走，取消后回到最下面 */
   const respond = document.getElementById('respond');
   if (respond) {

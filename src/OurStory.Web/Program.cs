@@ -79,7 +79,8 @@ builder.Services.Configure<WebEncoderOptions>(options =>
 
 builder.Services.AddSingleton<AssetVersionProvider>();
 builder.Services.AddSingleton<DailyVisitLedger>();
-builder.Services.AddSingleton<CoverThumbnails>();
+builder.Services.AddSingleton<MediaUrls>();
+builder.Services.AddSingleton<ArticleMedia>();
 builder.Services.AddScoped<HeartbeatTokenService>();
 builder.Services.AddScoped<VisitorIdentityAccessor>();
 builder.Services.AddScoped<MomentUnlockStore>();
@@ -131,7 +132,7 @@ app.UseAuthorization();
 app.UseDailyVisitReward();
 app.MapRazorPages();
 app.MapHeartbeatEndpoints();
-app.MapThumbnailEndpoints();
+app.MapMediaEndpoints();
 app.MapPushEndpoints();
 
 // 存活探针：容器和反代拿它判断站点还活着。只探数据库连不连得上，

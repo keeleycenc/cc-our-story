@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core.Models;
@@ -19,6 +20,7 @@ public class DetailModel(
     ISettingsService settingsService,
     IMomentService moments,
     ICommentService comments,
+    ArticleMedia articleMedia,
     MomentUnlockStore unlockStore,
     VisitorIdentityAccessor visitors) : PageModel {
     private const string CommentErrorKey = "CommentError";
@@ -32,6 +34,11 @@ public class DetailModel(
     /// 执行 Detail 操作
     /// </summary>
     public MomentDetail Detail { get; private set; } = new();
+
+    /// <summary>
+    /// 获取改写过图片的正文，小图先显示、点开才去取原图
+    /// </summary>
+    public IHtmlContent Story { get; private set; } = HtmlString.Empty;
 
     /// <summary>
     /// 执行 Comments 操作
@@ -48,6 +55,7 @@ public class DetailModel(
         }
 
         Detail = detail;
+        Story = await articleMedia.RenderAsync(detail.ContentHtml, $"moment-{detail.Slug}", cancellationToken);
         Comments = await BuildCommentsAsync(detail, replyTo, TempData[CommentErrorKey] as string, cancellationToken);
         return Page();
     }

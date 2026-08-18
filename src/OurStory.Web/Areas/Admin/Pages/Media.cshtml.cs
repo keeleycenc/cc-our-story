@@ -20,7 +20,7 @@ namespace OurStory.Web.Areas.Admin.Pages;
 public class MediaModel(
     IAttachmentService attachments,
     IFileStorage storage,
-    CoverThumbnails thumbnails,
+    MediaUrls media,
     StoragePaths paths,
     ActiveConfiguration configuration,
     IMarkdownRenderer markdown) : PageModel {
@@ -138,7 +138,7 @@ public class MediaModel(
             .Take(PageSize)
             .Select(file => {
                 var url = storage.PublicUrl(Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/'));
-                return new MediaItem(url, thumbnails.For(url), file.Name, file.Length);
+                return new MediaItem(url, media.Cover(url), media.Preview(url), file.Name, file.Length);
             })
             .ToList();
 
@@ -148,9 +148,10 @@ public class MediaModel(
     /// <summary>图片库里的一张图</summary>
     /// <param name="Url">原图的对外地址</param>
     /// <param name="ThumbUrl">列表里用的缩略图地址</param>
+    /// <param name="PreviewUrl">查看器里等原图时先顶上的那一份，没裁过，比例和原图一致</param>
     /// <param name="Name">文件名</param>
     /// <param name="Size">字节数</param>
-    public record MediaItem(string Url, string ThumbUrl, string Name, long Size) {
+    public record MediaItem(string Url, string ThumbUrl, string PreviewUrl, string Name, long Size) {
         /// <summary>
         /// 获取 SizeText
         /// </summary>
