@@ -35,7 +35,7 @@ public sealed class MomentAdminListTests : IDisposable {
         Add(3, Boy, "男主写的二");
         _ = _db.SaveChanges();
 
-        _moments = new MomentService(_db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Notifications(), TestDoubles.Clock());
+        _moments = new MomentService(_db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Notifications(), TestDoubles.Atmosphere(), TestDoubles.Clock());
     }
 
     /// <summary>

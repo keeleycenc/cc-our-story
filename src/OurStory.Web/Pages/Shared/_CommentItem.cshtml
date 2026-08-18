@@ -3,7 +3,6 @@
     var comment = Model.Comment;
     var tone = comment.IsOwner ? "owner" : comment.AvatarTone.ToString(System.Globalization.CultureInfo.InvariantCulture);
     var stamp = comment.CreatedAt.ToString("yyyy-MM-dd HH:mm");
-    // 回复挤在楼中楼里，年份就不重复了，完整时间挂在 title 上
     var shown = Model.IsReply ? comment.CreatedAt.ToString("MM-dd HH:mm") : stamp;
     var replies = comment.Replies;
     var folded = replies.Count > CommentItemModel.ReplyPreview + 1 ? replies.Count - CommentItemModel.ReplyPreview : 0;
@@ -33,6 +32,10 @@
                 @if (comment.IsAuthor)
                 {
                     <span class="comment-badge">作者</span>
+                }
+                @if (comment.IsAtmosphere)
+                {
+                    <span class="comment-badge is-atmosphere" title="来自氛围组">朋友</span>
                 }
                 <time class="comment-time" datetime="@comment.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")" title="@stamp">@shown</time>
             </p>

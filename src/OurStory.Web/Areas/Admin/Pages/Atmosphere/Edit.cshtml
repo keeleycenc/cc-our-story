@@ -1,0 +1,120 @@
+@page "/admin/atmosphere/edit"
+@model OurStory.Web.Areas.Admin.Pages.Atmosphere.EditModel
+@{
+    ViewData["ActiveMenu"] = "atmosphere";
+    ViewData["Eyebrow"] = "ATMOSPHERE";
+    ViewData["Title"] = Model.IsExisting ? "编辑角色" : "添加角色";
+    ViewData["BackUrl"] = "/admin/atmosphere";
+}
+
+<form method="post" data-dirty-guard>
+    <input asp-for="Input.Id" type="hidden">
+
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    }
+
+    <div class="admin-panel">
+        <h2>@Icon("user-round")这位朋友是谁</h2>
+
+        <div class="field-grid">
+            <label class="field">
+                <span>名字</span>
+                <input asp-for="Input.Name" type="text" maxlength="32" required placeholder="例如：阿柔">
+                <small>评论区会用这个名字称呼它。以后修改名字，历史留言也会同步更新。</small>
+            </label>
+
+            <label class="field">
+                <span>头像地址</span>
+                <input asp-for="Input.AvatarUrl" type="text" maxlength="500" placeholder="留空就用文字头像">
+                <small>留空时会根据名字自动生成文字头像，并为每位朋友分配不同的配色。</small>
+            </label>
+        </div>
+
+        <label class="field">
+            <span>人设</span>
+            <textarea asp-for="Input.Prompt" rows="6" maxlength="2000" placeholder="例如：说话温柔，喜欢关心生活里的小细节；看到他们出去玩会替他们开心，偶尔提醒天气变化。"></textarea>
+            <small>写下它的性格、语气和相处方式即可，评论长度和表达风格会由站点统一约束。</small>
+        </label>
+
+        <label class="field-check">
+            <input asp-for="Input.Enabled" type="checkbox">
+            <span>启用这个角色</span>
+        </label>
+    </div>
+
+    <div class="admin-panel">
+        <h2>@Icon("package")模型</h2>
+
+        <p class="admin-panel-hint">
+            支持兼容 OpenAI Responses 协议的官方服务、第三方服务或自建网关。
+            服务地址填写到版本段即可，站点会自动补上 <code>/responses</code>。
+        </p>
+
+        <div class="field-grid">
+            <label class="field">
+                <span>服务地址</span>
+                <input asp-for="Input.BaseUrl" type="text" maxlength="300" required placeholder="https://api.openai.com/v1">
+            </label>
+
+            <label class="field">
+                <span>模型名称</span>
+                <input asp-for="Input.Model" type="text" maxlength="120" required placeholder="gpt-5">
+            </label>
+
+            <label class="field">
+                <span>API Key</span>
+                <input asp-for="Input.ApiKey" type="password" maxlength="300" autocomplete="new-password"
+                       placeholder="@(Model.HasApiKey ? "已保存，留空则保持不变" : "sk-…")">
+            </label>
+
+            <label class="field">
+                <span>单条最多写多少 token</span>
+                <input asp-for="Input.MaxOutputTokens" type="number" min="32" max="4096">
+            </label>
+        </div>
+
+        <label class="field-check">
+            <input asp-for="Input.AllowImages" type="checkbox">
+            <span>让它看正文里的图</span>
+        </label>
+
+        <p class="admin-panel-hint">
+            开启后会尝试结合图片内容参与互动。若模型不支持图片、图片读取失败或请求被拒绝，会自动改用纯文本继续生成留言
+        </p>
+    </div>
+
+    <div class="admin-panel">
+        <h2>@Icon("clock")什么时候参与留言</h2>
+
+        <div class="field-grid">
+            <label class="field">
+                <span>发布后来留言的概率（%）</span>
+                <input asp-for="Input.CommentChance" type="number" min="0" max="100">
+                <small>设为 0 时，这位朋友不会主动留下新留言。</small>
+            </label>
+
+            <label class="field">
+                <span>被回复后接话的概率（%）</span>
+                <input asp-for="Input.ReplyChance" type="number" min="0" max="100">
+                <small>只有回复到它的留言时，才会触发后续互动</small>
+            </label>
+
+            <label class="field">
+                <span>最短等（分钟）</span>
+                <input asp-for="Input.DelayMinMinutes" type="number" min="0" max="1440">
+            </label>
+
+            <label class="field">
+                <span>最长等（分钟）</span>
+                <input asp-for="Input.DelayMaxMinutes" type="number" min="0" max="1440">
+                <small>会在这个时间范围内随机等待</small>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn" type="submit">@Icon("save")保存角色</button>
+        </div>
+    </div>
+</form>

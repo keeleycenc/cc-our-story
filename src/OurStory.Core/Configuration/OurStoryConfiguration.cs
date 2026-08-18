@@ -27,4 +27,9 @@ public class OurStoryConfiguration {
     /// 获取或设置 Web Push 的 VAPID 身份，首次启动自动生成
     /// </summary>
     public PushOptions Push { get; set; } = new();
+
+    /// <summary>
+    /// 获取或设置 LLM 氛围组：一群按人设留言的虚拟朋友
+    /// </summary>
+    public LlmAtmosphereOptions LlmAtmosphere { get; set; } = new();
 }

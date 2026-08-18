@@ -10,6 +10,7 @@ using OurStory.Core.Text;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
+using OurStory.Services.LlmAtmosphere;
 using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
@@ -21,6 +22,7 @@ internal class MomentService(
     IMarkdownRenderer markdown,
     IHeartPointService heartPoints,
     INotificationQueue notifications,
+    ILlmAtmosphereScheduler atmosphere,
     SiteClock clock) : IMomentService {
     public async Task<PagedList<MomentCard>> GetPageAsync(int page, MomentViewer viewer, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
@@ -162,6 +164,7 @@ internal class MomentService(
         _ = await db.SaveChangesAsync(cancellationToken);
         await AwardAsync(moment, cancellationToken);
         await NotifyAsync(moment, cancellationToken);
+        Stir(moment);
         return moment;
     }
 
@@ -182,6 +185,7 @@ internal class MomentService(
         if (wasDraft) {
             await AwardAsync(moment, cancellationToken);
             await NotifyAsync(moment, cancellationToken);
+            Stir(moment);
         }
 
         return true;
@@ -237,6 +241,14 @@ internal class MomentService(
                 body,
                 $"/moments/{moment.Slug}",
                 $"moment-{moment.Id}")));
+    }
+
+    private void Stir(Moment moment) {
+        if (moment.Status != MomentStatus.Published || !moment.AllowComment) {
+            return;
+        }
+
+        atmosphere.OnMomentPublished(moment.Id, moment.IsProtected);
     }
 
     private async Task<UserRole> AuthorRoleAsync(int authorId, CancellationToken cancellationToken) =>

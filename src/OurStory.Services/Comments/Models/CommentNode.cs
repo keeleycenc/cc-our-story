@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
+using OurStory.Core;
+
 namespace OurStory.Services.Comments;
 
 /// <summary>
@@ -44,7 +46,17 @@ public class CommentNode {
     public bool IsAuthor { get; init; }
 
     /// <summary>
-    /// 获取站主的头像地址，访客留言为空，页面上退回文字头像
+    /// 获取这条留言的来源
+    /// </summary>
+    public CommentSource Source { get; init; } = CommentSource.Guest;
+
+    /// <summary>
+    /// 获取一个值，指示这句话是否出自氛围组
+    /// </summary>
+    public bool IsAtmosphere => Source == CommentSource.LlmAtmosphere;
+
+    /// <summary>
+    /// 获取头像地址：站主用站点设置里的，氛围组用角色配的，访客为空，页面上退回文字头像
     /// </summary>
     public string AvatarUrl { get; init; } = string.Empty;
 

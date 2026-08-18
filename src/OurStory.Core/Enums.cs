@@ -252,3 +252,23 @@ public enum ShopItemStatus {
     /// </summary>
     Expired = 5
 }
+
+/// <summary>
+/// 一条留言是谁写的
+/// </summary>
+public enum CommentSource {
+    /// <summary>
+    /// 访客
+    /// </summary>
+    Guest = 0,
+
+    /// <summary>
+    /// 男主或女主
+    /// </summary>
+    Owner = 1,
+
+    /// <summary>
+    /// LLM 氛围组
+    /// </summary>
+    LlmAtmosphere = 2
+}

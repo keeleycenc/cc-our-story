@@ -74,6 +74,16 @@ public class Comment {
     public string? VisitorHash { get; set; }
 
     /// <summary>
+    /// 获取或设置写这条留言的氛围组角色标识；人写的留言为 null
+    /// </summary>
+    public string? LlmMemberId { get; set; }
+
+    /// <summary>
+    /// 获取或设置留言当时那个角色的头像地址，角色被删掉之后就靠它
+    /// </summary>
+    public string? LlmAvatarUrl { get; set; }
+
+    /// <summary>
     /// 获取或设置留言的创建时间
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -82,4 +92,12 @@ public class Comment {
     /// 获取或设置留言的回复
     /// </summary>
     public ICollection<Comment> Replies { get; set; } = [];
+
+    /// <summary>
+    /// 获取这条留言的来路
+    /// </summary>
+    public CommentSource Source =>
+        LlmMemberId is not null ? CommentSource.LlmAtmosphere
+        : AuthorId is not null ? CommentSource.Owner
+        : CommentSource.Guest;
 }

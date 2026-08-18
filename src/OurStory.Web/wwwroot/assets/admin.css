@@ -449,6 +449,130 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .admin-empty { padding: 40px 0; text-align: center; color: var(--faint); font-size: 13px }
 
+.atmosphere-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none }
+
+.atmosphere-item {
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--surface-soft);
+    overflow: hidden;
+    transition: border-color .18s;
+}
+
+.atmosphere-item:hover { border-color: var(--line-strong) }
+
+.atmosphere-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 16px;
+    padding: 17px 18px;
+}
+
+.atmosphere-avatar {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+    font-size: 17px;
+    overflow: hidden;
+}
+
+.atmosphere-avatar img { width: 100%; height: 100%; object-fit: cover }
+
+.atmosphere-main { min-width: 0 }
+
+.atmosphere-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 2px 0 0 }
+.atmosphere-head strong { font-size: 14px; font-weight: 700 }
+
+.atmosphere-prompt {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.atmosphere-facts { display: flex; flex-wrap: wrap; gap: 9px 22px; margin: 12px 0 0 }
+.atmosphere-facts > div { min-width: 0 }
+.atmosphere-facts dt { color: var(--faint); font-size: 10px; letter-spacing: .04em }
+.atmosphere-facts dd { margin: 2px 0 0; color: var(--ink); font-size: 12px; overflow-wrap: anywhere }
+
+.atmosphere-actions { display: flex; align-items: center; gap: 6px }
+.atmosphere-actions form { display: inline-flex; margin: 0 }
+
+.atmosphere-try {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    padding: 11px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-muted);
+}
+
+.atmosphere-try-topic { display: flex; align-items: center; gap: 8px; min-width: 0; margin-right: auto }
+.atmosphere-try-topic > span { color: var(--faint); font-size: 11px; white-space: nowrap }
+
+.atmosphere-try-topic select {
+    max-width: 260px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--ink);
+    font: 12px var(--sans);
+}
+
+.atmosphere-probe { padding: 13px 18px; border-top: 1px solid var(--line) }
+.atmosphere-probe.is-ok { background: var(--surface) }
+.atmosphere-probe.is-bad { background: var(--pink-softer) }
+
+.atmosphere-probe-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.atmosphere-probe.is-bad .atmosphere-probe-head { color: var(--pink-dark) }
+.atmosphere-probe .icon { flex: none }
+
+.atmosphere-probe blockquote {
+    margin: 9px 0 0;
+    padding: 10px 14px;
+    border-radius: 4px 13px 13px 13px;
+    background: var(--surface-soft);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+
+.atmosphere-notice {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 15px;
+    padding: 10px 14px;
+    border-radius: 11px;
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+    font-size: 12px;
+}
+
+.atmosphere-orphan { margin: 15px 0 0 }
+
 /* 翻页条：和前台共用 _Pagination 这一份局部视图，
    当前页的底色要给到 li 里的 span，挂在 li 上会被里面的方块盖掉 */
 .page-navigator { margin-top: 22px }
@@ -1688,6 +1812,28 @@ body.auth-page {
 
     .admin-moment-actions form, .admin-comment-actions form { display: block }
     .admin-moment-actions .btn, .admin-comment-actions .btn { width: 100%; justify-content: center }
+
+    /* 氛围组：头像和正文并排还放得下，操作按钮落到下面去，和上面两栏对齐 */
+    .atmosphere-card { grid-template-columns: auto minmax(0, 1fr); row-gap: 14px }
+
+    .atmosphere-actions {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 8px;
+        padding-top: 13px;
+        border-top: 1px solid var(--line);
+    }
+
+    .atmosphere-actions form { display: block }
+    .atmosphere-actions .btn { width: 100%; justify-content: center }
+
+    /* 「话题」那一格自己占满一行，两个按钮再平分下面一行 */
+    .atmosphere-try { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px }
+    .atmosphere-try-topic { grid-column: 1 / -1; margin-right: 0 }
+    .atmosphere-try-topic select { flex: 1; max-width: none; min-width: 0 }
+    .atmosphere-try .btn { width: 100%; justify-content: center }
 }
 
 /* 三个快捷入口在最窄的手机上也要和站名、配色及更多按钮共处一行。 */

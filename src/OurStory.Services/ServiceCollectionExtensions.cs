@@ -13,6 +13,7 @@ using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Heartbeats;
+using OurStory.Services.LlmAtmosphere;
 using OurStory.Services.Moments;
 using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
@@ -64,6 +65,10 @@ public static class ServiceCollectionExtensions {
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
+        _ = services.AddHttpClient(ResponsesClient.HttpClientName, client => {
+            client.Timeout = TimeSpan.FromMinutes(5);
+        });
+
         // 两个驱动都建好，用哪个由 FileStorageRouter 按当前配置临时决定
         _ = services.AddSingleton<LocalFileStorage>();
         _ = services.AddSingleton<AliyunOssFileStorage>();
@@ -77,6 +82,11 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IHeartbeatService, HeartbeatService>();
         _ = services.AddScoped<IHeartPointService, HeartPointService>();
         _ = services.AddScoped<IShopService, ShopService>();
+
+        _ = services.AddSingleton<ILlmAtmosphereScheduler, LlmAtmosphereScheduler>();
+        _ = services.AddSingleton<IResponsesClient, ResponsesClient>();
+        _ = services.AddSingleton<IMomentImageSource, MomentImageSource>();
+        _ = services.AddScoped<ILlmAtmosphereService, LlmAtmosphereService>();
 
         _ = services.AddSingleton<INotificationQueue, NotificationQueue>();
         _ = services.AddSingleton<IMissYouNotifier, MissYouNotifier>();

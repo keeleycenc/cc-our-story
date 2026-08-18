@@ -87,6 +87,8 @@ builder.Services.AddScoped<MomentUnlockStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<NotificationWorker>();
 builder.Services.AddHostedService<NotificationScheduler>();
+builder.Services.AddHostedService<LlmAtmosphereWorker>();
+builder.Services.AddHostedService<LlmAtmosphereSweeper>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options => {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -134,6 +136,7 @@ app.MapRazorPages();
 app.MapHeartbeatEndpoints();
 app.MapMediaEndpoints();
 app.MapPushEndpoints();
+app.MapAtmosphereEndpoints();
 
 // 存活探针：容器和反代拿它判断站点还活着。只探数据库连不连得上，
 // 不查任何业务数据，也不渲染页面

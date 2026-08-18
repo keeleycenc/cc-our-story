@@ -1,0 +1,214 @@
+@page "/admin/atmosphere"
+@model OurStory.Web.Areas.Admin.Pages.Atmosphere.IndexModel
+@inject AssetVersionProvider Assets
+@{
+    ViewData["ActiveMenu"] = "atmosphere";
+    ViewData["Eyebrow"] = "ATMOSPHERE";
+    ViewData["Title"] = "氛围组";
+
+    var options = Model.Input;
+    var usable = Model.Members.Count(member => member.IsUsable);
+}
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+}
+
+<div class="admin-panel">
+    <div class="panel-head">
+        <h2>@Icon("users-round")角色</h2>
+        <a class="btn btn-small" href="/admin/atmosphere/edit">@Icon("plus")添加角色</a>
+    </div>
+
+    <p class="admin-panel-hint">
+        每个角色都是一位「常来串门的朋友」，有自己的名字、头像、人设，以及一个兼容 Responses 协议的模型。
+        在你们记录生活之后，它们会隔一阵子来聊两句，也会继续参与评论区里的互动。
+    </p>
+
+    @if (!options.Enabled && Model.Members.Count > 0)
+    {
+        <p class="atmosphere-notice">@Icon("circle-alert")氛围组目前还没有启用，角色不会自动参与互动。仍可以使用下方的「测试模型」和「立即触发」确认模型配置是否正常。</p>
+    }
+
+    @if (Model.Members.Count > 0)
+    {
+        <ul class="atmosphere-list">
+            @foreach (var member in Model.Members)
+            {
+                var count = Model.Counts.TryGetValue(member.Id, out var tally) ? tally : 0;
+                var probe = string.Equals(Model.ProbedMemberId, member.Id, StringComparison.Ordinal) ? Model.Probe : null;
+
+                <li class="atmosphere-item">
+                    <div class="atmosphere-card">
+                        <div class="atmosphere-avatar">
+                            @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
+                            {
+                                <img src="@member.AvatarUrl" alt="" loading="lazy" decoding="async">
+                            }
+                            else
+                            {
+                                <span aria-hidden="true">@(member.Name.Length > 0 ? member.Name[..1] : "?")</span>
+                            }
+                        </div>
+
+                        <div class="atmosphere-main">
+                            <p class="atmosphere-head">
+                                <strong>@member.Name</strong>
+                                @if (!member.IsConfigured)
+                                {
+                                    <span class="tag is-hidden">配置未完成</span>
+                                }
+                                else if (!member.Enabled)
+                                {
+                                    <span class="tag is-hidden">已停用</span>
+                                }
+                                @if (member.AllowImages)
+                                {
+                                    <span class="tag">会看图</span>
+                                }
+                            </p>
+
+                            <p class="atmosphere-prompt">@(string.IsNullOrWhiteSpace(member.Prompt) ? "还没有写下人设" : member.Prompt)</p>
+
+                            <dl class="atmosphere-facts">
+                                <div><dt>模型</dt><dd>@member.Model</dd></div>
+                                <div><dt>留言 / 回复</dt><dd>@member.CommentChance% · @member.ReplyChance%</dd></div>
+                                <div><dt>等待</dt><dd>@member.DelayMinMinutes–@member.DelayMaxMinutes 分钟</dd></div>
+                                <div><dt>已留下</dt><dd data-tally="@count">@count 条</dd></div>
+                            </dl>
+                        </div>
+
+                        <div class="atmosphere-actions">
+                            <a class="btn btn-ghost btn-small" href="/admin/atmosphere/edit?id=@Uri.EscapeDataString(member.Id)">@Icon("pen-line")<span>编辑</span></a>
+                            <form method="post" asp-page-handler="Duplicate">
+                                <input type="hidden" name="id" value="@member.Id">
+                                <button class="btn btn-ghost btn-small" type="submit" title="复制这位角色">@Icon("copy")<span>复制</span></button>
+                            </form>
+                            <form method="post" asp-page-handler="Delete" data-confirm-title="删除角色" data-confirm="它已经留下的内容会继续保留，但之后不会再参与互动。" data-confirm-ok="删除">
+                                <input type="hidden" name="id" value="@member.Id">
+                                <button class="btn btn-danger btn-small" type="submit" title="删除这个角色">@Icon("trash-2")<span>删除</span></button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <form class="atmosphere-try" method="post" asp-page-handler="Test">
+                        <input type="hidden" name="id" value="@member.Id">
+
+                        <label class="atmosphere-try-topic">
+                            <span>话题</span>
+                            <select name="topicId">
+                                <option value="0">最近发布的一条</option>
+                                @foreach (var topic in Model.Topics)
+                                {
+                                    <option value="@topic.Id">@topic.Title</option>
+                                }
+                            </select>
+                        </label>
+
+                        <button class="btn btn-ghost btn-small" type="submit" name="persist" value="false"
+                            @(member.IsConfigured ? null : "disabled")>
+                            <span class="push-spinner" aria-hidden="true"></span>
+                            @Icon("sparkles", "icon-idle")<span>测试模型</span>
+                        </button>
+
+                        <button class="btn btn-small" type="submit" name="persist" value="true"
+                            @(member.IsConfigured ? null : "disabled")>
+                            <span class="push-spinner" aria-hidden="true"></span>
+                            @Icon("send", "icon-idle")<span>立即留言</span>
+                        </button>
+                    </form>
+
+                    @if (probe is not null)
+                    {
+                        <div class="atmosphere-probe @(probe.Ok ? "is-ok" : "is-bad")">
+                            <p class="atmosphere-probe-head">@Icon(probe.Ok ? "circle-check" : "circle-alert")@probe.Message</p>
+                            @if (probe.Ok)
+                            {
+                                <blockquote>@probe.Text</blockquote>
+                            }
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+
+        @if (Model.OrphanCount > 0)
+        {
+            <p class="admin-panel-hint atmosphere-orphan">
+                另有 @Model.OrphanCount 条留言来自已删除的角色，这些内容仍会继续保留。
+            </p>
+        }
+    }
+    else
+    {
+        <p class="admin-empty">氛围组里还没有朋友。添加一位，让评论区多一点陪伴。</p>
+    }
+</div>
+
+<div class="admin-panel">
+    <h2>@Icon("settings")公用规矩</h2>
+
+    <p class="admin-panel-hint">
+        这些设置会对所有角色生效。API Key 只保存在 <code>@Model.ConfigFilePath</code> 中，不会在页面或日志中显示。
+        当前共有 @Model.Members.Count 位角色，其中 @usable 位已经准备好参与互动。
+    </p>
+
+    <form method="post" data-dirty-guard>
+        <label class="field-check">
+            <input asp-for="Input.Enabled" type="checkbox">
+            <span>启用氛围组</span>
+        </label>
+
+        <label class="field-check">
+            <input asp-for="Input.IncludeProtected" type="checkbox">
+            <span>允许氛围组参与上锁记录</span>
+        </label>
+
+        <p class="admin-panel-hint">
+            关闭总开关后，氛围组将暂停所有新的模型调用，已经留下的内容不会受到影响。
+            上锁的记录默认不会发送给模型；开启前请确认愿意让所配置的模型服务读取这些内容。草稿始终不会发送。
+        </p>
+
+        <div class="field-grid">
+            <label class="field">
+                <span>每条记录最多留下几条</span>
+                <input asp-for="Input.MaxCommentsPerMoment" type="number" min="1" max="50">
+            </label>
+
+            <label class="field">
+                <span>两次互动至少间隔（分钟）</span>
+                <input asp-for="Input.QuietMinutes" type="number" min="0" max="1440">
+            </label>
+
+            <label class="field">
+                <span>巡检回看（天）</span>
+                <input asp-for="Input.RecentDays" type="number" min="1" max="90">
+                <small>后台会定期回看这段时间内的记录，并补充符合条件但错过的互动。</small>
+            </label>
+
+            <label class="field">
+                <span>巡检间隔（分钟）</span>
+                <input asp-for="Input.SweepMinutes" type="number" min="1" max="720">
+            </label>
+
+            <label class="field">
+                <span>单次调用超时（秒）</span>
+                <input asp-for="Input.TimeoutSeconds" type="number" min="5" max="300">
+            </label>
+
+            <label class="field">
+                <span>每次最多一起看几张图</span>
+                <input asp-for="Input.MaxImages" type="number" min="0" max="10">
+                <small>仅对开启「会看图」的角色生效，图片会先压缩后再发送</small>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn" type="submit">@Icon("save")保存设置</button>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <script src="@Assets.Url("assets/atmosphere.js")" defer></script>
+}

@@ -53,7 +53,7 @@ public class MomentEditPageTests {
     }
 
     private static MomentService Service(Data.OurStoryDbContext db) =>
-        new(db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Notifications(), TestDoubles.Clock());
+        new(db, new SettingsStub(), new MarkdownRenderer(), TestDoubles.NoPoints(), TestDoubles.Notifications(), TestDoubles.Atmosphere(), TestDoubles.Clock());
 
     private static MomentEditPage Page(IMomentService service) {
         var httpContext = new DefaultHttpContext {

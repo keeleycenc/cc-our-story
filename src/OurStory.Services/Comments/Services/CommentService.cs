@@ -3,17 +3,25 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.EntityFrameworkCore;
+using OurStory.Core;
+using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.LlmAtmosphere;
 using OurStory.Services.Settings;
 using System.Net;
 using System.Text;
 
 namespace OurStory.Services.Comments;
 
-internal class CommentService(OurStoryDbContext db, ISettingsService settings, SiteClock clock) : ICommentService {
+internal class CommentService(
+    OurStoryDbContext db,
+    ISettingsService settings,
+    ActiveConfiguration configuration,
+    ILlmAtmosphereScheduler atmosphere,
+    SiteClock clock) : ICommentService {
     public async Task<IReadOnlyList<CommentNode>> GetTreeAsync(int momentId, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
 
@@ -70,12 +78,15 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
             AuthorUrl = Trim(submission.AuthorUrl),
             Content = submission.Content.Trim(),
             VisitorHash = submission.VisitorHash,
+            LlmMemberId = Trim(submission.LlmMemberId),
+            LlmAvatarUrl = Trim(submission.LlmAvatarUrl),
             IsApproved = true,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
         _ = db.Comments.Add(comment);
         _ = await db.SaveChangesAsync(cancellationToken);
+        await StirAsync(comment, cancellationToken);
         return comment;
     }
 
@@ -128,8 +139,40 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
 
     #region 私有方法
 
+    private async Task StirAsync(Comment comment, CancellationToken cancellationToken) {
+        if (comment.LlmMemberId is not null || comment.ParentId is not { } parentId) {
+            return;
+        }
+
+        if (configuration.LlmAtmosphere.ActiveMembers.Count == 0) {
+            return;
+        }
+
+        var moment = await db.Moments
+            .Where(item => item.Id == comment.MomentId)
+            .Select(item => new { item.Status, item.AllowComment, item.Password })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (moment is not { Status: MomentStatus.Published, AllowComment: true }) {
+            return;
+        }
+
+        var repliedMemberId = await db.Comments
+            .Where(item => item.Id == parentId)
+            .Select(item => item.LlmMemberId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        atmosphere.OnCommentAdded(
+            comment.MomentId,
+            comment.Id,
+            repliedMemberId,
+            !string.IsNullOrEmpty(moment.Password));
+    }
+
     private CommentNode ToNode(Comment comment, SiteSettings site, int? momentAuthorId) {
-        var name = DisplayName(comment, site);
+        var member = configuration.LlmAtmosphere.Find(comment.LlmMemberId);
+        var name = DisplayName(comment, site, member?.Name);
+
         return new CommentNode {
             Id = comment.Id,
             AuthorName = name,
@@ -138,14 +181,21 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
             CreatedAt = clock.ToLocal(comment.CreatedAt),
             IsOwner = comment.AuthorId is not null,
             IsAuthor = comment.AuthorId is { } id && id == momentAuthorId,
-            AvatarUrl = comment.Author is null ? string.Empty : site.RoleAvatar(comment.Author.Role),
+            Source = comment.Source,
+            AvatarUrl = Avatar(comment, site, member?.AvatarUrl),
             AvatarTone = Tone(name)
         };
     }
 
-    /// <summary>沿着父链一直往上，找到这条回复属于哪条顶层留言。</summary>
+    private static string Avatar(Comment comment, SiteSettings site, string? memberAvatar) {
+        if (comment.LlmMemberId is not null) {
+            return Trim(memberAvatar) ?? comment.LlmAvatarUrl ?? string.Empty;
+        }
+
+        return comment.Author is null ? string.Empty : site.RoleAvatar(comment.Author.Role);
+    }
+
     private static int RootOf(int id, Dictionary<int, int> parents) {
-        // 数据里理论上不会出现环，真出了也只是走一圈就停下，不至于把页面转死
         var walked = new HashSet<int>();
         var current = id;
         while (walked.Add(current) && parents.TryGetValue(current, out var parentId)) {
@@ -155,7 +205,6 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
         return current;
     }
 
-    /// <summary>按称呼算一个稳定的配色编号，改用随机数会导致同一个人每次刷新换个颜色。</summary>
     private static int Tone(string name) {
         var sum = 0;
         foreach (var character in name) {
@@ -183,12 +232,13 @@ internal class CommentService(OurStoryDbContext db, ISettingsService settings, S
         return builder.ToString();
     }
 
-    /// <summary>
-    /// 自己人的留言按站点设置里的称呼显示，改了名字连旧留言一起跟着变；
-    /// 访客没有账号，只能用当时填的名字。
-    /// </summary>
-    private static string DisplayName(Comment comment, SiteSettings site) =>
-        comment.Author is null ? comment.AuthorName : site.RoleName(comment.Author.Role);
+    private static string DisplayName(Comment comment, SiteSettings site, string? memberName) {
+        if (comment.LlmMemberId is not null) {
+            return Trim(memberName) ?? comment.AuthorName;
+        }
+
+        return comment.Author is null ? comment.AuthorName : site.RoleName(comment.Author.Role);
+    }
 
     private static string? Trim(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

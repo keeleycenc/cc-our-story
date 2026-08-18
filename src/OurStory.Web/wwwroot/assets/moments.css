@@ -460,6 +460,8 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     letter-spacing: .05em;
 }
 
+.comment-badge.is-atmosphere { background: var(--surface-soft); color: var(--muted) }
+
 .comment-time { font-size: 10px; color: var(--faint) }
 .comment-replyto { display: flex; align-items: center; gap: 5px; margin: 0 0 6px; font-size: 10px; color: var(--faint) }
 .comment-replyto a { color: var(--pink-dark) }

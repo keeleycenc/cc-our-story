@@ -147,7 +147,7 @@ public class NotificationTriggerTests {
     #region 私有方法
 
     private static MomentService Moments(OurStoryDbContext db, NotificationQueueSpy queue) =>
-        new(db, new SettingsStub(), TestDoubles.Markdown(), TestDoubles.NoPoints(), queue, TestDoubles.Clock());
+        new(db, new SettingsStub(), TestDoubles.Markdown(), TestDoubles.NoPoints(), queue, TestDoubles.Atmosphere(), TestDoubles.Clock());
 
     private static AnniversaryService Anniversaries(OurStoryDbContext db, NotificationQueueSpy queue) =>
         new(db, TestDoubles.Clock(), TestDoubles.Markdown(), TestDoubles.NoPoints(), queue, new SettingsStub());

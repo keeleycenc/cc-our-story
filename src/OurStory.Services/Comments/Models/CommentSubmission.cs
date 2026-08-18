@@ -47,4 +47,14 @@ public class CommentSubmission {
     /// 获取或设置 VisitorHash
     /// </summary>
     public string? VisitorHash { get; set; }
+
+    /// <summary>
+    /// 获取或设置写这条留言的氛围组角色标识；人写的留言留空
+    /// </summary>
+    public string? LlmMemberId { get; set; }
+
+    /// <summary>
+    /// 获取或设置那个角色当时的头像地址
+    /// </summary>
+    public string? LlmAvatarUrl { get; set; }
 }

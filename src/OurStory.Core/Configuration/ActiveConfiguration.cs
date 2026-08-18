@@ -32,6 +32,11 @@ public sealed class ActiveConfiguration(ConfigurationStore store, OurStoryConfig
     public StorageOptions Storage => Current.Storage;
 
     /// <summary>
+    /// 获取 LLM 氛围组参数
+    /// </summary>
+    public LlmAtmosphereOptions LlmAtmosphere => Current.LlmAtmosphere;
+
+    /// <summary>
     /// 获取配置文件的完整路径，后台页面上会显示出来
     /// </summary>
     public string FilePath => _store.FilePath;

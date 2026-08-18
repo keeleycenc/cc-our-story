@@ -8,9 +8,11 @@ using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
+using OurStory.Core.Options;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
+using OurStory.Services.LlmAtmosphere;
 using OurStory.Services.Moments;
 using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
@@ -39,6 +41,15 @@ internal static class TestDoubles {
 
     /// <summary>只把排队的通知收进列表，不真的往外发。</summary>
     public static NotificationQueueSpy Notifications() => new();
+
+    /// <summary>氛围组不参与断言时给一份只记账的替身。</summary>
+    public static AtmosphereSchedulerSpy Atmosphere() => new();
+
+    /// <summary>指定一份氛围组配置，用来测概率、延迟和上锁那几条规矩。</summary>
+    public static ActiveConfiguration Configuration(LlmAtmosphereOptions? atmosphere = null) =>
+        new(new ConfigurationStore("."), new OurStoryConfiguration {
+            LlmAtmosphere = atmosphere ?? new LlmAtmosphereOptions()
+        });
 
     /// <summary>时钟归测试管，攒单那类靠计时器的行为不用真的等。</summary>
     public static FakeTimeProvider Time() => new();
@@ -142,6 +153,68 @@ internal sealed class NotificationQueueSpy : INotificationQueue {
 
         await Task.CompletedTask;
     }
+}
+
+/// <summary>
+/// 把排给氛围组的待办留在手边，测试直接翻这份清单
+/// </summary>
+/// <remarks>真的去掷骰子、连模型，这类业务测试就没法断言了。</remarks>
+internal sealed class AtmosphereSchedulerSpy : ILlmAtmosphereScheduler {
+    /// <summary>按顺序记下的所有待办。</summary>
+    public List<LlmAtmosphereTrigger> Scheduled { get; } = [];
+
+    /// <summary>发布触发被叫到时的入参。</summary>
+    public List<(int MomentId, bool IsProtected)> Published { get; } = [];
+
+    /// <summary>评论触发被叫到时的入参。</summary>
+    public List<(int MomentId, int CommentId, string? RepliedMemberId, bool IsProtected)> Commented { get; } = [];
+
+    public int Pending => Scheduled.Count;
+
+    public void OnMomentPublished(int momentId, bool isProtected) =>
+        Published.Add((momentId, isProtected));
+
+    public void OnCommentAdded(int momentId, int commentId, string? repliedMemberId, bool isProtected) =>
+        Commented.Add((momentId, commentId, repliedMemberId, isProtected));
+
+    public bool Schedule(LlmAtmosphereTrigger trigger) {
+        Scheduled.Add(trigger);
+        return true;
+    }
+
+    public IReadOnlyList<LlmAtmosphereTrigger> TakeDue() {
+        var due = Scheduled.ToList();
+        Scheduled.Clear();
+        return due;
+    }
+}
+
+/// <summary>
+/// 按事先摆好的答案作答的模型，一次调用取走一个
+/// </summary>
+/// <remarks>答案用完之后一律回 <see cref="ResponsesFailure.Unreachable"/>，免得测试悄悄多调一次还看不出来。</remarks>
+internal sealed class ResponsesClientStub(params ResponsesResult[] answers) : IResponsesClient {
+    private readonly Queue<ResponsesResult> _answers = new(answers);
+
+    /// <summary>每次调用收到的请求，按先后顺序。</summary>
+    public List<ResponsesRequest> Requests { get; } = [];
+
+    public Task<ResponsesResult> CompleteAsync(ResponsesRequest request, CancellationToken cancellationToken = default) {
+        Requests.Add(request);
+
+        return Task.FromResult(_answers.Count > 0
+            ? _answers.Dequeue()
+            : ResponsesResult.Failed(ResponsesFailure.Unreachable));
+    }
+}
+
+/// <summary>按需交出几张假图，不碰磁盘也不连 OSS。</summary>
+internal sealed class MomentImageSourceStub(params string[] urls) : IMomentImageSource {
+    public Task<IReadOnlyList<ResponsesImage>> CollectAsync(
+        Moment moment,
+        int max,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ResponsesImage>>([.. urls.Take(max).Select(url => new ResponsesImage(url))]);
 }
 
 /// <summary>不记账的心意服务，给那些和心意无关的测试用。</summary>
