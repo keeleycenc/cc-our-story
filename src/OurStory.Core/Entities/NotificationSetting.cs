@@ -52,6 +52,11 @@ public class NotificationSetting {
     public bool MissYou { get; set; } = true;
 
     /// <summary>
+    /// 获取或设置点点滴滴下面来了新留言时，要不要提醒我
+    /// </summary>w
+    public bool Comments { get; set; } = true;
+
+    /// <summary>
     /// 获取或设置纪念日提醒的时刻，从当天零点算起的分钟数，按站点时区理解
     /// </summary>
     /// <remarks>
@@ -87,6 +92,7 @@ public class NotificationSetting {
         NotificationTopic.Anniversary => Enabled && Anniversaries,
         NotificationTopic.Shop => Enabled && Shop,
         NotificationTopic.MissYou => Enabled && MissYou,
+        NotificationTopic.Comment => Enabled && Comments,
         _ => false
     };
 }

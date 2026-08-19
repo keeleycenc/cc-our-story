@@ -229,7 +229,11 @@
 
 .shop-days-left.is-urgent { background: var(--danger-soft); color: var(--danger) }
 
+.shop-desc-box { display: flex; align-items: baseline; gap: 8px }
+
 .shop-desc {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     color: var(--muted);
     font-size: 12px;
@@ -237,6 +241,29 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.shop-desc-box.is-open { display: block }
+.shop-desc-box.is-open .shop-desc { overflow: visible; text-overflow: clip; white-space: pre-line }
+
+.shop-desc-toggle {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--pink-dark);
+    font-size: 11px;
+    line-height: 1.85;
+    cursor: pointer;
+}
+
+.shop-desc-toggle[hidden] { display: none }
+.shop-desc-toggle:hover { text-decoration: underline }
+.shop-desc-toggle .icon { width: 13px; height: 13px; transition: transform .2s }
+.shop-desc-box.is-open .shop-desc-toggle { margin-top: 2px }
+.shop-desc-box.is-open .shop-desc-toggle .icon { transform: rotate(180deg) }
 
 .shop-meta {
     display: flex;

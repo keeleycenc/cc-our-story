@@ -679,7 +679,7 @@ public class LlmAtmosphereTests {
             db,
             configuration,
             new SettingsStub(),
-            new CommentService(db, new SettingsStub(), configuration, TestDoubles.Atmosphere(), TestDoubles.Clock()),
+            new CommentService(db, new SettingsStub(), configuration, TestDoubles.Atmosphere(), TestDoubles.Notifications(), TestDoubles.Clock()),
             client,
             images ?? new MomentImageSourceStub(),
             TestDoubles.Clock(),
@@ -700,7 +700,7 @@ public class LlmAtmosphereTests {
         OurStoryDbContext db,
         AtmosphereSchedulerSpy atmosphere,
         LlmAtmosphereOptions options) =>
-        new(db, new SettingsStub(), TestDoubles.Configuration(options), atmosphere, TestDoubles.Clock());
+        new(db, new SettingsStub(), TestDoubles.Configuration(options), atmosphere, TestDoubles.Notifications(), TestDoubles.Clock());
 
     private static async Task SeedAsync(
         OurStoryDbContext db,

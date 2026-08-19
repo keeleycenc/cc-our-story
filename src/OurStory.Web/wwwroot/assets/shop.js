@@ -58,6 +58,40 @@
     });
   }
 
+  const descBoxes = Array.from(document.querySelectorAll('.shop-desc-box'));
+  if (descBoxes.length > 0) {
+    const measure = () => {
+      descBoxes.forEach((box) => {
+        const text = box.querySelector('.shop-desc');
+        const toggle = box.querySelector('[data-desc-toggle]');
+        if (!text || !toggle || box.classList.contains('is-open')) return;
+
+        toggle.hidden = text.scrollWidth <= text.clientWidth + 1;
+      });
+    };
+
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+
+    let timer = 0;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(measure, 150);
+    });
+
+    descBoxes.forEach((box) => {
+      const toggle = box.querySelector('[data-desc-toggle]');
+      if (!toggle) return;
+
+      const label = toggle.querySelector('[data-desc-label]');
+      toggle.addEventListener('click', () => {
+        const open = box.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (label) label.textContent = open ? '收起' : '展开';
+      });
+    });
+  }
+
   const forms = document.querySelectorAll('form[data-confirm], form[data-confirm-title]');
   if (forms.length === 0) return;
 

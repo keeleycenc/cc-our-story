@@ -395,6 +395,10 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     color: var(--pink-dark);
 }
 
+.article-moment-meta .locked-tag { background: var(--surface-muted); color: var(--faint) }
+
+.locked-tag.is-unlocked { border: 1px dashed var(--line-strong); background: none }
+
 /* 8. 留言 ---------------------------------------------------------------- */
 .comments { max-width: 760px; margin: 75px auto 0; padding-top: 55px; border-top: 1px solid var(--line) }
 .comments-heading p { font: 700 8px Arial; letter-spacing: .2em; color: var(--pink-dark); margin: 0 0 8px }

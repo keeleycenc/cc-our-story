@@ -26,6 +26,11 @@ public class IndexModel(IAnniversaryService anniversaries, SiteClock clock) : Pa
     /// </summary>
     public DateOnly Today { get; private set; }
 
+    /// <summary>
+    /// 获取私密纪念日的数量
+    /// </summary>
+    public int PrivateCount { get; private set; }
+
     private static readonly string[] stringArray = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
     /// <summary>
@@ -34,6 +39,7 @@ public class IndexModel(IAnniversaryService anniversaries, SiteClock clock) : Pa
     public async Task OnGetAsync(CancellationToken cancellationToken) {
         Today = clock.Today;
         Items = await anniversaries.GetForViewerAsync(User.IsOwner(), cancellationToken);
+        PrivateCount = await anniversaries.CountPrivateAsync(cancellationToken);
     }
 
     /// <summary>

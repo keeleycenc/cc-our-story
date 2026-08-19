@@ -44,6 +44,9 @@ internal class AnniversaryService(
             ? db.Anniversaries.CountAsync(cancellationToken)
             : db.Anniversaries.CountAsync(item => !item.IsPrivate, cancellationToken);
 
+    public Task<int> CountPrivateAsync(CancellationToken cancellationToken = default) =>
+        db.Anniversaries.CountAsync(item => item.IsPrivate, cancellationToken);
+
     public async Task<AnniversaryOccurrence?> GetOccurrenceAsync(int id, bool isOwner, CancellationToken cancellationToken = default) {
         var query = isOwner ? db.Anniversaries : db.Anniversaries.Where(item => !item.IsPrivate);
         var item = await query.Include(value => value.Author).AsNoTracking().FirstOrDefaultAsync(value => value.Id == id, cancellationToken);

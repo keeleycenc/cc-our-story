@@ -106,6 +106,7 @@ internal class MomentService(
             Location = moment.Location ?? string.Empty,
             MomentDate = localDate,
             IsLocked = locked,
+            IsProtected = moment.IsProtected,
             AllowComment = moment.AllowComment && !locked,
             AuthorName = AuthorName(moment, site),
             LoveDay = LoveTimeline.ElapsedDays(localDate, site.LoveStartedAt),
@@ -330,6 +331,7 @@ internal class MomentService(
             Location = moment.Location ?? string.Empty,
             MomentDate = localDate,
             IsLocked = locked,
+            IsProtected = moment.IsProtected,
             AuthorName = AuthorName(moment, site),
             CommentCount = commentCounts.GetValueOrDefault(moment.Id),
             LoveDay = LoveTimeline.ElapsedDays(localDate, site.LoveStartedAt)

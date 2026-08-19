@@ -32,7 +32,7 @@ public sealed class CommentTreeTests : IDisposable {
         _ = _db.Moments.Add(new Moment { Id = MomentId, Title = "记一天", Slug = "one-day", AuthorId = AuthorId });
         _ = _db.SaveChanges();
 
-        _comments = new CommentService(_db, new SettingsStub(), TestDoubles.Configuration(), TestDoubles.Atmosphere(), TestDoubles.Clock());
+        _comments = new CommentService(_db, new SettingsStub(), TestDoubles.Configuration(), TestDoubles.Atmosphere(), TestDoubles.Notifications(), TestDoubles.Clock());
     }
 
     /// <summary>

@@ -89,6 +89,7 @@ public class NotificationsModel(
             Anniversaries = preferences.Anniversaries,
             Shop = preferences.Shop,
             MissYou = preferences.MissYou,
+            Comments = preferences.Comments,
             RemindAt = ToText(preferences.RemindMinutes)
         };
 
@@ -118,6 +119,7 @@ public class NotificationsModel(
                 Anniversaries = Input.Anniversaries,
                 Shop = Input.Shop,
                 MissYou = Input.MissYou,
+                Comments = Input.Comments,
                 RemindMinutes = ToMinutes(Input.RemindAt)
             },
             cancellationToken);
@@ -195,6 +197,11 @@ public class NotificationsModel(
         /// 获取或设置对方点了想你时要不要提醒
         /// </summary>
         public bool MissYou { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置点点滴滴下面来了新留言时要不要提醒
+        /// </summary>
+        public bool Comments { get; set; } = true;
 
         /// <summary>
         /// 获取或设置纪念日提醒时间，形如 21:00，按站点时区理解

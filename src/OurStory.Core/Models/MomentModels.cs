@@ -5,151 +5,208 @@
 namespace OurStory.Core.Models;
 
 /// <summary>
-/// 列表页和首页用的一条点点滴滴
+/// 点滴列表项，用于首页和点滴列表页展示
 /// </summary>
 /// <remarks>
-/// 上锁的记录在服务层就已经把摘要和封面清空了，模板拿到什么就能显示什么，不必再各自判断一遍，也不会漏
+/// 对于当前访问者无权查看的受保护记录，服务层会提前清空摘要和封面等敏感内容。
+/// 展示层只需按模型内容渲染，无需重复判断访问权限
 /// </remarks>
 public class MomentCard {
     /// <summary>
-    /// 获取或设置 Id
+    /// 点滴记录 ID
     /// </summary>
     public int Id { get; init; }
 
     /// <summary>
-    /// 获取或设置 Title
+    /// 点滴标题
     /// </summary>
     public string Title { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Slug
+    /// 点滴的 URL 标识
     /// </summary>
     public string Slug { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Excerpt
+    /// 点滴内容摘要
     /// </summary>
+    /// <remarks>
+    /// 当前访问者无权查看受保护记录时为空字符串。
+    /// </remarks>
     public string Excerpt { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 CoverUrl
+    /// 封面图片地址
     /// </summary>
+    /// <remarks>
+    /// 当前访问者无权查看受保护记录时为空字符串。
+    /// </remarks>
     public string CoverUrl { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Mood
+    /// 点滴心情
     /// </summary>
     public string Mood { get; init; } = "日常";
 
     /// <summary>
-    /// 获取或设置 Location
+    /// 点滴发生地点
     /// </summary>
     public string Location { get; init; } = string.Empty;
 
-    /// <summary>已换算到站点时区。</summary>
+    /// <summary>
+    /// 点滴发生时间
+    /// </summary>
+    /// <remarks>
+    /// 已转换为站点配置的时区。
+    /// </remarks>
     public DateTime MomentDate { get; init; }
 
     /// <summary>
-    /// 获取或设置 IsLocked
+    /// 当前访问者是否处于锁定状态
     /// </summary>
+    /// <remarks>
+    /// 为 <see langword="true"/> 时，表示该记录受保护且当前访问者尚未获得查看权限。
+    /// </remarks>
     public bool IsLocked { get; init; }
 
     /// <summary>
-    /// 获取或设置 AuthorName
+    /// 点滴是否设置了访问密码
+    /// </summary>
+    /// <remarks>
+    /// 与 <see cref="IsLocked"/> 不同，本属性描述记录本身是否受密码保护，
+    /// 不受当前访问者是否已经解锁影响。
+    /// </remarks>
+    public bool IsProtected { get; init; }
+
+    /// <summary>
+    /// 作者显示名称
     /// </summary>
     public string AuthorName { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 CommentCount
+    /// 评论数量
     /// </summary>
     public int CommentCount { get; init; }
 
-    /// <summary>相恋第几天，0 表示算不出来（早于在一起的日子）。</summary>
+    /// <summary>
+    /// 点滴发生在相恋后的第几天
+    /// </summary>
+    /// <remarks>
+    /// 为 0 时表示无法计算，例如点滴时间早于相恋日期。
+    /// </remarks>
     public int LoveDay { get; init; }
 
     /// <summary>
-    /// 获取 Url
+    /// 点滴详情页地址
     /// </summary>
     public string Url => "/moments/" + Slug;
 }
 
 /// <summary>
-/// 详情页需要的全部内容
+/// 点滴详情页模型
 /// </summary>
 public class MomentDetail {
     /// <summary>
-    /// 获取或设置 Id
+    /// 点滴记录 ID
     /// </summary>
     public int Id { get; init; }
 
     /// <summary>
-    /// 获取或设置 Title
+    /// 点滴标题
     /// </summary>
     public string Title { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Slug
+    /// 点滴的 URL 标识
     /// </summary>
     public string Slug { get; init; } = string.Empty;
 
-    /// <summary>上锁且没解锁时为空串，模板会改为显示密码表单。</summary>
+    /// <summary>
+    /// 点滴正文 HTML
+    /// </summary>
+    /// <remarks>
+    /// 当前访问者无权查看受保护记录时为空字符串，
+    /// 详情页会据此显示密码验证界面。
+    /// </remarks>
     public string ContentHtml { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 Mood
+    /// 点滴心情
     /// </summary>
     public string Mood { get; init; } = "日常";
 
     /// <summary>
-    /// 获取或设置 Location
+    /// 点滴发生地点
     /// </summary>
     public string Location { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 MomentDate
+    /// 点滴发生时间
     /// </summary>
+    /// <remarks>
+    /// 已转换为站点配置的时区。
+    /// </remarks>
     public DateTime MomentDate { get; init; }
 
     /// <summary>
-    /// 获取或设置 IsLocked
+    /// 当前访问者是否处于锁定状态
     /// </summary>
+    /// <remarks>
+    /// 为 <see langword="true"/> 时，表示该记录受保护且当前访问者尚未获得查看权限。
+    /// </remarks>
     public bool IsLocked { get; init; }
 
     /// <summary>
-    /// 获取或设置 AllowComment
+    /// 点滴是否设置了访问密码
+    /// </summary>
+    /// <remarks>
+    /// 与 <see cref="IsLocked"/> 不同，本属性描述记录本身是否受密码保护，
+    /// 不受当前访问者是否已经解锁影响。
+    /// </remarks>
+    public bool IsProtected { get; init; }
+
+    /// <summary>
+    /// 是否允许访客发表评论
     /// </summary>
     public bool AllowComment { get; init; }
 
     /// <summary>
-    /// 获取或设置 AuthorName
+    /// 作者显示名称
     /// </summary>
     public string AuthorName { get; init; } = string.Empty;
 
     /// <summary>
-    /// 获取或设置 LoveDay
+    /// 点滴发生在相恋后的第几天
     /// </summary>
+    /// <remarks>
+    /// 为 0 时表示无法计算，例如点滴时间早于相恋日期。
+    /// </remarks>
     public int LoveDay { get; init; }
 
     /// <summary>
-    /// 获取或设置 CommentCount
+    /// 评论数量
     /// </summary>
     public int CommentCount { get; init; }
 
     /// <summary>
-    /// 获取或设置 Previous
+    /// 上一篇点滴
     /// </summary>
     public MomentLink? Previous { get; init; }
 
     /// <summary>
-    /// 获取或设置 Next
+    /// 下一篇点滴
     /// </summary>
     public MomentLink? Next { get; init; }
 }
 
-/// <summary>上一篇 / 下一篇。</summary>
+/// <summary>
+/// 点滴上一篇或下一篇的导航信息
+/// </summary>
+/// <param name="Title">点滴标题</param>
+/// <param name="Slug">点滴的 URL 标识</param>
 public record MomentLink(string Title, string Slug) {
     /// <summary>
-    /// 获取 Url
+    /// 点滴详情页地址
     /// </summary>
     public string Url => "/moments/" + Slug;
 }

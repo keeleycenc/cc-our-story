@@ -21,6 +21,10 @@
                 {
                     <span>@Icon("clock")相恋第 @detail.LoveDay 天</span>
                 }
+                @if (detail.IsProtected)
+                {
+                    <span class="locked-tag@(detail.IsLocked ? null : " is-unlocked")">@Icon("lock")已上锁</span>
+                }
             </div>
             <time datetime="@detail.MomentDate.ToString("yyyy-MM-ddTHH:mm:ss")">@detail.MomentDate.ToString("yyyy 年 MM 月 dd 日")</time>
             <h1>@detail.Title</h1>

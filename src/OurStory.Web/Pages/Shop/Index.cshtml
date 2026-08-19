@@ -147,7 +147,18 @@
                             }
                         </div>
 
-                        <p class="shop-desc" title="@description">@description</p>
+                        <div class="shop-desc-box">
+                            <p class="shop-desc" id="wish-desc-@item.Id">@description</p>
+
+                            <button class="shop-desc-toggle"
+                                    type="button"
+                                    hidden
+                                    aria-expanded="false"
+                                    aria-controls="wish-desc-@item.Id"
+                                    data-desc-toggle>
+                                @Icon("chevron-down")<span data-desc-label>展开</span>
+                            </button>
+                        </div>
 
                         <div class="shop-meta">
                             <span>

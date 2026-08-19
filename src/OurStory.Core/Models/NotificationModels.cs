@@ -178,6 +178,11 @@ public sealed class NotificationPreferences {
     public bool MissYou { get; set; } = true;
 
     /// <summary>
+    /// 获取或设置点点滴滴下面来了新留言时要不要提醒我
+    /// </summary>
+    public bool Comments { get; set; } = true;
+
+    /// <summary>
     /// 获取或设置纪念日提醒时刻，从零点算起的分钟数
     /// </summary>
     public int RemindMinutes { get; set; } = NotificationSetting.DefaultRemindMinutes;
@@ -194,6 +199,7 @@ public sealed class NotificationPreferences {
             Anniversaries = setting.Anniversaries,
             Shop = setting.Shop,
             MissYou = setting.MissYou,
+            Comments = setting.Comments,
             RemindMinutes = setting.RemindMinutes
         };
     }

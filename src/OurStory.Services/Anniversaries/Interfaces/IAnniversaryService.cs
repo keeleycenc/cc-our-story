@@ -43,6 +43,13 @@ public interface IAnniversaryService {
     Task<int> CountForViewerAsync(bool isOwner, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步获取私密纪念日数量
+    /// </summary>
+    /// <param name="cancellationToken">用于取消异步操作的令牌</param>
+    /// <returns>私密纪念日的数量</returns>
+    Task<int> CountPrivateAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步获取当前访问者可查看的指定纪念日详情
     /// </summary>
     /// <param name="id">纪念日 ID</param>

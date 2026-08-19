@@ -99,6 +99,11 @@
             <strong>@Model.Items.Count</strong>
             <small>个被记住的日子</small>
         </article>
+        <article class="overview-card overview-private">
+            <span>@Icon("lock")私密收藏</span>
+            <strong>@Model.PrivateCount</strong>
+            <small>个被珍藏起来的特别日子</small>
+        </article>
         <article class="overview-card overview-next">
             <span>下一次日子</span>
             @if (next is not null)

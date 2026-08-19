@@ -191,14 +191,19 @@ public enum NotificationTopic {
     MissYou = 3,
 
     /// <summary>
-    /// 对方手动发来的一句话，不受上面四项开关影响
+    /// 留言：点点滴滴
     /// </summary>
-    Direct = 4,
+    Comment = 4,
 
     /// <summary>
-    /// 后台点的「通知测试」，只发给自己，同样不受四项开关影响
+    /// 对方手动发来的一句话，不受上面几项开关影响
     /// </summary>
-    Test = 5
+    Direct = 5,
+
+    /// <summary>
+    /// 后台点的「通知测试」，只发给自己，同样不受那几项开关影响
+    /// </summary>
+    Test = 6
 }
 
 /// <summary>

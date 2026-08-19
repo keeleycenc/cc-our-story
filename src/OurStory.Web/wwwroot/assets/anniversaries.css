@@ -154,7 +154,7 @@
     width: min(1180px, 100%);
     margin: 0 auto 16px;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
 }
 
@@ -188,6 +188,9 @@
 .overview-next { --overview-tint: var(--memory-accent) }
 .overview-next > strong { color: var(--memory-accent) }
 .overview-repeat { --overview-tint: var(--memory-milestone) }
+.overview-private { --overview-tint: var(--memory-promise) }
+.overview-private > span { display: flex; align-items: center; gap: 5px }
+.overview-private > span .icon { width: 13px; height: 13px }
 
 .memory-columns {
     width: min(1180px, 100%);
@@ -520,6 +523,7 @@
 }
 
 @media (max-width: 980px) {
+    .memory-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .memory-columns { grid-template-columns: 1fr }
     .lazy-scroll { height: 520px }
     .memory-calendar-header { align-items: flex-end }
@@ -539,8 +543,6 @@
     .memory-today-row { flex-wrap: wrap; row-gap: 5px }
     .memory-today-row strong { flex-basis: 100%; font-size: 16px }
     .memory-today-go { width: 30px; height: 30px; font-size: 13px }
-    .memory-overview { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-    .overview-total { grid-row: span 2; min-height: 100% }
     .overview-card { min-height: 125px; padding: 21px }
     .overview-card > strong { font-size: 31px }
     .memory-calendar-header { align-items: stretch; flex-direction: column }

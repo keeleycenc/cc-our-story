@@ -10,6 +10,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.LlmAtmosphere;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 using System.Net;
 using System.Text;
@@ -21,6 +22,7 @@ internal class CommentService(
     ISettingsService settings,
     ActiveConfiguration configuration,
     ILlmAtmosphereScheduler atmosphere,
+    INotificationQueue notifications,
     SiteClock clock) : ICommentService {
     public async Task<IReadOnlyList<CommentNode>> GetTreeAsync(int momentId, CancellationToken cancellationToken = default) {
         var site = await settings.GetAsync(cancellationToken);
@@ -86,6 +88,7 @@ internal class CommentService(
 
         _ = db.Comments.Add(comment);
         _ = await db.SaveChangesAsync(cancellationToken);
+        await NotifyAsync(comment, cancellationToken);
         await StirAsync(comment, cancellationToken);
         return comment;
     }
@@ -138,6 +141,42 @@ internal class CommentService(
     }
 
     #region 私有方法
+
+    private async Task NotifyAsync(Comment comment, CancellationToken cancellationToken) {
+        var moment = await db.Moments
+            .Where(item => item.Id == comment.MomentId)
+            .Select(item => new { item.Title, item.Slug, item.Status })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (moment is not { Status: MomentStatus.Published }) {
+            return;
+        }
+
+        var site = await settings.GetAsync(cancellationToken);
+        var member = configuration.LlmAtmosphere.Find(comment.LlmMemberId);
+        var author = comment.AuthorId is { } authorId
+            ? site.RoleName(await db.Users
+                .Where(user => user.Id == authorId)
+                .Select(user => user.Role)
+                .FirstOrDefaultAsync(cancellationToken))
+            : DisplayName(comment, site, member?.Name);
+
+        var request = new PushMessage(
+            comment.ParentId is null ? $"{author}留言了" : $"{author}回了一条留言",
+            $"{moment.Title} · {Preview(comment.Content)}",
+            $"/moments/{moment.Slug}#comment-{comment.Id}",
+
+            $"comment-{comment.MomentId}");
+
+        _ = notifications.Enqueue(comment.AuthorId is { } self
+            ? NotificationRequest.ToPartner(NotificationTopic.Comment, self, request)
+            : new NotificationRequest(NotificationTopic.Comment, request));
+    }
+
+    private static string Preview(string content) {
+        var text = content.Trim().ReplaceLineEndings(" ");
+        return text.Length <= 60 ? text : text[..60] + "…";
+    }
 
     private async Task StirAsync(Comment comment, CancellationToken cancellationToken) {
         if (comment.LlmMemberId is not null || comment.ParentId is not { } parentId) {

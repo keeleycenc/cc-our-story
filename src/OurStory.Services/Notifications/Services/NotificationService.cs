@@ -56,6 +56,7 @@ internal sealed class NotificationService(
         setting.Anniversaries = preferences.Anniversaries;
         setting.Shop = preferences.Shop;
         setting.MissYou = preferences.MissYou;
+        setting.Comments = preferences.Comments;
         setting.RemindMinutes = Math.Clamp(preferences.RemindMinutes, 0, 1439);
         setting.UpdatedAt = SiteClock.UtcNow;
 

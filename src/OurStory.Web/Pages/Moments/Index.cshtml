@@ -62,9 +62,9 @@
                                 {
                                     <em class="love-day">@Icon("clock")第 @moment.LoveDay 天</em>
                                 }
-                                @if (moment.IsLocked)
+                                @if (moment.IsProtected)
                                 {
-                                    <em class="locked-tag">@Icon("lock")已上锁</em>
+                                    <em class="locked-tag@(moment.IsLocked ? null : " is-unlocked")">@Icon("lock")已上锁</em>
                                 }
                             </span>
                             <h2>@moment.Title</h2>
