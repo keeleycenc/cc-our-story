@@ -641,13 +641,35 @@
 
     if (!uploadInput) return;
 
-    // 每传好一张就立刻插进正文，光标跟着往后走，几张图的先后顺序和选的时候一致
-    const insert = (url) => {
-      const snippet = '\n![图片](' + url + ')\n';
-      const at = editor.selectionStart || editor.value.length;
+    let caretKnown = false;
+    editor.addEventListener('focus', () => { caretKnown = true; });
 
-      editor.value = editor.value.slice(0, at) + snippet + editor.value.slice(at);
-      editor.selectionStart = editor.selectionEnd = at + snippet.length;
+    const insertAt = () => {
+      const value = editor.value;
+      if (!caretKnown || typeof editor.selectionEnd !== 'number') return value.length;
+
+      const caret = Math.min(Math.max(editor.selectionEnd, 0), value.length);
+      const line = value.indexOf('\n', caret);
+
+      return line === -1 ? value.length : line;
+    };
+
+    const insert = (url) => {
+      const at = insertAt();
+      const before = editor.value.slice(0, at);
+      const after = editor.value.slice(at);
+      const head = before.length === 0 || before.endsWith('\n\n') ? '' : (before.endsWith('\n') ? '\n' : '\n\n');
+      const tail = after.length === 0 || after.startsWith('\n\n') ? '' : (after.startsWith('\n') ? '\n' : '\n\n');
+      const snippet = head + '![图片](' + url + ')' + tail;
+
+      if (typeof editor.setRangeText === 'function') {
+        editor.setRangeText(snippet, at, at, 'end');
+      } else {
+        editor.value = before + snippet + after;
+        editor.selectionStart = editor.selectionEnd = at + snippet.length;
+      }
+
+      caretKnown = true;
       editor.dispatchEvent(new Event('input', { bubbles: true }));
       if (cover && !cover.value) cover.value = url;
     };

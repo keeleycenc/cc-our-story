@@ -23,7 +23,8 @@ public class MediaModel(
     MediaUrls media,
     StoragePaths paths,
     ActiveConfiguration configuration,
-    IMarkdownRenderer markdown) : PageModel {
+    IMarkdownRenderer markdown,
+    ArticleMedia articleMedia) : PageModel {
     private const int PageSize = PageNumbers.AdminPageSize;
 
     /// <summary>
@@ -111,8 +112,8 @@ public class MediaModel(
     /// <summary>
     /// 使用与前台正文一致的规则生成 Markdown 预览
     /// </summary>
-    public IActionResult OnPostPreview(string? content) =>
-        new JsonResult(new { ok = true, html = markdown.ToHtml(content) });
+    public async Task<IActionResult> OnPostPreviewAsync(string? content, CancellationToken cancellationToken) =>
+        new JsonResult(new { ok = true, html = await articleMedia.ShrinkImagesAsync(markdown.ToHtml(content), cancellationToken) });
 
     /// <summary>
     /// 本地存储时按页列出上传过的图片，新的排在前面。

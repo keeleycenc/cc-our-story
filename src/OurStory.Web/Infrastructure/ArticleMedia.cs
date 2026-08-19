@@ -74,6 +74,45 @@ public sealed partial class ArticleMedia(MediaUrls media, IThumbnailService thum
         return new HtmlString(builder.ToString());
     }
 
+    /// <summary>
+    /// 异步把正文 HTML 里的图片换成压缩后的展示图
+    /// </summary>
+    /// <param name="html">渲染好的正文 HTML，不会修改原始内容</param>
+    /// <param name="cancellationToken">异步操作取消令牌</param>
+    /// <returns>
+    /// 改写后的 HTML 内容；当正文为空时返回空字符串
+    /// </returns>
+    public async Task<string> ShrinkImagesAsync(string? html, CancellationToken cancellationToken = default) {
+        if (string.IsNullOrWhiteSpace(html)) {
+            return string.Empty;
+        }
+
+        var matches = PlainImages().Matches(html);
+        if (matches.Count == 0) {
+            return html;
+        }
+
+        var builder = new StringBuilder(html.Length + (matches.Count * 64));
+        var cursor = 0;
+
+        foreach (Match match in matches) {
+            _ = builder.Append(html, cursor, match.Index - cursor);
+            cursor = match.Index + match.Length;
+
+            var source = Attribute(match.Value, "src");
+
+            if (source.Length == 0 || !media.CanResize(source)) {
+                _ = builder.Append(match.Value);
+                continue;
+            }
+
+            _ = builder.Append(await ShrinkAsync(match.Value, source, cancellationToken));
+        }
+
+        _ = builder.Append(html, cursor, html.Length - cursor);
+        return builder.ToString();
+    }
+
     private async Task<string> BuildAsync(
         string tag,
         string source,
@@ -143,6 +182,33 @@ public sealed partial class ArticleMedia(MediaUrls media, IThumbnailService thum
         return builder.ToString();
     }
 
+    private async Task<string> ShrinkAsync(string tag, string source, CancellationToken cancellationToken) {
+        var alternate = Attribute(tag, "alt");
+        var caption = Attribute(tag, "title");
+        var size = media.LocalKey(source) is { } key
+            ? await thumbnails.MeasureAsync(key, cancellationToken)
+            : null;
+
+        var builder = new StringBuilder(192)
+            .Append("<img src=\"")
+            .Append(encoder.Encode(media.Preview(source)))
+            .Append("\" alt=\"")
+            .Append(encoder.Encode(alternate))
+            .Append('"');
+
+        if (caption.Length > 0) {
+            _ = builder.Append(" title=\"").Append(encoder.Encode(caption)).Append('"');
+        }
+
+        if (size is { Width: > 0, Height: > 0 } pixels) {
+            _ = builder
+                .Append(" width=\"").Append(pixels.Width)
+                .Append("\" height=\"").Append(pixels.Height).Append('"');
+        }
+
+        return builder.Append(" loading=\"lazy\" decoding=\"async\">").ToString();
+    }
+
     private static string Attribute(string tag, string name) {
         var pattern = name switch {
             "src" => Source(),
@@ -154,12 +220,13 @@ public sealed partial class ArticleMedia(MediaUrls media, IThumbnailService thum
         return match.Success ? WebUtility.HtmlDecode(match.Groups["value"].Value) : string.Empty;
     }
 
-    // 三种情形按优先级排：套了链接的整段跳过；独占一段的换成 figure；
-    // 剩下混在文字里的只包一层，免得把 figure 塞进 p 里
     [GeneratedRegex(
         """(?<anchor><a\b[^>]*>\s*<img\b[^>]*>\s*</a>)|(?<figure><p>\s*(?<tag><img\b[^>]*>)\s*</p>)|(?<tag><img\b[^>]*>)""",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Images();
+
+    [GeneratedRegex("""<img\b[^>]*>""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PlainImages();
 
     [GeneratedRegex("""\bsrc\s*=\s*(?:"(?<value>[^"]*)"|'(?<value>[^']*)')""", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Source();

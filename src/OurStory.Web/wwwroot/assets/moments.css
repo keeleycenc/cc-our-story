@@ -97,8 +97,15 @@
 .article-byline span, .article-byline a { display: inline-flex; align-items: center; gap: 6px }
 .article-byline a:hover { color: var(--pink-dark) }
 
-.article-body { font-family: var(--serif); font-size: 16px; line-height: 2; color: var(--ink) }
-.article-body img { margin: 30px auto; border-radius: 18px }
+.article-body {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 2;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+}
+
+.article-body img { max-width: 100%; margin: 30px auto; border-radius: 18px }
 .article-body a { color: var(--pink-dark); border-bottom: 1px solid }
 .article-body h2, .article-body h3 { line-height: 1.4; margin-top: 2em }
 
@@ -345,6 +352,7 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     -webkit-line-clamp: 2;
     line-clamp: 2;
     overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 .moment-content h2 { font: 400 27px/1.3 var(--serif); margin: 15px 0 9px }

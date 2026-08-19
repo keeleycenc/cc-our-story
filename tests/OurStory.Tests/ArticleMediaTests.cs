@@ -142,6 +142,53 @@ public sealed class ArticleMediaTests : IDisposable {
     public async Task 空正文返回空内容(string? html) =>
         Assert.Equal(string.Empty, await RenderAsync(html));
 
+    /// <summary>后台预览也吃压过的那一份，并且提前占好位置。</summary>
+    [Fact]
+    public async Task 后台预览换成压缩图() {
+        var html = await _article.ShrinkImagesAsync($"""<p><img src="{Url}" alt="海边" /></p>""");
+
+        Assert.Contains("src=\"/media/preview/ourstory/public/2026/08/photo.png\"", html, StringComparison.Ordinal);
+        Assert.Contains("alt=\"海边\"", html, StringComparison.Ordinal);
+        Assert.Contains("width=\"1600\" height=\"800\"", html, StringComparison.Ordinal);
+        Assert.Contains("loading=\"lazy\" decoding=\"async\"", html, StringComparison.Ordinal);
+        Assert.DoesNotContain(Url, html, StringComparison.Ordinal);
+    }
+
+    /// <summary>预览里不套查看器：后台只看排版，点开原图是前台的事。</summary>
+    [Fact]
+    public async Task 后台预览不套查看器() {
+        var html = await _article.ShrinkImagesAsync($"""<p><img src="{Url}" alt="" /></p>""");
+
+        Assert.DoesNotContain("data-lightbox", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<figure", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<button", html, StringComparison.Ordinal);
+    }
+
+    /// <summary>套了链接的图也只是换成小图，链接本身留着。</summary>
+    [Fact]
+    public async Task 后台预览保留图上的链接() {
+        var html = await _article.ShrinkImagesAsync($"""<p><a href="https://example.com"><img src="{Url}" alt="" /></a></p>""");
+
+        Assert.Contains("<a href=\"https://example.com\">", html, StringComparison.Ordinal);
+        Assert.Contains("src=\"/media/preview/", html, StringComparison.Ordinal);
+    }
+
+    /// <summary>站外的图压不了，原样留着。</summary>
+    [Fact]
+    public async Task 后台预览放过站外的图() {
+        const string outside = """<p><img src="https://other.example.org/a.png" alt="" /></p>""";
+
+        Assert.Equal(outside, await _article.ShrinkImagesAsync(outside));
+    }
+
+    /// <summary>没有图或者没有内容时，一个字都不改。</summary>
+    [Theory]
+    [InlineData("<p>只有文字</p>", "<p>只有文字</p>")]
+    [InlineData("   ", "")]
+    [InlineData(null, "")]
+    public async Task 后台预览没有图时原样返回(string? html, string expected) =>
+        Assert.Equal(expected, await _article.ShrinkImagesAsync(html));
+
     /// <summary>删掉这次测试用的临时目录。</summary>
     public void Dispose() {
         try {
