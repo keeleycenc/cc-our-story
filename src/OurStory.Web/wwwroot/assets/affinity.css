@@ -1,25 +1,37 @@
 .affinity-page { min-height: 80vh; background: linear-gradient(180deg, var(--surface-soft), var(--paper) 420px) }
-.affinity-hero { padding: 92px 24px 58px; text-align: center }
+.affinity-hero { padding: 102px 24px 46px; text-align: center }
 .affinity-mark { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 18px; border-radius: 20px; background: var(--pink-soft); color: var(--pink-dark); font-size: 27px; box-shadow: var(--shadow-sm) }
 .affinity-hero > p, .affinity-history header p { color: var(--pink-dark); font: 700 9px Arial; letter-spacing: .22em }
 .affinity-hero h1 { margin: 9px 0 10px; font: 400 clamp(38px, 6vw, 55px)/1.1 var(--serif); color: var(--ink) }
-.affinity-hero > span:last-child { color: var(--muted); font-size: 13px }
+.affinity-hero > h1 + span { color: var(--muted); font-size: 13px }
+.affinity-manage { display: flex; align-items: center; justify-content: center; gap: 7px; width: max-content; min-height: 36px; margin: 19px auto 0; padding: 0 15px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: 10px; transition: border-color .18s, color .18s, transform .18s }
+.affinity-manage:hover { border-color: var(--pink); color: var(--pink-dark); transform: translateY(-1px) }
 .affinity-shell { width: min(860px, calc(100% - 32px)); margin: 0 auto; padding-bottom: 110px }
 .affinity-notice { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 13px 16px; border-radius: 14px; font-size: 12px }
 .affinity-notice.is-ok { background: var(--card-mint); color: var(--ink) }
 .affinity-notice.is-error { background: var(--card-rose); color: var(--ink) }
-.affinity-stats { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; margin-bottom: 22px; padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm) }
-.affinity-stats div { position: relative; display: grid; gap: 4px; padding: 6px 10px; text-align: center }
-.affinity-stats div + div::before { position: absolute; top: 7px; bottom: 7px; left: 0; width: 1px; background: var(--line); content: "" }
-.affinity-stats strong { font: 400 27px var(--serif); color: var(--ink) }
-.affinity-stats strong small { font: 500 12px Arial }
-.affinity-stats span { color: var(--faint); font-size: 9px; letter-spacing: .08em }
+.affinity-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; margin-bottom: 24px }
+.affinity-stat { position: relative; isolation: isolate; display: flex; min-width: 0; min-height: 132px; flex-direction: column; align-items: flex-start; overflow: hidden; padding: 19px 18px 17px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, var(--surface) 56%, var(--stat-tint, var(--card-rose))); box-shadow: var(--shadow-sm) }
+.affinity-stat::after { position: absolute; right: -32px; bottom: -40px; z-index: -1; width: 110px; height: 110px; border-radius: 50%; background: var(--stat-tint, var(--card-rose)); filter: blur(10px); opacity: .62; content: "" }
+.affinity-stat.is-rose { --stat-tint: var(--card-rose) }
+.affinity-stat.is-gold { --stat-tint: var(--card-gold) }
+.affinity-stat.is-mint { --stat-tint: var(--card-mint) }
+.affinity-stat.is-lilac { --stat-tint: var(--card-lilac) }
+.affinity-stat.is-rate { --stat-tint: var(--card-blue) }
+.affinity-stat > span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px }
+.affinity-stat > span .icon { color: var(--pink-dark); font-size: 13px }
+.affinity-stat > strong { margin-top: auto; color: var(--ink); font: 400 29px/1 var(--serif) }
+.affinity-stat > strong small { font: 500 12px Arial }
+.affinity-stat > small { margin-top: 7px; overflow: hidden; color: var(--faint); font-size: 9px; line-height: 1.35; text-overflow: ellipsis }
 .today-card { overflow: hidden; padding: 34px clamp(22px, 5vw, 48px) 38px; border: 1px solid var(--line); border-radius: 28px; background: var(--surface); box-shadow: var(--shadow-md) }
 .today-card.is-waiting { background: linear-gradient(145deg, var(--surface), var(--card-lilac)) }
 .today-card.is-revealed { background: linear-gradient(145deg, var(--surface), var(--card-rose)) }
 .today-card > header { display: flex; justify-content: space-between; align-items: center; gap: 15px }
 .today-label { color: var(--faint); font: 700 9px Arial; letter-spacing: .12em }
-.category, .history-meta span, .history-meta b { padding: 5px 9px; border-radius: 999px; background: var(--card-chip); color: var(--muted); font-size: 9px }
+.category, .history-badges span, .history-badges b { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 999px; background: var(--card-chip); color: var(--muted); font-size: 9px }
+.today-tags { display: flex; align-items: center; justify-content: flex-end; gap: 6px }
+.question-type { padding: 5px 9px; border-radius: 999px; background: var(--pink-soft); color: var(--pink-dark); font-size: 9px }
+.today-love-day { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 999px; background: var(--card-chip); color: var(--muted); font-size: 9px }
 .today-card > h2 { max-width: 690px; margin: 27px auto 28px; text-align: center; font: 400 clamp(23px, 4vw, 31px)/1.55 var(--serif); color: var(--ink) }
 .answer-form fieldset { display: grid; gap: 11px; margin: 0; padding: 0; border: 0 }
 .answer-option { display: grid; grid-template-columns: 35px 1fr 22px; align-items: center; gap: 12px; min-height: 58px; padding: 10px 15px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); color: var(--muted); cursor: pointer; transition: .18s ease }
@@ -29,6 +41,15 @@
 .answer-option > .icon { opacity: 0; color: var(--pink-dark) }
 .answer-option:has(input:checked) { border-color: var(--pink); background: var(--pink-soft); color: var(--ink) }
 .answer-option:has(input:checked) > .icon { opacity: 1 }
+.answer-form fieldset.has-error { padding: 7px; border: 1px solid var(--danger); border-radius: 18px }
+.open-answer-field { display: grid; gap: 9px; text-align: left }
+.open-answer-field > span { color: var(--muted); font-size: 10px }
+.open-answer-field textarea { width: 100%; min-height: 142px; resize: vertical; padding: 16px 17px; border: 1px solid var(--line); border-radius: 16px; outline: 0; background: var(--paper); color: var(--ink); font: 400 13px/1.8 var(--sans); transition: border-color .18s, box-shadow .18s }
+.open-answer-field textarea:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+.open-answer-field textarea.has-error { border-color: var(--danger) }
+.open-answer-field > small { color: var(--faint); font-size: 9px }
+.answer-selection-error { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 12px; color: var(--danger); font-size: 10px }
+.answer-selection-error[hidden] { display: none }
 .affinity-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 23px auto 0; padding: 0 22px; border: 0; border-radius: 999px; background: var(--ink); color: var(--surface); font: 600 11px var(--sans); cursor: pointer }
 .answer-form { text-align: center }
 .answer-reward { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 12px; color: var(--pink-dark); font-size: 10px; font-weight: 600 }
@@ -41,11 +62,11 @@
 .waiting-answer-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 17px }
 .my-hidden-answer { display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: 999px; background: var(--card-chip); color: var(--muted); font-size: 10px }
 .reveal-answers { display: grid; grid-template-columns: 1fr 42px 1fr; align-items: stretch; gap: 12px; margin: 22px 0 }
-.reveal-answers > div { display: grid; place-items: center; gap: 7px; min-height: 110px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface) }
-.reveal-answers span { color: var(--faint); font-size: 9px }
+.reveal-answers > div { display: flex; min-height: 110px; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); text-align: left }
+.reveal-answers > div > header { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.reveal-answers > div > header span, .reveal-answers > div > header time { color: var(--faint); font-size: 9px }
+.reveal-answers > div > header time { font-variant-numeric: tabular-nums }
 .reveal-answers strong { color: var(--ink); font: 400 16px/1.5 var(--serif) }
-.reveal-answers small { display: inline-flex; align-items: center; gap: 4px; color: var(--faint); font-size: 9px }
-.reveal-answers small.answer-points { padding: 5px 8px; border-radius: 999px; background: var(--card-gold); color: var(--muted) }
 .reveal-link { display: grid; place-items: center; color: var(--pink-dark) !important; font-size: 22px !important }
 .affinity-empty { text-align: center }
 .affinity-empty > span { color: var(--pink-dark); font-size: 28px }
@@ -55,28 +76,42 @@
 .affinity-history header h2 { margin: 6px 0 0; font: 400 27px var(--serif); color: var(--ink) }
 .affinity-history > header > span { color: var(--faint); font-size: 10px }
 .history-list { display: grid; gap: 12px }
-.history-card { padding: 21px 23px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface) }
+.history-card { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm) }
 .history-card.is-match { border-color: var(--pink-soft) }
-.history-meta { display: flex; align-items: center; gap: 8px }
-.history-meta time { margin-right: auto; color: var(--faint); font: 700 9px Arial; letter-spacing: .08em }
-.history-meta b { background: var(--card-lilac); font-weight: 500 }
-.history-card.is-match .history-meta b { background: var(--pink-soft); color: var(--pink-dark) }
-.history-card h3 { margin: 14px 0; font: 400 17px/1.5 var(--serif); color: var(--ink) }
-.history-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 }
-.history-card dl div { padding: 11px 13px; border-radius: 11px; background: var(--paper) }
-.history-card dt { margin-bottom: 4px; color: var(--faint); font-size: 9px }
-.history-card dd { margin: 0; color: var(--muted); font-size: 11px }
-.history-card dl small { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--faint); font-size: 9px }
+.history-meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 20px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 70%, transparent) }
+.history-origin, .history-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 8px }
+.history-origin time { color: var(--faint); font: 700 9px Arial; letter-spacing: .08em }
+.history-origin > span { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 9px }
+.history-origin > span::before { color: var(--line-strong); content: "·" }
+.history-badges { justify-content: flex-end }
+.history-badges .history-love-day { background: var(--card-chip) }
+.history-badges b { background: var(--card-lilac); font-weight: 500 }
+.history-card.is-match .history-badges b { background: var(--pink-soft); color: var(--pink-dark) }
+.history-card h3 { margin: 0; padding: 20px 22px 15px; font: 400 19px/1.55 var(--serif); color: var(--ink) }
+.history-answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin: 0 22px 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--line) }
+.history-answer { display: flex; min-width: 0; min-height: 104px; flex-direction: column; padding: 15px 16px; background: var(--paper) }
+.history-answer > header { display: flex; align-items: center; justify-content: space-between; gap: 10px }
+.history-answer > header strong { color: var(--ink); font-size: 11px }
+.history-answer > header time { display: inline-flex; align-items: center; gap: 4px; color: var(--faint); font-size: 9px }
+.history-answer > p { margin: 15px 0 0; color: var(--ink); font: 400 15px/1.65 var(--serif); overflow-wrap: anywhere }
 .history-empty { padding: 36px; border: 1px dashed var(--line-strong); border-radius: 18px; text-align: center; color: var(--faint); font-size: 11px }
 @media (max-width: 600px) {
     .affinity-hero { padding-top: 70px }
     .affinity-shell { width: min(100% - 22px, 860px) }
-    .affinity-stats { grid-template-columns: repeat(2, 1fr); padding: 10px }
-    .affinity-stats div + div::before { display: none }
-    .affinity-stats div:last-child { grid-column: 1 / -1; border-top: 1px solid var(--line) }
+    .affinity-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px }
+    .affinity-stat { min-height: 122px; padding: 17px 16px }
+    .affinity-stat:last-child { grid-column: 1 / -1; min-height: 112px }
     .today-card { border-radius: 22px }
+    .today-card > header { align-items: center; gap: 8px }
+    .today-label { min-width: 0; flex: 1 1 auto; white-space: nowrap }
+    .today-tags { flex: 0 0 auto; flex-wrap: nowrap; gap: 4px }
     .reveal-answers { grid-template-columns: 1fr; }
     .reveal-link { height: 25px }
     .affinity-history > header { align-items: start; flex-direction: column }
-    .history-card dl { grid-template-columns: 1fr }
+    .history-meta { align-items: center; flex-direction: row; gap: 8px; padding: 13px 16px }
+    .history-origin { min-width: 0; flex: 1 1 auto; flex-wrap: nowrap; gap: 5px }
+    .history-origin > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+    .history-badges { flex: 0 0 auto; flex-wrap: nowrap; justify-content: flex-end; gap: 4px }
+    .history-badges span, .history-badges b { padding: 5px 7px }
+    .history-answers { grid-template-columns: 1fr }
 }

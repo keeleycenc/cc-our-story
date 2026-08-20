@@ -8,7 +8,7 @@
     ViewData["BackText"] = "返回封存记录";
 }
 
-<form method="post" data-dirty-guard>
+<form method="post" data-dirty-guard data-affinity-question-editor>
     @if (!string.IsNullOrWhiteSpace(Model.Error))
     {
         <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
@@ -27,12 +27,15 @@
                     <small>使用双方都容易理解的表述，避免答案存在明显对错。</small>
                 </label>
 
-                <label class="field affinity-options-field">
-                    <span>选项</span>
-                    <textarea asp-for="Input.Options" rows="9" maxlength="1000" required
-                              placeholder="出去吃点东西&#10;看一部电影&#10;随便散散步&#10;什么都不做，待在一起"></textarea>
-                    <small>每行一个选项，支持 2–8 项。封存后只会公开“选项数量”，不会显示选项内容。</small>
-                </label>
+                <div class="affinity-options-container" data-affinity-options-container
+                     hidden="@(Model.Input.Type == AffinityQuestionType.OpenEnded)">
+                    <label class="field affinity-options-field">
+                        <span>选项</span>
+                        <textarea asp-for="Input.Options" rows="9" maxlength="1000"
+                                  placeholder="出去吃点东西&#10;看一部电影&#10;随便散散步&#10;什么都不做，待在一起"></textarea>
+                        <small>每行一个选项，支持 2–8 项</small>
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -42,10 +45,12 @@
 
                 <label class="field">
                     <span>题型</span>
-                    <select asp-for="Input.Type">
+                    <select asp-for="Input.Type" data-affinity-question-type>
                         <option value="@AffinityQuestionType.SingleChoice">单选题</option>
+                        <option value="@AffinityQuestionType.MultipleChoice">多选题</option>
+                        <option value="@AffinityQuestionType.OpenEnded">开放题</option>
                     </select>
-                    <small>题型参数已独立保存，后续可继续扩展多选、开放题或猜 TA。</small>
+                    <small data-affinity-type-help>单选题只能选一项；多选题可选多项；开放题自由填写</small>
                 </label>
 
                 <label class="field">
@@ -59,13 +64,6 @@
                     <small>使用固定分类，方便后续按题型和主题扩展。</small>
                 </label>
 
-                <div class="field slider-field" data-slider-field>
-                    <span class="slider-head">答题奖励 <b data-slider-value data-slider-unit=" 心意">@Model.Input.RewardPoints 心意</b></span>
-                    <input asp-for="Input.RewardPoints" type="range"
-                           min="@HeartPointRules.MinAffinityReward" max="@HeartPointRules.MaxReward" step="1" data-slider>
-                    <span class="slider-scale"><i>@HeartPointRules.MinAffinityReward</i><i>@HeartPointRules.MaxReward</i></span>
-                    <small>每个人完成当天题目时各获得一次</small>
-                </div>
             </div>
 
             <div class="admin-panel affinity-seal-panel">

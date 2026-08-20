@@ -147,13 +147,23 @@ public enum HeartPointReason {
 }
 
 /// <summary>
-/// 心有灵犀题型。每日题目保存该值的快照，后续可按题型扩展参数与判定策略
+/// 心有灵犀题型。每日题目保存该值的快照
 /// </summary>
 public enum AffinityQuestionType {
     /// <summary>
     /// 单选题
     /// </summary>
-    SingleChoice = 0
+    SingleChoice = 0,
+
+    /// <summary>
+    /// 多选题
+    /// </summary>
+    MultipleChoice = 1,
+
+    /// <summary>
+    /// 开放题
+    /// </summary>
+    OpenEnded = 2
 }
 
 /// <summary>

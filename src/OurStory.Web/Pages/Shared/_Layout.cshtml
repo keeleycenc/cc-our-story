@@ -1,59 +1,93 @@
 @inject ISettingsService SettingsService
 @inject AssetVersionProvider Assets
+
 @{
     var site = await SettingsService.GetAsync();
     var activeNav = ViewData["ActiveNav"] as string ?? string.Empty;
-    // 首页和其它页面的样式 / 脚本不一样，和原主题的资源清单保持一致
+
     var bundle = ViewData["Bundle"] as string ?? "moments";
-    var styles = new[] { "assets/variables.css", "assets/core.css", "assets/lightbox.css", $"assets/{bundle}.css" };
-    var scripts = new[] { "assets/core.js", $"assets/{bundle}.js" };
+    var styles = new[] {
+        "assets/variables.css",
+        "assets/core.css",
+        "assets/lightbox.css",
+        $"assets/{bundle}.css"
+    };
+
+    var scripts = new[] {
+        "assets/core.js",
+        $"assets/{bundle}.js"
+    };
+
     var pageTitle = ViewData["Title"] as string;
 }
+
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-color-mode="@site.ColorMode">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#fffaf8" media="(prefers-color-scheme: light)" data-theme-color="light">
-    <meta name="theme-color" content="#17151b" media="(prefers-color-scheme: dark)" data-theme-color="dark">
+
+    <meta name="theme-color"
+          content="#fffaf8"
+          media="(prefers-color-scheme: light)"
+          data-theme-color="light">
+
+    <meta name="theme-color"
+          content="#17151b"
+          media="(prefers-color-scheme: dark)"
+          data-theme-color="dark">
+
     <meta name="format-detection" content="telephone=no">
-    <title>@(string.IsNullOrWhiteSpace(pageTitle) ? site.SiteTitle : pageTitle + " - " + site.SiteTitle)</title>
+
+    <title>
+        @(string.IsNullOrWhiteSpace(pageTitle)
+            ? site.SiteTitle
+            : pageTitle + " - " + site.SiteTitle)
+    </title>
+
     <link rel="icon" href="/favicon.ico">
 
-    @* 装成 App 的三件套。iPhone 上必须先「添加到主屏幕」，
-       通知才用得了，所以 apple-touch-icon 这几行不能省 *@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="@site.SiteTitle">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     @foreach (var style in styles)
     {
         <link rel="stylesheet" href="@Assets.Url(style)">
     }
-    <script>
-        // 在首屏绘制之前定好配色，避免深色模式下闪一下白屏。
-        // data-theme-mode 记的是选择（auto/light/dark），data-theme 记的是最终生效的那套配色
-        (function () {
-            var fallback = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(site.ColorMode));
-            var saved = null;
-            try { saved = localStorage.getItem('cc-color-mode'); } catch (e) {}
-            var mode = saved || fallback;
-            if (mode !== 'light' && mode !== 'dark') {
-                mode = 'auto';
-            }
-            var root = document.documentElement;
-            root.dataset.themeMode = mode;
-            root.dataset.theme = mode === 'auto'
-                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                : mode;
 
-            // 封面的骨架屏和淡入都要靠脚本收尾，没有脚本时它们一律不生效，
-            // 图片老老实实直接显示
-            root.classList.add('has-js');
-        }());
+    <script>
+            (function() {
+                const root = document.documentElement;
+                const fallback = root.dataset.colorMode || 'auto';
+
+                let saved = null;
+
+                try {
+                    saved = localStorage.getItem('cc-color-mode');
+                } catch (e) {
+                }
+
+                let mode = saved || fallback;
+
+                if (mode !== 'light' && mode !== 'dark') {
+                    mode = 'auto';
+                }
+
+                root.dataset.themeMode = mode;
+                root.dataset.theme = mode === 'auto'
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark'
+                        : 'light')
+                    : mode;
+                root.classList.add('has-js');
+            }());
     </script>
 </head>
+
 <body>
 @Sprite()
 <a class="skip-link" href="#main">跳到主要内容</a>
@@ -63,6 +97,7 @@
         <nav aria-label="站内导航">
             <a href="/"@(activeNav == "home" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("house")<span>首页</span></a>
             <a href="/moments"@(activeNav == "moments" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("camera")<span>点点滴滴</span></a>
+            <a href="/affinity"@(activeNav == "affinity" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("sparkles")<span>心有灵犀</span></a>
             <a href="/anniversaries"@(activeNav == "anniversaries" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("calendar-heart")<span>纪念日</span></a>
             <a href="/shop"@(activeNav == "shop" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("store")<span>心意商城</span></a>
         </nav>

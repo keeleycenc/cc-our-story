@@ -88,6 +88,7 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             RewardHeartbeat = site.RewardHeartbeat,
             RewardMoment = site.RewardMoment,
             RewardAnniversary = site.RewardAnniversary,
+            RewardAffinity = site.RewardAffinity,
             ShopPriceMin = site.ShopPriceMin,
             ShopPriceMax = site.ShopPriceMax,
             ShopListingDays = site.ShopListingDays,
@@ -133,6 +134,7 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             site.RewardHeartbeat = Input.RewardHeartbeat;
             site.RewardMoment = Input.RewardMoment;
             site.RewardAnniversary = Input.RewardAnniversary;
+            site.RewardAffinity = Input.RewardAffinity;
             site.ShopPriceMin = Input.ShopPriceMin;
             site.ShopPriceMax = Input.ShopPriceMax;
             site.ShopListingDays = Input.ShopListingDays;
@@ -165,7 +167,11 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             || !InRange(Input.RewardHeartbeat, 0, 100)
             || !InRange(Input.RewardMoment, 0, 100)
             || !InRange(Input.RewardAnniversary, 0, 100)) {
-            return "四档心意奖励都要在 0 到 100 之间。";
+                return "四档心意奖励都要在 0 到 100 之间。";
+        }
+
+        if (!InRange(Input.RewardAffinity, HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward)) {
+            return $"心有灵犀答题奖励要在 {HeartPointRules.MinAffinityReward} 到 {HeartPointRules.MaxReward} 之间。";
         }
 
         if (!InRange(Input.ShopPriceMin, 1, 99999) || !InRange(Input.ShopPriceMax, 1, 99999)) {
@@ -372,6 +378,12 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         /// 获取或设置当天第一次发布纪念日给多少心意
         /// </summary>
         public int RewardAnniversary { get; set; } = 12;
+
+        /// <summary>
+        /// 获取或设置每次完成心有灵犀答题给多少心意
+        /// </summary>
+        [Range(HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward)]
+        public int RewardAffinity { get; set; } = 5;
 
         /// <summary>
         /// 获取或设置心愿的最低标价

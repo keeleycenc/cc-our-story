@@ -559,6 +559,29 @@
     slider.addEventListener('input', show);
   });
 
+  document.querySelectorAll('[data-affinity-question-editor]').forEach((editor) => {
+    const type = editor.querySelector('[data-affinity-question-type]');
+    const optionsContainer = editor.querySelector('[data-affinity-options-container]');
+    const options = optionsContainer && optionsContainer.querySelector('textarea');
+    const help = editor.querySelector('[data-affinity-type-help]');
+    if (!type || !optionsContainer || !options) return;
+
+    const refresh = () => {
+      const isOpen = type.value === 'OpenEnded' || type.value === '2';
+      optionsContainer.hidden = isOpen;
+      options.disabled = isOpen;
+      options.required = !isOpen;
+      if (help) help.textContent = isOpen
+        ? '不设置选项，双方分别填写文字，完成后一起揭晓。'
+        : (type.value === 'MultipleChoice' || type.value === '1'
+          ? '允许选择一项或多项；双方选项完全一致计为默契。'
+          : '单选题只能选择一项；双方选择相同时计为默契。');
+    };
+
+    type.addEventListener('change', refresh);
+    refresh();
+  });
+
   document.querySelectorAll('[data-shop-preset]').forEach((select) => {
     const form = select.closest('form');
     if (!form) return;

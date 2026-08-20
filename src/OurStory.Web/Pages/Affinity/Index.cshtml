@@ -14,6 +14,7 @@
         <p>DAILY MIND SYNC</p>
         <h1>心有灵犀</h1>
         <span>每天一个小问题，看看你们到底有多懂彼此</span>
+        <a class="affinity-manage" href="/admin/affinity">@Icon("pen-line")管理心有灵犀</a>
     </section>
 
     <div class="affinity-shell">
@@ -27,11 +28,11 @@
         }
 
         <section class="affinity-stats" aria-label="默契统计">
-            <div><strong>@stats.AnsweredDays</strong><span>我的答题</span></div>
-            <div><strong>@stats.CurrentStreak</strong><span>连续答题</span></div>
-            <div><strong>@stats.RevealedDays</strong><span>共同揭晓</span></div>
-            <div><strong>@stats.MatchedDays</strong><span>默契次数</span></div>
-            <div><strong>@stats.MatchRate<small>%</small></strong><span>默契率</span></div>
+            <article class="affinity-stat is-rose"><span>@Icon("message-circle-heart")我的答题</span><strong>@stats.AnsweredDays</strong><small>个认真回答的日子</small></article>
+            <article class="affinity-stat is-gold"><span>@Icon("history")连续答题</span><strong>@stats.CurrentStreak</strong><small>天正在延续的默契</small></article>
+            <article class="affinity-stat is-mint"><span>@Icon("eye")共同揭晓</span><strong>@stats.RevealedDays</strong><small>次一起打开的答案</small></article>
+            <article class="affinity-stat is-lilac"><span>@Icon("heart")默契次数</span><strong>@stats.MatchedDays</strong><small>次想到了一起</small></article>
+            <article class="affinity-stat is-rate"><span>@Icon("sparkles")默契率</span><strong>@stats.MatchRate<small>%</small></strong><small>共同答案中的同频比例</small></article>
         </section>
 
         @if (today is null)
@@ -45,43 +46,69 @@
         }
         else
         {
+            var creatorName = today.CreatorRole is { } creatorRole
+                ? Model.Site.RoleName(creatorRole)
+                : "系统预置";
             <section class="today-card@(today.IsRevealed ? " is-revealed" : today.HasAnswered ? " is-waiting" : null)">
                 <header>
-                    <span class="today-label">今日问题 · @today.Day.Replace("-", ".")</span>
-                    <span class="category">@today.Category</span>
+                    <span class="today-label">@creatorName · 今日问题 · @today.Day.Replace("-", ".")</span>
+                    <span class="today-tags">
+                        @if (today.LoveDay > 0)
+                        {
+                            <span class="today-love-day">@Icon("clock")第 @today.LoveDay 天</span>
+                        }
+                        <span class="question-type">@(today.Type switch { AffinityQuestionType.MultipleChoice => "多选 · 可选多项", AffinityQuestionType.OpenEnded => "开放题 · 自由作答", _ => "单选" })</span>
+                        <span class="category">@today.Category</span>
+                    </span>
                 </header>
                 <h2>@today.Question</h2>
 
                 @if (!today.HasAnswered)
                 {
-                    <form method="post" asp-page-handler="Answer" class="answer-form">
+                    <form method="post" asp-page-handler="Answer" class="answer-form" data-answer-form>
                         <input type="hidden" name="dailyQuestionId" value="@today.DailyQuestionId">
-                        <fieldset>
-                            <legend class="sr-only">请选择一个答案</legend>
-                            @for (var index = 0; index < today.Options.Count; index++)
-                            {
-                                var letter = ((char)('A' + index)).ToString();
-                                <label class="answer-option">
-                                    <input type="radio" name="optionIndex" value="@index" required>
-                                    <span class="answer-letter">@letter</span>
-                                    <span>@today.Options[index]</span>
-                                    @Icon("circle-check")
-                                </label>
-                            }
-                        </fieldset>
-                        <button class="affinity-button" type="submit">藏好我的答案 @Icon("arrow-right")</button>
+                        @if (today.Type == AffinityQuestionType.OpenEnded)
+                        {
+                            <label class="open-answer-field">
+                                <span>写下你的回答</span>
+                                <textarea name="textAnswer" rows="5" maxlength="1000" required
+                                          placeholder="把此刻真实的想法告诉 TA……"></textarea>
+                                <small>最多 1000 字；双方提交后才会一起揭晓</small>
+                            </label>
+                        }
+                        else
+                        {
+                            <fieldset>
+                                @for (var index = 0; index < today.Options.Count; index++)
+                                {
+                                    var letter = ((char)('A' + index)).ToString();
+                                    <label class="answer-option">
+                                        <input type="@(today.Type == AffinityQuestionType.MultipleChoice ? "checkbox" : "radio")"
+                                               name="optionIndexes" value="@index" required="@(today.Type == AffinityQuestionType.SingleChoice ? "required" : null)">
+                                        <span class="answer-letter">@letter</span>
+                                        <span>@today.Options[index]</span>
+                                        @Icon("circle-check")
+                                    </label>
+                                }
+                            </fieldset>
+                        }
+                        <span class="answer-selection-error" data-answer-error hidden>@Icon("circle-alert")请先填写答案</span>
+                        <button class="affinity-button" type="submit">提交我的答案 @Icon("arrow-right")</button>
                         <span class="answer-reward">@Icon("coins")完成作答可获得 @today.RewardPoints 心意</span>
                         <small>@Icon("lock")提交后不能修改；在 TA 完成前，彼此都看不到答案</small>
                     </form>
                 }
                 else if (!today.IsRevealed)
                 {
+                    var myAnswer = today.Type == AffinityQuestionType.OpenEnded
+                        ? today.MyAnswer!.Text
+                        : string.Join("、", today.MyAnswer!.SelectedOptionIndexes.Select(index => today.Options[index]));
                     <div class="waiting-state">
                         <span class="waiting-hearts">@Icon("heart")@Icon("sparkles")</span>
-                        <h3>你的答案已经藏好</h3>
+                        <h3>你的答案已经提交</h3>
                         <p>等待 @Model.PartnerName 回答……双方完成后会在这里一起揭晓。</p>
                         <div class="waiting-answer-meta">
-                            <span class="my-hidden-answer">@Icon("lock")你的选择：@today.Options[today.MyOptionIndex!.Value]</span>
+                            <span class="my-hidden-answer">@Icon("lock")你的选择：@myAnswer</span>
                             @if (today.MyAnsweredAt is { } answeredAt)
                             {
                                 <span class="my-hidden-answer">@Icon("clock")作答于 @answeredAt.ToString("HH:mm")</span>
@@ -92,27 +119,35 @@
                 }
                 else
                 {
+                    var myAnswer = today.Type == AffinityQuestionType.OpenEnded
+                        ? today.MyAnswer!.Text
+                        : string.Join("、", today.MyAnswer!.SelectedOptionIndexes.Select(index => today.Options[index]));
+                    var partnerAnswer = today.Type == AffinityQuestionType.OpenEnded
+                        ? today.PartnerAnswer!.Text
+                        : string.Join("、", today.PartnerAnswer!.SelectedOptionIndexes.Select(index => today.Options[index]));
                     <div class="reveal-state">
                         <p class="reveal-title">@(today.IsMatch ? "🎉 今日默契达成" : "答案不同，也是在了解彼此")</p>
                         <div class="reveal-answers">
                             <div>
-                                <span>@Model.MyName</span>
-                                <strong>@today.Options[today.MyOptionIndex!.Value]</strong>
-                                @if (today.MyAnsweredAt is { } myTime)
-                                {
-                                    <small>@Icon("clock")@myTime.ToString("HH:mm") 作答</small>
-                                }
-                                <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
+                                <header>
+                                    <span>@Model.MyName</span>
+                                    @if (today.MyAnsweredAt is { } myTime)
+                                    {
+                                        <time datetime="@myTime.ToString("O")">@myTime.ToString("HH:mm")</time>
+                                    }
+                                </header>
+                                <strong>@myAnswer</strong>
                             </div>
                             <span class="reveal-link">@(today.IsMatch ? Icon("heart") : Icon("sparkles"))</span>
                             <div>
-                                <span>@Model.PartnerName</span>
-                                <strong>@today.Options[today.PartnerOptionIndex!.Value]</strong>
-                                @if (today.PartnerAnsweredAt is { } partnerTime)
-                                {
-                                    <small>@Icon("clock")@partnerTime.ToString("HH:mm") 作答</small>
-                                }
-                                <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
+                                <header>
+                                    <span>@Model.PartnerName</span>
+                                    @if (today.PartnerAnsweredAt is { } partnerTime)
+                                    {
+                                        <time datetime="@partnerTime.ToString("O")">@partnerTime.ToString("HH:mm")</time>
+                                    }
+                                </header>
+                                <strong>@partnerAnswer</strong>
                             </div>
                         </div>
                         <p>@(today.IsMatch ? "你们想到一起去了，默契 +1" : "原来 TA 是这样想的，又多懂彼此一点啦")</p>
@@ -136,19 +171,44 @@
                 <div class="history-list">
                     @foreach (var item in Model.Dashboard.History.Items)
                     {
+                        var itemCreatorName = item.CreatorRole is { } itemCreatorRole
+                            ? Model.Site.RoleName(itemCreatorRole)
+                            : "系统预置";
                         <article class="history-card@(item.IsMatch ? " is-match" : null)">
-                            <div class="history-meta"><time>@item.Day.Replace("-", ".")</time><span>@item.Category</span><b>@(item.IsMatch ? "默契" : "不同答案")</b></div>
+                            <div class="history-meta">
+                                <div class="history-origin">
+                                    <time datetime="@item.Day">@item.Day.Replace("-", ".")</time>
+                                    <span>@Icon("user-round")@itemCreatorName 出题</span>
+                                </div>
+                                <div class="history-badges">
+                                    @if (item.LoveDay > 0)
+                                    {
+                                        <span class="history-love-day">@Icon("clock")第 @item.LoveDay 天</span>
+                                    }
+                                    <span>@item.Category</span>
+                                    <b>@(item.IsMatch ? "默契" : "不同答案")</b>
+                                </div>
+                            </div>
+
                             <h3>@item.Question</h3>
-                            <dl>
-                                <div>
-                                    <dt>@Model.MyName</dt><dd>@item.MyAnswer</dd>
-                                    <small>@Icon("clock")@item.MyAnsweredAt.ToString("HH:mm") · @Icon("coins")+@item.RewardPoints 心意</small>
-                                </div>
-                                <div>
-                                    <dt>@Model.PartnerName</dt><dd>@item.PartnerAnswer</dd>
-                                    <small>@Icon("clock")@item.PartnerAnsweredAt.ToString("HH:mm") · @Icon("coins")+@item.RewardPoints 心意</small>
-                                </div>
-                            </dl>
+
+                            <div class="history-answers">
+                                <section class="history-answer">
+                                    <header>
+                                        <strong>@Model.MyName</strong>
+                                        <time datetime="@item.MyAnsweredAt.ToString("O")">@item.MyAnsweredAt.ToString("HH:mm")</time>
+                                    </header>
+                                    <p>@item.MyAnswer</p>
+                                </section>
+
+                                <section class="history-answer">
+                                    <header>
+                                        <strong>@Model.PartnerName</strong>
+                                        <time datetime="@item.PartnerAnsweredAt.ToString("O")">@item.PartnerAnsweredAt.ToString("HH:mm")</time>
+                                    </header>
+                                    <p>@item.PartnerAnswer</p>
+                                </section>
+                            </div>
                         </article>
                     }
                 </div>

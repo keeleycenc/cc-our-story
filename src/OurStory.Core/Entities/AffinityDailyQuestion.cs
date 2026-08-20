@@ -18,6 +18,11 @@ public class AffinityDailyQuestion {
     public string Day { get; set; } = string.Empty;
 
     /// <summary>
+    /// 获取或设置当天是相恋后的第几天
+    /// </summary>
+    public int LoveDay { get; set; }
+
+    /// <summary>
     /// 获取或设置来源题目的标识
     /// </summary>
     public int? QuestionId { get; set; }
@@ -98,9 +103,14 @@ public class AffinityAnswer {
     public UserRole Role { get; set; }
 
     /// <summary>
-    /// 获取或设置选择的选项索引
+    /// 获取或设置选择题答案的选项索引集合 JSON。开放题固定为空数组
     /// </summary>
-    public int OptionIndex { get; set; }
+    public string SelectedOptionIndexesJson { get; set; } = "[]";
+
+    /// <summary>
+    /// 获取或设置开放题文字答案。选择题固定为空
+    /// </summary>
+    public string? TextAnswer { get; set; }
 
     /// <summary>
     /// 获取或设置回答时间

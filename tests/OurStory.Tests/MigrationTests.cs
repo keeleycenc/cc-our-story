@@ -89,8 +89,8 @@ public class MigrationTests {
         _ = await db.SaveChangesAsync();
 
         db.AffinityAnswers.AddRange(
-            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, OptionIndex = 0 },
-            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, OptionIndex = 1 });
+            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, SelectedOptionIndexesJson = "[0]" },
+            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, SelectedOptionIndexesJson = "[1]" });
 
         _ = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }

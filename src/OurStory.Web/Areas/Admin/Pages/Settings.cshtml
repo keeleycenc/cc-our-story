@@ -192,6 +192,13 @@
                 </label>
 
                 <label class="field">
+                    <span>心有灵犀答题</span>
+                    <input asp-for="Input.RewardAffinity" type="number"
+                           min="@HeartPointRules.MinAffinityReward" max="@HeartPointRules.MaxReward">
+                    <small>每人完成每日题目时获得</small>
+                </label>
+
+                <label class="field">
                     <span>心愿最低价格</span>
                     <input asp-for="Input.ShopPriceMin" type="number" min="1" max="99999">
                 </label>

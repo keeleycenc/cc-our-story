@@ -115,6 +115,11 @@ public class SiteSettings {
     public int RewardAnniversary { get; set; } = 12;
 
     /// <summary>
+    /// 获取或设置每次完成心有灵犀答题可获得的固定心意
+    /// </summary>
+    public int RewardAffinity { get; set; } = 5;
+
+    /// <summary>
     /// 获取或设置心愿的最低标价
     /// </summary>
     public int ShopPriceMin { get; set; } = 5;
@@ -254,6 +259,10 @@ public static class SettingKeys {
     /// 表示 RewardAnniversary
     /// </summary>
     public const string RewardAnniversary = "heart.reward.anniversary";
+    /// <summary>
+    /// 表示 RewardAffinity
+    /// </summary>
+    public const string RewardAffinity = "heart.reward.affinity";
     /// <summary>
     /// 表示 ShopPriceMin
     /// </summary>

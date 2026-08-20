@@ -348,6 +348,14 @@ p > .article-figure-frame { display: inline-block; width: auto; max-width: 100%;
     .nav-actions { gap: 6px }
 }
 
+@media (max-width: 360px) {
+    .nav-inner { padding: 0 6px; gap: 4px }
+    .site-nav nav { gap: 0 }
+    .site-nav nav a { padding: 8px 7px }
+    .nav-actions { gap: 4px }
+    .theme-toggle, .admin-link { width: 34px }
+}
+
 @media (max-width: 520px) {
     .modal-card { padding: 38px 24px 28px }
 }

@@ -30,7 +30,6 @@ public class CreateModel(IAffinityService affinity) : PageModel {
     /// 初始化创建页面
     /// </summary>
     public void OnGet() {
-        Input.RewardPoints = 5;
         Input.Type = AffinityQuestionType.SingleChoice;
     }
 
@@ -45,8 +44,13 @@ public class CreateModel(IAffinityService affinity) : PageModel {
         }
 
         var options = SplitOptions(Input.Options);
-        if (options.Count is < 2 or > 8) {
-            ModelState.AddModelError(nameof(Input.Options), "请填写 2 到 8 个不重复选项，每行一个");
+        if (Input.Type is AffinityQuestionType.SingleChoice or AffinityQuestionType.MultipleChoice
+            && options.Count is < 2 or > 8) {
+            ModelState.AddModelError(nameof(Input.Options), "单选题和多选题请填写 2 到 8 个不重复选项，每行一个");
+        } else if (Input.Type == AffinityQuestionType.OpenEnded && options.Count > 0) {
+            ModelState.AddModelError(nameof(Input.Options), "开放题不需要设置选项");
+        } else if (Input.Type is not (AffinityQuestionType.SingleChoice or AffinityQuestionType.MultipleChoice or AffinityQuestionType.OpenEnded)) {
+            ModelState.AddModelError(nameof(Input.Type), "请选择有效题型");
         }
 
         if (!ModelState.IsValid) {
@@ -59,8 +63,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
                 Text = Input.Text,
                 Category = Input.Category,
                 Type = Input.Type,
-                Options = options,
-                RewardPoints = Input.RewardPoints
+                Options = options
             }, creatorUserId, cancellationToken);
         } catch (ArgumentException exception) {
             Error = exception.Message;
@@ -106,14 +109,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
         /// <summary>
         /// 获取或设置题目选项文本
         /// </summary>
-        [Required(ErrorMessage = "请填写选项")]
         [StringLength(1000)]
-        public string Options { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 获取或设置答题奖励值
-        /// </summary>
-        [Range(HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward, ErrorMessage = "答题奖励应为 1 到 20 心意")]
-        public int RewardPoints { get; set; } = 5;
+        public string? Options { get; set; }
     }
 }

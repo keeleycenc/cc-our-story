@@ -4,7 +4,7 @@
 namespace OurStory.Core.Entities;
 
 /// <summary>
-/// 获取心有灵犀题库中的一道单选题
+/// 获取心有灵犀题库中的一道选择题
 /// </summary>
 public class AffinityQuestion {
     /// <summary>

@@ -16,34 +16,43 @@ public class AffinityServiceTests {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();
         var queue = TestDoubles.Notifications();
-        var service = Service(harness, queue);
+        var site = new SiteSettings {
+            BoyName = "男主",
+            GirlName = "女主",
+            LoveStartedAt = TestDoubles.Clock().LocalNow.Date.AddDays(-19).AddHours(20)
+        };
+        var service = Service(harness, queue, site: site);
         _ = await service.CreateQuestionAsync(Question(), boyId);
 
         var initial = await service.GetDashboardAsync(boyId, UserRole.Boy);
         var daily = Assert.IsType<AffinityToday>(initial.Today);
+        Assert.Equal(20, daily.LoveDay);
+        Assert.Equal(UserRole.Boy, daily.CreatorRole);
 
-        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, 1, boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(1), boyId, UserRole.Boy));
 
         var boyWaiting = Assert.IsType<AffinityToday>((await service.GetDashboardAsync(boyId, UserRole.Boy)).Today);
         var girlWaiting = Assert.IsType<AffinityToday>((await service.GetDashboardAsync(girlId, UserRole.Girl)).Today);
-        Assert.Equal(1, boyWaiting.MyOptionIndex);
-        Assert.NotNull(boyWaiting.MyAnsweredAt);
-        Assert.Null(boyWaiting.PartnerOptionIndex);
+        Assert.Equal([1], boyWaiting.MyAnswer!.SelectedOptionIndexes);
+        _ = Assert.NotNull(boyWaiting.MyAnsweredAt);
+        Assert.Null(boyWaiting.PartnerAnswer);
         Assert.Null(boyWaiting.PartnerAnsweredAt);
-        Assert.Null(girlWaiting.MyOptionIndex);
-        Assert.Null(girlWaiting.PartnerOptionIndex);
+        Assert.Null(girlWaiting.MyAnswer);
+        Assert.Null(girlWaiting.PartnerAnswer);
 
-        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, 1, girlId, UserRole.Girl));
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(1), girlId, UserRole.Girl));
 
         var revealed = await service.GetDashboardAsync(boyId, UserRole.Boy);
         Assert.True(revealed.Today!.IsRevealed);
         Assert.True(revealed.Today.IsMatch);
-        Assert.NotNull(revealed.Today.PartnerAnsweredAt);
+        _ = Assert.NotNull(revealed.Today.PartnerAnsweredAt);
         Assert.Equal(1, revealed.Stats.AnsweredDays);
         Assert.Equal(1, revealed.Stats.RevealedDays);
         Assert.Equal(1, revealed.Stats.MatchedDays);
         Assert.Equal(100, revealed.Stats.MatchRate);
-        Assert.Single(revealed.History.Items);
+        var history = Assert.Single(revealed.History.Items);
+        Assert.Equal(20, history.LoveDay);
+        Assert.Equal(UserRole.Boy, history.CreatorRole);
         Assert.Equal(2, queue.Sent.Count);
         Assert.All(queue.Sent, request => Assert.Equal(NotificationTopic.Affinity, request.Topic));
     }
@@ -56,9 +65,9 @@ public class AffinityServiceTests {
         _ = await service.CreateQuestionAsync(Question(), boyId);
         var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
 
-        Assert.Equal(AffinitySubmitResult.InvalidOption, await service.SubmitAsync(daily.DailyQuestionId, 99, boyId, UserRole.Boy));
-        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, 0, boyId, UserRole.Boy));
-        Assert.Equal(AffinitySubmitResult.AlreadyAnswered, await service.SubmitAsync(daily.DailyQuestionId, 1, boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.InvalidAnswer, await service.SubmitAsync(daily.DailyQuestionId, Selection(99), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(0), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.AlreadyAnswered, await service.SubmitAsync(daily.DailyQuestionId, Selection(1), boyId, UserRole.Boy));
         Assert.Equal(1, await harness.Db.AffinityAnswers.CountAsync());
     }
 
@@ -73,7 +82,7 @@ public class AffinityServiceTests {
         Assert.Equal(created.Id, card.Id);
         Assert.True(card.IsSealed);
         Assert.Equal(3, card.OptionCount);
-        Assert.Equal(7, card.RewardPoints);
+        Assert.Equal(5, card.RewardPoints);
         Assert.Equal("男主", card.CreatorName);
         Assert.Null(typeof(AffinityQuestionCard).GetProperty("Text"));
         Assert.Null(typeof(AffinityQuestionCard).GetProperty("Options"));
@@ -84,18 +93,21 @@ public class AffinityServiceTests {
     }
 
     [Fact]
-    public async Task 每道题按快照奖励一次心意() {
+    public async Task 统一答题奖励按每日题快照发放一次() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
         var points = Points(harness);
-        var service = Service(harness, heartPoints: points);
+        var site = new SiteSettings { BoyName = "男主", GirlName = "女主", RewardAffinity = 9 };
+        var service = Service(harness, heartPoints: points, site: site);
         _ = await service.CreateQuestionAsync(Question(), boyId);
         var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
 
-        Assert.Equal(7, daily.RewardPoints);
-        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, 0, boyId, UserRole.Boy));
-        Assert.Equal(AffinitySubmitResult.AlreadyAnswered, await service.SubmitAsync(daily.DailyQuestionId, 0, boyId, UserRole.Boy));
-        Assert.Equal(7, await points.GetBalanceAsync(boyId));
+        site.RewardAffinity = 3;
+        daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        Assert.Equal(9, daily.RewardPoints);
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(0), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.AlreadyAnswered, await service.SubmitAsync(daily.DailyQuestionId, Selection(0), boyId, UserRole.Boy));
+        Assert.Equal(9, await points.GetBalanceAsync(boyId));
 
         var entry = await harness.Db.HeartPointEntries.AsNoTracking().SingleAsync();
         Assert.Equal(HeartPointReason.AffinityAnswer, entry.Reason);
@@ -136,16 +148,57 @@ public class AffinityServiceTests {
             .SingleAsync());
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(101)]
-    public async Task 答题奖励必须在一到一百之间(int reward) {
+    [Fact]
+    public async Task 多选答案忽略选择顺序并按完整集合判断默契() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        _ = await service.CreateQuestionAsync(Question(type: AffinityQuestionType.MultipleChoice), boyId);
+        var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(0, 2), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(2, 0), girlId, UserRole.Girl));
+
+        var dashboard = await service.GetDashboardAsync(boyId, UserRole.Boy);
+        Assert.True(dashboard.Today!.IsMatch);
+        Assert.Equal([0, 2], dashboard.Today.MyAnswer!.SelectedOptionIndexes);
+        Assert.Equal("散步、吃夜宵", Assert.Single(dashboard.History.Items).MyAnswer);
+    }
+
+    [Fact]
+    public async Task 单选题不能同时提交多个选项() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
         var service = Service(harness);
+        _ = await service.CreateQuestionAsync(Question(), boyId);
+        var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateQuestionAsync(Question(reward: reward), boyId));
+        Assert.Equal(AffinitySubmitResult.InvalidAnswer,
+            await service.SubmitAsync(daily.DailyQuestionId, Selection(0, 1), boyId, UserRole.Boy));
+        Assert.Empty(await harness.Db.AffinityAnswers.ToListAsync());
+    }
+
+    [Fact]
+    public async Task 开放题使用文字答案并在双方完成后揭晓() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        _ = await service.CreateQuestionAsync(Question(type: AffinityQuestionType.OpenEnded), boyId);
+        var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+
+        Assert.Empty(daily.Options);
+        Assert.Equal(AffinitySubmitResult.InvalidAnswer,
+            await service.SubmitAsync(daily.DailyQuestionId, Text("   "), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.Accepted,
+            await service.SubmitAsync(daily.DailyQuestionId, Text("雨天窝在沙发看电影"), boyId, UserRole.Boy));
+        Assert.Equal(AffinitySubmitResult.Accepted,
+            await service.SubmitAsync(daily.DailyQuestionId, Text("雨天窝在沙发看电影"), girlId, UserRole.Girl));
+
+        var dashboard = await service.GetDashboardAsync(boyId, UserRole.Boy);
+        Assert.True(dashboard.Today!.IsRevealed);
+        Assert.True(dashboard.Today.IsMatch);
+        Assert.Equal("雨天窝在沙发看电影", dashboard.Today.MyAnswer!.Text);
+        Assert.Equal("雨天窝在沙发看电影", Assert.Single(dashboard.History.Items).PartnerAnswer);
     }
 
     [Fact]
@@ -155,25 +208,29 @@ public class AffinityServiceTests {
 
         _ = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             service.GetDashboardAsync(0, UserRole.Guest));
-        Assert.Equal(AffinitySubmitResult.Forbidden, await service.SubmitAsync(1, 0, 0, UserRole.Guest));
+        Assert.Equal(AffinitySubmitResult.Forbidden, await service.SubmitAsync(1, Selection(0), 0, UserRole.Guest));
     }
 
     private static AffinityService Service(
         SqliteHarness harness,
         NotificationQueueSpy? queue = null,
-        IHeartPointService? heartPoints = null) =>
-        new(harness.Db, TestDoubles.Clock(), queue ?? TestDoubles.Notifications(), heartPoints ?? TestDoubles.NoPoints(), new SettingsStub());
+        IHeartPointService? heartPoints = null,
+        SiteSettings? site = null) =>
+        new(harness.Db, TestDoubles.Clock(), queue ?? TestDoubles.Notifications(), heartPoints ?? TestDoubles.NoPoints(), new SettingsStub(site));
 
     private static HeartPointService Points(SqliteHarness harness) =>
         new(harness.Db, new SettingsStub(), TestDoubles.Clock());
 
+    private static AffinityAnswerSubmission Selection(params int[] indexes) => new(indexes, null);
+
+    private static AffinityAnswerSubmission Text(string text) => new([], text);
+
     private static AffinityQuestionCreateModel Question(
         string text = "今晚最想一起做什么？",
-        int reward = 7) => new() {
+        AffinityQuestionType type = AffinityQuestionType.SingleChoice) => new() {
         Text = text,
         Category = "日常",
-        Type = AffinityQuestionType.SingleChoice,
-        Options = ["散步", "看电影", "吃夜宵"],
-        RewardPoints = reward
+        Type = type,
+        Options = type == AffinityQuestionType.OpenEnded ? [] : ["散步", "看电影", "吃夜宵"]
     };
 }

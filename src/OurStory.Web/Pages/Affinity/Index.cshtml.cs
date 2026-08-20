@@ -71,22 +71,28 @@ public class IndexModel(IAffinityService affinity, ISettingsService settings) : 
     /// </summary>
     public async Task<IActionResult> OnPostAnswerAsync(
         int dailyQuestionId,
-        int optionIndex,
+        int[] optionIndexes,
+        string? textAnswer,
         CancellationToken cancellationToken) {
         if (User.UserId() is not { } userId) {
             return Forbid();
         }
 
-        var result = await affinity.SubmitAsync(dailyQuestionId, optionIndex, userId, User.Role(), cancellationToken);
+        var result = await affinity.SubmitAsync(
+            dailyQuestionId,
+            new AffinityAnswerSubmission(optionIndexes, textAnswer),
+            userId,
+            User.Role(),
+            cancellationToken);
         switch (result) {
             case AffinitySubmitResult.Accepted:
-                TempData["AffinityFlash"] = "答案已经藏好啦，等两个人都完成后一起揭晓。";
+                TempData["AffinityFlash"] = "答案已经提交啦，等两个人都完成后一起揭晓。";
                 break;
             case AffinitySubmitResult.AlreadyAnswered:
                 TempData["AffinityError"] = "今天已经回答过啦，每个人每天只能提交一次。";
                 break;
-            case AffinitySubmitResult.InvalidOption:
-                TempData["AffinityError"] = "这个选项不存在，请重新选择。";
+            case AffinitySubmitResult.InvalidAnswer:
+                TempData["AffinityError"] = "请按题型要求填写答案后再提交。";
                 break;
             case AffinitySubmitResult.InvalidQuestion:
                 TempData["AffinityError"] = "今日题目已经更新，请重新打开页面。";

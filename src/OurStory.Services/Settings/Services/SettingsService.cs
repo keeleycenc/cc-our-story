@@ -52,6 +52,7 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
             [SettingKeys.RewardHeartbeat] = settings.RewardHeartbeat.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.RewardMoment] = settings.RewardMoment.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.RewardAnniversary] = settings.RewardAnniversary.ToString(CultureInfo.InvariantCulture),
+            [SettingKeys.RewardAffinity] = settings.RewardAffinity.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.ShopPriceMin] = settings.ShopPriceMin.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.ShopPriceMax] = settings.ShopPriceMax.ToString(CultureInfo.InvariantCulture),
             [SettingKeys.ShopListingDays] = settings.ShopListingDays.ToString(CultureInfo.InvariantCulture),
@@ -130,6 +131,7 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
         settings.RewardHeartbeat = Math.Clamp(Number(raw, SettingKeys.RewardHeartbeat, settings.RewardHeartbeat), HeartPointRules.MinReward, HeartPointRules.MaxReward);
         settings.RewardMoment = Math.Clamp(Number(raw, SettingKeys.RewardMoment, settings.RewardMoment), HeartPointRules.MinReward, HeartPointRules.MaxReward);
         settings.RewardAnniversary = Math.Clamp(Number(raw, SettingKeys.RewardAnniversary, settings.RewardAnniversary), HeartPointRules.MinReward, HeartPointRules.MaxReward);
+        settings.RewardAffinity = Math.Clamp(Number(raw, SettingKeys.RewardAffinity, settings.RewardAffinity), HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward);
         settings.ShopListingDays = Math.Clamp(Number(raw, SettingKeys.ShopListingDays, settings.ShopListingDays), 1, 3650);
         settings.ShopValidDays = Math.Clamp(Number(raw, SettingKeys.ShopValidDays, settings.ShopValidDays), 1, 3650);
 

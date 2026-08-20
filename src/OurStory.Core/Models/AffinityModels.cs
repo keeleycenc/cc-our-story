@@ -4,34 +4,47 @@
 namespace OurStory.Core.Models;
 
 /// <summary>
+/// 一次心有灵犀回答。选择题使用选项索引，开放题使用文字，两种载荷互斥
+/// </summary>
+public sealed record AffinityAnswerValue(
+    IReadOnlyList<int> SelectedOptionIndexes,
+    string? Text);
+
+/// <summary>
+/// 提交心有灵犀答案时的统一输入
+/// </summary>
+public sealed record AffinityAnswerSubmission(
+    IReadOnlyCollection<int> SelectedOptionIndexes,
+    string? Text);
+
+/// <summary>
 /// 今日题目的安全视图。未揭晓时不包含对方答案与作答时间
 /// </summary>
 public sealed record AffinityToday(
     int DailyQuestionId,
     string Day,
+    int LoveDay,
+    UserRole? CreatorRole,
     string Question,
     string Category,
     AffinityQuestionType Type,
     IReadOnlyList<string> Options,
     int RewardPoints,
-    int? MyOptionIndex,
+    AffinityAnswerValue? MyAnswer,
     DateTime? MyAnsweredAt,
-    int? PartnerOptionIndex,
-    DateTime? PartnerAnsweredAt) {
+    AffinityAnswerValue? PartnerAnswer,
+    DateTime? PartnerAnsweredAt,
+    bool IsMatch) {
+
     /// <summary>
     /// 获取是否已完成答题
     /// </summary>
-    public bool HasAnswered => MyOptionIndex is not null;
+    public bool HasAnswered => MyAnswer is not null;
 
     /// <summary>
     /// 获取是否已揭晓双方答案
     /// </summary>
-    public bool IsRevealed => MyOptionIndex is not null && PartnerOptionIndex is not null;
-
-    /// <summary>
-    /// 获取双方答案是否一致
-    /// </summary>
-    public bool IsMatch => IsRevealed && MyOptionIndex == PartnerOptionIndex;
+    public bool IsRevealed => HasAnswered && PartnerAnswer is not null;
 }
 
 /// <summary>
@@ -53,6 +66,8 @@ public sealed record AffinityStats(
 /// </summary>
 public sealed record AffinityHistoryItem(
     string Day,
+    int LoveDay,
+    UserRole? CreatorRole,
     string Question,
     string Category,
     AffinityQuestionType Type,
@@ -109,11 +124,6 @@ public sealed class AffinityQuestionCreateModel {
     /// 获取或设置题目选项
     /// </summary>
     public IReadOnlyList<string> Options { get; set; } = [];
-
-    /// <summary>
-    /// 获取或设置心意奖励值
-    /// </summary>
-    public int RewardPoints { get; set; } = 5;
 }
 
 /// <summary>
@@ -136,9 +146,9 @@ public enum AffinitySubmitResult {
     InvalidQuestion,
 
     /// <summary>
-    /// 选项无效
+    /// 答案与题型要求不符
     /// </summary>
-    InvalidOption,
+    InvalidAnswer,
 
     /// <summary>
     /// 无权限提交

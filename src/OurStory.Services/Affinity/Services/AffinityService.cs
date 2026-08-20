@@ -43,10 +43,12 @@ internal sealed class AffinityService(
         var completed = await db.AffinityDailyQuestions
             .Where(item => item.Answers.Count >= 2)
             .Include(item => item.Answers)
+            .Include(item => item.Question)
+                .ThenInclude(question => question!.CreatedByUser)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var matched = completed.Count(item => item.Answers.Select(answer => answer.OptionIndex).Distinct().Count() == 1);
+        var matched = completed.Count(AnswersMatch);
         var total = completed.Count;
         var historyEntities = completed
             .OrderByDescending(item => item.Day)
@@ -76,10 +78,11 @@ internal sealed class AffinityService(
 
     public async Task<AffinitySubmitResult> SubmitAsync(
         int dailyQuestionId,
-        int optionIndex,
+        AffinityAnswerSubmission submission,
         int userId,
         UserRole role,
         CancellationToken cancellationToken = default) {
+        ArgumentNullException.ThrowIfNull(submission);
         if (role is not (UserRole.Boy or UserRole.Girl)) {
             return AffinitySubmitResult.Forbidden;
         }
@@ -92,8 +95,9 @@ internal sealed class AffinityService(
         }
 
         var options = ReadOptions(daily.OptionsJson);
-        if (daily.Type != AffinityQuestionType.SingleChoice || optionIndex < 0 || optionIndex >= options.Length) {
-            return AffinitySubmitResult.InvalidOption;
+        var value = NormalizeSubmission(daily.Type, submission, options.Length);
+        if (value is null) {
+            return AffinitySubmitResult.InvalidAnswer;
         }
 
         if (daily.Answers.Any(answer => answer.Role == role || answer.UserId == userId)) {
@@ -105,7 +109,8 @@ internal sealed class AffinityService(
             DailyQuestionId = daily.Id,
             UserId = userId,
             Role = role,
-            OptionIndex = optionIndex,
+            SelectedOptionIndexesJson = JsonSerializer.Serialize(value.SelectedOptionIndexes),
+            TextAnswer = value.Text,
             AnsweredAt = SiteClock.UtcNow
         };
         _ = db.AffinityAnswers.Add(answer);
@@ -154,7 +159,6 @@ internal sealed class AffinityService(
                 item.IsSealed,
                 OptionCount = item.Options.Count,
                 UsedCount = item.DailyQuestions.Count,
-                item.RewardPoints,
                 CreatorRole = item.CreatedByUser == null ? (UserRole?)null : item.CreatedByUser.Role,
                 item.CreatedAt
             })
@@ -170,7 +174,7 @@ internal sealed class AffinityService(
             item.IsSealed,
             item.OptionCount,
             item.UsedCount,
-            item.RewardPoints,
+            site.RewardAffinity,
             item.CreatorRole is { } role ? site.RoleName(role) : "系统预置",
             clock.ToLocal(item.CreatedAt)))];
     }
@@ -187,21 +191,25 @@ internal sealed class AffinityService(
             .Where(user => user.Id == creatorUserId && user.IsActive)
             .Select(user => (UserRole?)user.Role)
             .SingleOrDefaultAsync(cancellationToken);
-        if (model.Type != AffinityQuestionType.SingleChoice
+        var optionsAreValid = model.Type switch {
+            AffinityQuestionType.SingleChoice or AffinityQuestionType.MultipleChoice => options.Count is >= 2 and <= 8,
+            AffinityQuestionType.OpenEnded => options.Count == 0,
+            _ => false
+        };
+        if (!optionsAreValid
             || text.Length is < 2 or > 300
             || !AffinityQuestionCategories.Contains(category)
-            || options.Count is < 2 or > 8
-            || model.RewardPoints is < HeartPointRules.MinAffinityReward or > HeartPointRules.MaxReward
             || creatorRole is null) {
-            throw new ArgumentException("题干、分类、选项或奖励不符合要求。", nameof(model));
+            throw new ArgumentException("题干、分类或选项不符合要求。", nameof(model));
         }
 
+        var site = await settings.GetAsync(cancellationToken);
         var now = SiteClock.UtcNow;
         var question = new AffinityQuestion {
             Text = text,
             Category = category,
             Type = model.Type,
-            RewardPoints = model.RewardPoints,
+            RewardPoints = site.RewardAffinity,
             IsActive = true,
             IsSealed = true,
             CreatedByUserId = creatorUserId,
@@ -215,7 +223,6 @@ internal sealed class AffinityService(
         _ = db.AffinityQuestions.Add(question);
         _ = await db.SaveChangesAsync(cancellationToken);
 
-        var site = await settings.GetAsync(cancellationToken);
         return new AffinityQuestionCard(
             question.Id,
             question.Category,
@@ -224,7 +231,7 @@ internal sealed class AffinityService(
             question.IsSealed,
             question.Options.Count,
             0,
-            question.RewardPoints,
+            site.RewardAffinity,
             site.RoleName(creatorRole.Value),
             clock.ToLocal(question.CreatedAt));
     }
@@ -254,7 +261,11 @@ internal sealed class AffinityService(
         }
 
         var question = await db.AffinityQuestions
-            .Where(item => item.IsActive && item.IsSealed && item.Options.Count >= 2 && item.DailyQuestions.Count == 0)
+            .Where(item => item.IsActive
+                && item.IsSealed
+                && item.DailyQuestions.Count == 0
+                && (item.Type == AffinityQuestionType.OpenEnded && item.Options.Count == 0
+                    || item.Type != AffinityQuestionType.OpenEnded && item.Options.Count >= 2))
             .Include(item => item.Options)
             .OrderBy(item => item.CreatedAt)
             .ThenBy(item => item.Id)
@@ -263,15 +274,18 @@ internal sealed class AffinityService(
         if (question is null) {
             return null;
         }
+
         var options = question.Options.OrderBy(item => item.SortOrder).Select(item => item.Text).ToArray();
+        var site = await settings.GetAsync(cancellationToken);
         var daily = new AffinityDailyQuestion {
             Day = day,
+            LoveDay = LoveTimeline.DayNumber(clock.LocalNow, site.LoveStartedAt),
             QuestionId = question.Id,
             QuestionText = question.Text,
             Category = question.Category,
             Type = question.Type,
             OptionsJson = JsonSerializer.Serialize(options),
-            RewardPoints = question.RewardPoints,
+            RewardPoints = site.RewardAffinity,
             CreatedAt = SiteClock.UtcNow
         };
         _ = db.AffinityDailyQuestions.Add(daily);
@@ -283,29 +297,36 @@ internal sealed class AffinityService(
             return await DailyQuery().FirstAsync(item => item.Day == day, cancellationToken);
         }
 
-        return daily;
+        return await DailyQuery().FirstAsync(item => item.Id == daily.Id, cancellationToken);
     }
 
     private IQueryable<AffinityDailyQuestion> DailyQuery() => db.AffinityDailyQuestions
         .Include(item => item.Answers)
+        .Include(item => item.Question)
+            .ThenInclude(question => question!.CreatedByUser)
         .AsNoTracking();
 
     private AffinityToday ToToday(AffinityDailyQuestion daily, UserRole role) {
         var mine = daily.Answers.FirstOrDefault(answer => answer.Role == role);
         var partner = daily.Answers.FirstOrDefault(answer => answer.Role != role);
         var revealed = mine is not null && partner is not null;
+        var mineValue = mine is null ? null : ToAnswerValue(mine);
+        var partnerValue = revealed ? ToAnswerValue(partner!) : null;
         return new AffinityToday(
             daily.Id,
             daily.Day,
+            daily.LoveDay,
+            daily.Question?.CreatedByUser?.Role,
             daily.QuestionText,
             daily.Category,
             daily.Type,
             ReadOptions(daily.OptionsJson),
             daily.RewardPoints,
-            mine?.OptionIndex,
+            mineValue,
             mine is null ? null : clock.ToLocal(mine.AnsweredAt),
-            revealed ? partner!.OptionIndex : null,
-            revealed ? clock.ToLocal(partner!.AnsweredAt) : null);
+            partnerValue,
+            revealed ? clock.ToLocal(partner!.AnsweredAt) : null,
+            revealed && AnswerValuesEqual(daily.Type, mineValue!, partnerValue!));
     }
 
     private AffinityHistoryItem ToHistory(AffinityDailyQuestion daily, UserRole role) {
@@ -314,21 +335,71 @@ internal sealed class AffinityService(
         var partner = daily.Answers.Single(answer => answer.Role != role);
         return new AffinityHistoryItem(
             daily.Day,
+            daily.LoveDay,
+            daily.Question?.CreatedByUser?.Role,
             daily.QuestionText,
             daily.Category,
             daily.Type,
-            Option(options, mine.OptionIndex),
+            AnswerText(daily.Type, options, mine),
             clock.ToLocal(mine.AnsweredAt),
-            Option(options, partner.OptionIndex),
+            AnswerText(daily.Type, options, partner),
             clock.ToLocal(partner.AnsweredAt),
             daily.RewardPoints,
-            mine.OptionIndex == partner.OptionIndex);
+            AnswerValuesEqual(daily.Type, ToAnswerValue(mine), ToAnswerValue(partner)));
     }
 
     private static string[] ReadOptions(string json) => JsonSerializer.Deserialize<string[]>(json) ?? [];
 
     private static string Option(string[] options, int index) =>
         index >= 0 && index < options.Length ? options[index] : "（选项已失效）";
+
+    private static string AnswerText(AffinityQuestionType type, string[] options, AffinityAnswer answer) {
+        var value = ToAnswerValue(answer);
+        return type == AffinityQuestionType.OpenEnded
+            ? value.Text ?? string.Empty
+            : string.Join("、", value.SelectedOptionIndexes.Select(index => Option(options, index)));
+    }
+
+    private static AffinityAnswerValue ToAnswerValue(AffinityAnswer answer) => new(
+        NormalizeSelection(JsonSerializer.Deserialize<int[]>(answer.SelectedOptionIndexesJson) ?? []),
+        answer.TextAnswer);
+
+    private static int[] NormalizeSelection(IEnumerable<int> optionIndexes) => [.. optionIndexes.Distinct().Order()];
+
+    private static AffinityAnswerValue? NormalizeSubmission(
+        AffinityQuestionType type,
+        AffinityAnswerSubmission submission,
+        int optionCount) {
+        var selected = NormalizeSelection(submission.SelectedOptionIndexes ?? []);
+        var text = (submission.Text ?? string.Empty).Trim();
+        var optionsAreValid = selected.All(index => index >= 0 && index < optionCount);
+
+        return type switch {
+            AffinityQuestionType.SingleChoice when optionsAreValid && selected.Length == 1 && text.Length == 0 =>
+                new AffinityAnswerValue(selected, null),
+            AffinityQuestionType.MultipleChoice when optionsAreValid && selected.Length > 0 && text.Length == 0 =>
+                new AffinityAnswerValue(selected, null),
+            AffinityQuestionType.OpenEnded when selected.Length == 0 && text.Length is >= 1 and <= 1000 =>
+                new AffinityAnswerValue([], text),
+            _ => null
+        };
+    }
+
+    private static bool AnswerValuesEqual(
+        AffinityQuestionType type,
+        AffinityAnswerValue first,
+        AffinityAnswerValue second) => type switch {
+            AffinityQuestionType.SingleChoice or AffinityQuestionType.MultipleChoice =>
+                first.SelectedOptionIndexes.SequenceEqual(second.SelectedOptionIndexes),
+            AffinityQuestionType.OpenEnded => string.Equals(first.Text, second.Text, StringComparison.Ordinal),
+            _ => false
+        };
+
+    private static bool AnswersMatch(AffinityDailyQuestion daily) {
+        var answers = daily.Answers.Take(2).ToArray();
+        return answers.Length == 2
+            && AnswerValuesEqual(daily.Type, ToAnswerValue(answers[0]), ToAnswerValue(answers[1]));
+    }
 
     private static List<string> NormalizeOptions(IEnumerable<string> options) => [.. options
         .Select(item => item.Trim())

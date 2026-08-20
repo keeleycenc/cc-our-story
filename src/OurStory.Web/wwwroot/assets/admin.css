@@ -1135,6 +1135,7 @@ h2 > .push-spinner[hidden] { display: none }
 .affinity-admin-empty strong { color: var(--ink); font: 400 18px var(--serif) }
 .affinity-admin-empty p { margin: 0; color: var(--faint); font-size: 11px }
 .affinity-editor-layout .editor-body > .admin-panel { min-height: 620px }
+.affinity-options-container[hidden] { display: none }
 .affinity-options-field { margin-bottom: 0 }
 .affinity-seal-panel { border-color: color-mix(in srgb, var(--pink) 25%, var(--line)); background: linear-gradient(145deg, var(--surface), var(--pink-softer)) }
 .affinity-seal-panel ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none }
