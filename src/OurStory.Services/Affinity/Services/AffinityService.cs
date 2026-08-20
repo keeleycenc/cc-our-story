@@ -89,9 +89,21 @@ internal sealed class AffinityService(
 
         var daily = await db.AffinityDailyQuestions
             .Include(item => item.Answers)
-            .FirstOrDefaultAsync(item => item.Id == dailyQuestionId && item.Day == clock.TodayKey, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == dailyQuestionId, cancellationToken);
         if (daily is null) {
             return AffinitySubmitResult.InvalidQuestion;
+        }
+
+        if (!string.Equals(daily.Day, clock.TodayKey, StringComparison.Ordinal)) {
+            var pendingId = await db.AffinityDailyQuestions
+                .Where(item => item.Answers.Count == 1)
+                .OrderByDescending(item => item.CreatedAt)
+                .ThenByDescending(item => item.Id)
+                .Select(item => (int?)item.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (pendingId != daily.Id) {
+                return AffinitySubmitResult.InvalidQuestion;
+            }
         }
 
         var options = ReadOptions(daily.OptionsJson);
@@ -255,6 +267,32 @@ internal sealed class AffinityService(
 
     private async Task<AffinityDailyQuestion?> GetOrCreateTodayAsync(CancellationToken cancellationToken) {
         var day = clock.TodayKey;
+
+        // 一方已经回答的题目不能因跨天被替换；它会一直作为当前题等待另一方完成。
+        var pending = await DailyQuery()
+            .Where(item => item.Answers.Count == 1)
+            .OrderByDescending(item => item.CreatedAt)
+            .ThenByDescending(item => item.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (pending is not null) {
+            return pending;
+        }
+
+        // 跨天题在今天由第二个人完成后，当天继续停留在揭晓状态，次日再换新题。
+        var todayStart = clock.ToUtc(clock.Today.ToDateTime(TimeOnly.MinValue));
+        var tomorrowStart = clock.ToUtc(clock.Today.AddDays(1).ToDateTime(TimeOnly.MinValue));
+        var completedToday = await DailyQuery()
+            .Where(item => item.Answers.Count >= 2 && item.Answers.Any(answer =>
+                answer.AnsweredAt >= todayStart && answer.AnsweredAt < tomorrowStart))
+            .ToListAsync(cancellationToken);
+        var justRevealed = completedToday
+            .OrderByDescending(item => item.Answers.Max(answer => answer.AnsweredAt))
+            .ThenByDescending(item => item.Id)
+            .FirstOrDefault();
+        if (justRevealed is not null) {
+            return justRevealed;
+        }
+
         var existing = await DailyQuery().FirstOrDefaultAsync(item => item.Day == day, cancellationToken);
         if (existing is not null) {
             return existing;

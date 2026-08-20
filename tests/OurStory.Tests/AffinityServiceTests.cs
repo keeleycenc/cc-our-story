@@ -149,6 +149,85 @@ public class AffinityServiceTests {
     }
 
     [Fact]
+    public async Task 一方作答的题目跨天后继续等待且完成当天保持揭晓() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        _ = await service.CreateQuestionAsync(Question(), boyId);
+        _ = await service.CreateQuestionAsync(Question(text: "第二道题"), boyId);
+
+        var firstDay = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        Assert.Equal(
+            AffinitySubmitResult.Accepted,
+            await service.SubmitAsync(firstDay.DailyQuestionId, Selection(0), boyId, UserRole.Boy));
+
+        var daily = await harness.Db.AffinityDailyQuestions.SingleAsync(item => item.Id == firstDay.DailyQuestionId);
+        daily.Day = TestDoubles.Clock().Today.AddDays(-1).ToString("yyyy-MM-dd");
+        _ = await harness.Db.SaveChangesAsync();
+
+        var carried = (await service.GetDashboardAsync(girlId, UserRole.Girl)).Today!;
+        Assert.Equal(firstDay.DailyQuestionId, carried.DailyQuestionId);
+        Assert.Equal(1, await harness.Db.AffinityDailyQuestions.CountAsync());
+        Assert.Equal(
+            AffinitySubmitResult.Accepted,
+            await service.SubmitAsync(carried.DailyQuestionId, Selection(1), girlId, UserRole.Girl));
+
+        var revealed = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        Assert.Equal(firstDay.DailyQuestionId, revealed.DailyQuestionId);
+        Assert.True(revealed.IsRevealed);
+        Assert.Equal(1, await harness.Db.AffinityDailyQuestions.CountAsync());
+
+        var completed = await harness.Db.AffinityDailyQuestions
+            .Include(item => item.Answers)
+            .SingleAsync(item => item.Id == firstDay.DailyQuestionId);
+        foreach (var answer in completed.Answers) {
+            answer.AnsweredAt = answer.AnsweredAt.AddDays(-1);
+        }
+
+        _ = await harness.Db.SaveChangesAsync();
+
+        var nextDay = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        Assert.NotEqual(firstDay.DailyQuestionId, nextDay.DailyQuestionId);
+        Assert.Equal(2, await harness.Db.AffinityDailyQuestions.CountAsync());
+    }
+
+    [Fact]
+    public async Task 空题库不会创建每日题并返回等待添加题目状态() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+
+        var dashboard = await service.GetDashboardAsync(boyId, UserRole.Boy);
+
+        Assert.Null(dashboard.Today);
+        Assert.Equal("等待添加题目", await service.GetTodayStatusAsync(boyId, UserRole.Boy));
+    }
+
+    [Fact]
+    public async Task 题库用尽后返回空状态供页面显示回退卡片() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        _ = await service.CreateQuestionAsync(Question(), boyId);
+        var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        _ = await service.SubmitAsync(daily.DailyQuestionId, Selection(0), boyId, UserRole.Boy);
+        _ = await service.SubmitAsync(daily.DailyQuestionId, Selection(1), girlId, UserRole.Girl);
+
+        var used = await harness.Db.AffinityDailyQuestions
+            .Include(item => item.Answers)
+            .SingleAsync(item => item.Id == daily.DailyQuestionId);
+        used.Day = TestDoubles.Clock().Today.AddDays(-1).ToString("yyyy-MM-dd");
+        foreach (var answer in used.Answers) {
+            answer.AnsweredAt = answer.AnsweredAt.AddDays(-1);
+        }
+
+        _ = await harness.Db.SaveChangesAsync();
+
+        Assert.Null((await service.GetDashboardAsync(boyId, UserRole.Boy)).Today);
+        Assert.Equal("等待添加题目", await service.GetTodayStatusAsync(boyId, UserRole.Boy));
+    }
+
+    [Fact]
     public async Task 多选答案忽略选择顺序并按完整集合判断默契() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();
