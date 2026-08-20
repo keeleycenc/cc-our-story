@@ -96,6 +96,7 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
         _ = services.AddSingleton<IMarkdownRenderer, MarkdownRenderer>();
         _ = services.AddScoped<IAttachmentService, AttachmentService>();
+        _ = services.AddScoped<IMediaLibraryService, MediaLibraryService>();
         _ = services.AddSingleton<IThumbnailService, ThumbnailService>();
 
         return services;

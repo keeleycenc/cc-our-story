@@ -9,6 +9,15 @@
 @if (!string.IsNullOrEmpty(Model.Error))
 {
     <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    @if (Model.References.Count > 0)
+    {
+        <ul class="media-references">
+            @foreach (var reference in Model.References)
+            {
+                <li><strong>@reference.Area</strong><span>@reference.Description</span><a href="@reference.EditUrl">去处理</a></li>
+            }
+        </ul>
+    }
 }
 
 <div class="admin-panel">
@@ -33,11 +42,7 @@
 <div class="admin-panel">
     <h2>@Icon("image")最近上传</h2>
 
-    @if (!Model.IsLocal)
-    {
-        <p class="admin-empty">附件存在 OSS 上，这里不列清单，去 Bucket 里看就好。</p>
-    }
-    else if (Model.Items.Items.Count == 0)
+    @if (Model.Items.Items.Count == 0)
     {
         <p class="admin-empty">还没有上传过图片。</p>
     }
@@ -56,8 +61,23 @@
                     <figcaption>
                         <span class="media-name" title="@item.Name">@item.Name</span>
                         <span class="media-foot">
-                            <span>@item.SizeText</span>
-                            <button class="media-copy" type="button" data-copy="@item.Url">@Icon("copy")<span>复制链接</span></button>
+                            <span class="media-meta">
+                                <span>@item.SizeText</span>
+                                <time class="media-uploaded" datetime="@item.UploadedAt.ToString("O")" title="上传于 @item.UploadedAtText">
+                                    <span class="media-uploaded-full">@item.UploadedAtText</span>
+                                    <span class="media-uploaded-short">@item.UploadedAtShortText</span>
+                                </time>
+                            </span>
+                            <span class="media-actions">
+                                <button class="media-copy" type="button" data-copy="@item.Url" title="复制图片链接">@Icon("copy")<span aria-live="polite">复制</span></button>
+                                <form method="post" asp-page-handler="Delete"
+                                      data-confirm-title="删除图片"
+                                      data-confirm="删除后无法恢复，确定继续吗？"
+                                      data-confirm-ok="删除">
+                                    <input type="hidden" name="objectKey" value="@item.ObjectKey">
+                                    <button class="media-delete" type="submit" title="删除图片">@Icon("trash-2")<span>删除</span></button>
+                                </form>
+                            </span>
                         </span>
                     </figcaption>
                 </figure>

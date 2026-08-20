@@ -32,9 +32,21 @@ public interface IFileStorage {
     Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步列出当前存储中的附件，供后台图片库展示
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>一个异步操作任务结果，包含所有附件的列表</returns>
+    Task<IReadOnlyList<StoredFile>> ListAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 拿到对外可访问的完整地址
     /// </summary>
     /// <param name="objectKey">对象键</param>
     /// <returns>附件公开访问完整地址</returns>
     string PublicUrl(string objectKey);
 }
+
+/// <summary>
+/// 存储中的一个附件
+/// </summary>
+public sealed record StoredFile(string ObjectKey, long Size, DateTimeOffset LastModified);

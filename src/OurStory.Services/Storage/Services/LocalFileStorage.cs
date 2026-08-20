@@ -50,6 +50,22 @@ public class LocalFileStorage(
         }
     }
 
+    public Task<IReadOnlyList<StoredFile>> ListAsync(CancellationToken cancellationToken = default) {
+        if (!Directory.Exists(paths.UploadsRoot)) {
+            return Task.FromResult<IReadOnlyList<StoredFile>>([]);
+        }
+
+        var files = new DirectoryInfo(paths.UploadsRoot)
+            .EnumerateFiles("*", SearchOption.AllDirectories)
+            .Select(file => new StoredFile(
+                Path.GetRelativePath(paths.UploadsRoot, file.FullName).Replace('\\', '/'),
+                file.Length,
+                file.LastWriteTimeUtc))
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<StoredFile>>(files);
+    }
+
     public string PublicUrl(string objectKey) =>
         $"{paths.PublicBasePath.TrimEnd('/')}/{EncodeKey(objectKey)}";
 

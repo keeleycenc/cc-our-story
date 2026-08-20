@@ -28,6 +28,14 @@ public interface IThumbnailService {
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>异步操作任务结果，宽高；原图不存在或读不出来时返回 null</returns>
     Task<ImageSize?> MeasureAsync(string objectKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 异步删除指定原图生成的全部本地派生图和尺寸缓存
+    /// </summary>
+    /// <param name="objectKey">原图对象键</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示一个异步操作任务</returns>
+    Task ClearAsync(string objectKey, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

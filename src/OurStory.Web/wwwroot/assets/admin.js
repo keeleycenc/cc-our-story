@@ -246,8 +246,12 @@
         document.body.removeChild(holder);
       }
 
-      label.textContent = ok ? '已复制' : '复制不了，手动选一下';
-      setTimeout(() => { label.textContent = original; }, 1600);
+      label.textContent = ok ? '已复制' : '复制失败';
+      button.classList.toggle('is-copied', ok);
+      setTimeout(() => {
+        label.textContent = original;
+        button.classList.remove('is-copied');
+      }, 1600);
     });
   });
 

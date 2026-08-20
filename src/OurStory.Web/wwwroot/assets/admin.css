@@ -1405,6 +1405,7 @@ h2 > .push-spinner[hidden] { display: none }
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px }
 
 .media-item {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
     margin: 0;
@@ -1471,7 +1472,7 @@ h2 > .push-spinner[hidden] { display: none }
 
 @keyframes skeleton-sweep { from { background-position: 140% 0 } to { background-position: -40% 0 } }
 
-.media-item figcaption { display: grid; gap: 3px; padding: 10px 12px 11px }
+.media-item figcaption { display: grid; gap: 7px; padding: 10px 12px 11px }
 
 /* 文件名是一串哈希，一行放不下就省略号收掉，完整地址挂在 title 和复制按钮上 */
 .media-name {
@@ -1482,7 +1483,14 @@ h2 > .push-spinner[hidden] { display: none }
     white-space: nowrap;
 }
 
-.media-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--faint); font-size: 11px }
+.media-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; color: var(--faint); font-size: 11px }
+
+.media-meta { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 8px; min-width: 0 }
+.media-uploaded { color: var(--faint); white-space: nowrap }
+.media-uploaded-short { display: none }
+
+.media-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px }
+.media-actions form { display: flex; min-width: 0; margin: 0 }
 
 .media-copy {
     display: inline-flex;
@@ -1499,7 +1507,39 @@ h2 > .push-spinner[hidden] { display: none }
 }
 
 .media-copy:hover { border-color: var(--pink); color: var(--pink-dark) }
+.media-copy.is-copied { border-color: var(--pink); background: var(--pink-soft); color: var(--pink-dark) }
 .media-copy .icon { font-size: 12px }
+
+.media-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border: 1px solid color-mix(in srgb, #d33 38%, var(--line));
+    border-radius: 8px;
+    background: none;
+    color: #d33;
+    font: 11px var(--sans);
+    cursor: pointer;
+    transition: border-color .18s, background .18s;
+}
+
+.media-copy, .media-delete { justify-content: center; width: 100%; min-height: 30px; white-space: nowrap }
+
+.media-delete:hover { border-color: #d33; background: color-mix(in srgb, #d33 8%, transparent) }
+.media-delete .icon { font-size: 12px }
+
+@container (max-width: 190px) {
+    .media-item figcaption { padding: 9px 10px 10px }
+    .media-uploaded-full { display: none }
+    .media-uploaded-short { display: inline }
+}
+
+.media-references { display: grid; gap: 7px; margin: -4px 0 18px; padding: 0; list-style: none }
+.media-references li { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface) }
+.media-references strong { color: var(--ink); font-size: 12px }
+.media-references span { flex: 1; color: var(--muted); font-size: 12px }
+.media-references a { color: var(--pink-dark); font-size: 12px; text-decoration: none }
 
 /* 12. 登录页 ------------------------------------------------------------- */
 body.auth-page {

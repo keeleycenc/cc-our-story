@@ -178,6 +178,19 @@ public sealed class ThumbnailServiceTests : IDisposable {
         Assert.True(File.Exists(preview));
     }
 
+    /// <summary>原图删除后，两档派生图都不能留在缓存目录里。</summary>
+    [Fact]
+    public async Task 清理会删除这张图的全部派生缓存() {
+        Write(Key, 2000, 1500);
+        var cover = await _service.EnsureAsync(Key, ImageVariant.Cover);
+        var preview = await _service.EnsureAsync(Key, ImageVariant.Preview);
+
+        await _service.ClearAsync(Key);
+
+        Assert.False(File.Exists(cover));
+        Assert.False(File.Exists(preview));
+    }
+
     /// <summary>正文里的图要先占好位置，所以得量得出原图尺寸。</summary>
     [Fact]
     public async Task 量得出原图尺寸() {

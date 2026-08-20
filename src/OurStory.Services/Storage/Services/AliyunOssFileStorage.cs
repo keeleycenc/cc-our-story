@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 
 namespace OurStory.Services.Storage;
 
@@ -49,6 +50,58 @@ public class AliyunOssFileStorage(
     public async Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default) {
         using var request = CreateRequest(HttpMethod.Delete, objectKey, string.Empty, []);
         return await Send(request, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StoredFile>> ListAsync(CancellationToken cancellationToken = default) {
+        var files = new List<StoredFile>();
+        var prefix = ObjectKeyFactory.NormalizePrefix(configuration.Storage.Prefix).TrimEnd('/') + "/";
+        string? marker = null;
+
+        do {
+            var query = $"?prefix={Uri.EscapeDataString(prefix)}&max-keys=1000";
+            if (!string.IsNullOrEmpty(marker)) {
+                query += $"&marker={Uri.EscapeDataString(marker)}";
+            }
+
+            using var request = CreateRequest(HttpMethod.Get, string.Empty, string.Empty, []);
+            request.RequestUri = new Uri(ApiUrl(string.Empty) + query);
+
+            var client = httpClientFactory.CreateClient(HttpClientName);
+            try {
+                using var response = await client.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode) {
+                    var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                    logger.LogError("OSS GET 列表失败（{Status}）：{Body}", (int)response.StatusCode, body);
+                    return [];
+                }
+
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                var document = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken);
+                var contents = document.Descendants().Where(element => element.Name.LocalName == "Contents").ToList();
+
+                foreach (var content in contents) {
+                    var key = Value(content, "Key");
+                    if (string.IsNullOrEmpty(key) || key.EndsWith('/')) {
+                        continue;
+                    }
+
+                    _ = long.TryParse(Value(content, "Size"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var size);
+                    _ = DateTimeOffset.TryParse(Value(content, "LastModified"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var modified);
+                    files.Add(new StoredFile(key, size, modified));
+                }
+
+                var truncated = string.Equals(Value(document.Root, "IsTruncated"), "true", StringComparison.OrdinalIgnoreCase);
+                marker = truncated ? Value(document.Root, "NextMarker") : null;
+                if (truncated && string.IsNullOrEmpty(marker)) {
+                    marker = contents.Select(content => Value(content, "Key")).LastOrDefault(key => !string.IsNullOrEmpty(key));
+                }
+            } catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or System.Xml.XmlException) {
+                logger.LogError(exception, "OSS 图片列表读取失败");
+                return [];
+            }
+        } while (!string.IsNullOrEmpty(marker));
+
+        return files;
     }
 
     public string PublicUrl(string objectKey) => $"{configuration.Storage.Oss.PublicBaseUrl.TrimEnd('/')}/{LocalFileStorage.EncodeKey(objectKey)}";
@@ -116,6 +169,9 @@ public class AliyunOssFileStorage(
 
         return new Uri($"{parsed.Scheme}://{host}/{LocalFileStorage.EncodeKey(objectKey)}");
     }
+
+    private static string? Value(XElement? parent, string name) =>
+        parent?.Elements().FirstOrDefault(element => element.Name.LocalName == name)?.Value;
 
     #endregion
 }

@@ -85,9 +85,10 @@ internal sealed class ThumbnailService(
             return null;
         }
 
-        var key = $"image-size:{source}:{File.GetLastWriteTimeUtc(source).Ticks}";
-        if (cache.TryGetValue<ImageSize?>(key, out var hit)) {
-            return hit;
+        var key = SizeCacheKey(objectKey);
+        var stamp = File.GetLastWriteTimeUtc(source).Ticks;
+        if (cache.TryGetValue<CachedImageSize>(key, out var hit) && hit is not null && hit.Stamp == stamp) {
+            return hit.Size;
         }
 
         ImageSize? size = null;
@@ -103,8 +104,35 @@ internal sealed class ThumbnailService(
             logger.LogWarning(exception, "读取图片尺寸失败：{ObjectKey}", objectKey);
         }
 
-        _ = cache.Set(key, size, TimeSpan.FromHours(12));
+        _ = cache.Set(key, new CachedImageSize(stamp, size), TimeSpan.FromHours(12));
         return size;
+    }
+
+    public async Task ClearAsync(string objectKey, CancellationToken cancellationToken = default) {
+        if (!ObjectKeyFactory.IsSafe(objectKey)) {
+            return;
+        }
+
+        cache.Remove(SizeCacheKey(objectKey));
+        await Gate.WaitAsync(cancellationToken);
+
+        try {
+            if (!Directory.Exists(paths.ThumbnailsRoot)) {
+                return;
+            }
+
+            var relative = Relative(objectKey) + ".webp";
+            foreach (var variant in Directory.EnumerateDirectories(paths.ThumbnailsRoot)) {
+                var cached = Path.Combine(variant, relative);
+                if (File.Exists(cached)) {
+                    File.Delete(cached);
+                }
+            }
+        } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
+            logger.LogWarning(exception, "清理图片派生缓存失败：{ObjectKey}", objectKey);
+        } finally {
+            _ = Gate.Release();
+        }
     }
 
     private static bool Swapped(ImageInfo info) =>
@@ -126,4 +154,8 @@ internal sealed class ThumbnailService(
 
     private static bool IsFresh(string cached, string source) =>
         File.Exists(cached) && File.GetLastWriteTimeUtc(cached) >= File.GetLastWriteTimeUtc(source);
+
+    private static string SizeCacheKey(string objectKey) => $"image-size:{objectKey.Replace('\\', '/').Trim('/')}";
+
+    private sealed record CachedImageSize(long Stamp, ImageSize? Size);
 }

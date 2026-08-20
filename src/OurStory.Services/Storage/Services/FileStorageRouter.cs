@@ -30,5 +30,8 @@ internal sealed class FileStorageRouter(
     public Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default) =>
         Current.DeleteAsync(objectKey, cancellationToken);
 
+    public Task<IReadOnlyList<StoredFile>> ListAsync(CancellationToken cancellationToken = default) =>
+        Current.ListAsync(cancellationToken);
+
     public string PublicUrl(string objectKey) => Current.PublicUrl(objectKey);
 }
