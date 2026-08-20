@@ -70,10 +70,7 @@
                             }
                         </fieldset>
                         <button class="affinity-button" type="submit">藏好我的答案 @Icon("arrow-right")</button>
-                        @if (today.RewardPoints > 0)
-                        {
-                            <span class="answer-reward">@Icon("coins")完成作答可获得 @today.RewardPoints 心意</span>
-                        }
+                        <span class="answer-reward">@Icon("coins")完成作答可获得 @today.RewardPoints 心意</span>
                         <small>@Icon("lock")提交后不能修改；在 TA 完成前，彼此都看不到答案</small>
                     </form>
                 }
@@ -89,10 +86,7 @@
                             {
                                 <span class="my-hidden-answer">@Icon("clock")作答于 @answeredAt.ToString("HH:mm")</span>
                             }
-                            @if (today.RewardPoints > 0)
-                            {
-                                <span class="my-hidden-answer">@Icon("coins")已获得 @today.RewardPoints 心意</span>
-                            }
+                            <span class="my-hidden-answer">@Icon("coins")已获得 @today.RewardPoints 心意</span>
                         </div>
                     </div>
                 }
@@ -108,10 +102,7 @@
                                 {
                                     <small>@Icon("clock")@myTime.ToString("HH:mm") 作答</small>
                                 }
-                                @if (today.RewardPoints > 0)
-                                {
-                                    <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
-                                }
+                                <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
                             </div>
                             <span class="reveal-link">@(today.IsMatch ? Icon("heart") : Icon("sparkles"))</span>
                             <div>
@@ -121,10 +112,7 @@
                                 {
                                     <small>@Icon("clock")@partnerTime.ToString("HH:mm") 作答</small>
                                 }
-                                @if (today.RewardPoints > 0)
-                                {
-                                    <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
-                                }
+                                <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
                             </div>
                         </div>
                         <p>@(today.IsMatch ? "你们想到一起去了，默契 +1" : "原来 TA 是这样想的，又多懂彼此一点啦")</p>

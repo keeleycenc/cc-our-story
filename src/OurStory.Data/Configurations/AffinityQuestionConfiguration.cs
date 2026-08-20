@@ -14,6 +14,9 @@ public class AffinityQuestionConfiguration : IEntityTypeConfiguration<AffinityQu
         _ = builder.Property(item => item.Text).HasMaxLength(300).IsRequired();
         _ = builder.Property(item => item.Category).HasMaxLength(30).IsRequired();
         _ = builder.HasIndex(item => item.IsActive);
+        _ = builder.HasIndex(item => item.CreatedByUserId);
+        _ = builder.HasOne(item => item.CreatedByUser).WithMany()
+            .HasForeignKey(item => item.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

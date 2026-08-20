@@ -679,8 +679,22 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .field textarea { resize: vertical; min-height: 110px }
 
-/* iOS 给日期时间控件配了一套自带外观：宽度按内容撑开、文字还居中，
-   窄屏里能直接顶出卡片右边。关掉外观，宽度就老实跟着 100% 走了。 */
+.field select {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 43px;
+    padding-right: 42px;
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='m2 2 5 5 5-5' stroke='%23A694A9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px 9px;
+    cursor: pointer;
+}
+
+.field select::-ms-expand { display: none }
+.field select option { background: var(--surface); color: var(--ink) }
+
 .field input[type="datetime-local"],
 .field input[type="date"],
 .field input[type="time"],
@@ -1109,7 +1123,7 @@ h2 > .push-spinner[hidden] { display: none }
 .sealed-question-card header div > span { color: var(--faint); font: 700 8px Arial; letter-spacing: .13em }
 .sealed-question-card header strong { color: var(--ink); font: 400 16px var(--serif) }
 .affinity-sealed-tag { background: var(--pink-soft); color: var(--pink-dark) }
-.sealed-question-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 19px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--line) }
+.sealed-question-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; margin: 0 19px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--line) }
 .sealed-question-summary > span { display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 2px 6px; min-width: 0; padding: 12px; background: var(--surface) }
 .sealed-question-summary .icon { grid-row: 1 / 3; color: var(--pink-dark); font-size: 14px }
 .sealed-question-summary small { color: var(--faint); font-size: 8px }
@@ -1760,7 +1774,7 @@ body.auth-page {
     .sealed-question-grid { grid-template-columns: 1fr }
     .affinity-toolbar { align-items: stretch; flex-direction: column }
     .affinity-toolbar > .btn { justify-content: center }
-    .sealed-question-summary { grid-template-columns: 1fr }
+    .sealed-question-summary { grid-template-columns: repeat(2, 1fr) }
     body.admin {
         display: flex;
         flex-direction: column;

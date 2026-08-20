@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core;
 using OurStory.Core.Models;
 using OurStory.Services.Affinity;
+using OurStory.Web.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace OurStory.Web.Areas.Admin.Pages.Affinity;
@@ -39,6 +40,10 @@ public class CreateModel(IAffinityService affinity) : PageModel {
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>页面响应结果</returns>
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken) {
+        if (User.UserId() is not { } creatorUserId) {
+            return Challenge();
+        }
+
         var options = SplitOptions(Input.Options);
         if (options.Count is < 2 or > 8) {
             ModelState.AddModelError(nameof(Input.Options), "请填写 2 到 8 个不重复选项，每行一个");
@@ -56,7 +61,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
                 Type = Input.Type,
                 Options = options,
                 RewardPoints = Input.RewardPoints
-            }, cancellationToken);
+            }, creatorUserId, cancellationToken);
         } catch (ArgumentException exception) {
             Error = exception.Message;
             return Page();
@@ -90,8 +95,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
         /// <summary>
         /// 获取或设置题目分类
         /// </summary>
-        [Required(ErrorMessage = "请填写分类")]
-        [StringLength(30, ErrorMessage = "分类不能超过 30 字")]
+        [Required(ErrorMessage = "请选择分类")]
         public string Category { get; set; } = "日常";
 
         /// <summary>
@@ -109,7 +113,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
         /// <summary>
         /// 获取或设置答题奖励值
         /// </summary>
-        [Range(HeartPointRules.MinReward, HeartPointRules.MaxReward, ErrorMessage = "答题奖励应为 0 到 100 心意")]
+        [Range(HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward, ErrorMessage = "答题奖励应为 1 到 100 心意")]
         public int RewardPoints { get; set; } = 5;
     }
 }

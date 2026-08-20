@@ -13,6 +13,11 @@ public static class HeartPointRules {
     public const int MinReward = 0;
 
     /// <summary>
+    /// 心有灵犀每次答题必须提供的最低奖励
+    /// </summary>
+    public const int MinAffinityReward = 1;
+
+    /// <summary>
     /// 单次奖励上限
     /// </summary>
     public const int MaxReward = 100;

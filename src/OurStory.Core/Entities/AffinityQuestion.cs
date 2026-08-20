@@ -43,6 +43,16 @@ public class AffinityQuestion {
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    /// 获取或设置创建者标识。系统预置题目没有创建者
+    /// </summary>
+    public int? CreatedByUserId { get; set; }
+
+    /// <summary>
+    /// 获取或设置创建者
+    /// </summary>
+    public User? CreatedByUser { get; set; }
+
+    /// <summary>
     /// 获取或设置创建时间
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -58,7 +68,7 @@ public class AffinityQuestion {
     public ICollection<AffinityQuestionOption> Options { get; set; } = [];
 
     /// <summary>
-    /// 获取或设置每日采用题目集合
+    /// 获取或设置题目的采用记录。每道题最多采用一次
     /// </summary>
     public ICollection<AffinityDailyQuestion> DailyQuestions { get; set; } = [];
 }

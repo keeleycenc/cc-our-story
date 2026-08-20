@@ -83,6 +83,7 @@ public sealed record AffinityQuestionCard(
     int OptionCount,
     int UsedCount,
     int RewardPoints,
+    string CreatorName,
     DateTime CreatedAt);
 
 /// <summary>

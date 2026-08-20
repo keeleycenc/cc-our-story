@@ -50,30 +50,31 @@
 
                 <label class="field">
                     <span>分类</span>
-                    <input asp-for="Input.Category" maxlength="30" list="affinity-categories" required>
-                    <datalist id="affinity-categories">
-                        <option value="日常"></option><option value="爱情"></option><option value="回忆"></option>
-                        <option value="未来"></option><option value="吃喝玩乐"></option><option value="二选一"></option>
-                        <option value="脑洞"></option><option value="猜 TA"></option>
-                    </datalist>
+                    <select asp-for="Input.Category" required>
+                        @foreach (var category in AffinityQuestionCategories.All)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                    <small>使用固定分类，方便后续按题型和主题扩展。</small>
                 </label>
 
                 <div class="field slider-field" data-slider-field>
                     <span class="slider-head">答题奖励 <b data-slider-value data-slider-unit=" 心意">@Model.Input.RewardPoints 心意</b></span>
                     <input asp-for="Input.RewardPoints" type="range"
-                           min="@HeartPointRules.MinReward" max="@HeartPointRules.MaxReward" step="1" data-slider>
-                    <span class="slider-scale"><i>@HeartPointRules.MinReward</i><i>@HeartPointRules.MaxReward</i></span>
-                    <small>每个人完成当天题目时各获得一次；设为 0 可关闭本题奖励</small>
+                           min="@HeartPointRules.MinAffinityReward" max="@HeartPointRules.MaxReward" step="1" data-slider>
+                    <span class="slider-scale"><i>@HeartPointRules.MinAffinityReward</i><i>@HeartPointRules.MaxReward</i></span>
+                    <small>每个人完成当天题目时各获得一次</small>
                 </div>
             </div>
 
             <div class="admin-panel affinity-seal-panel">
                 <h2>@Icon("lock")封存确认</h2>
                 <ul>
-                    <li>创建后立即进入每日抽题池</li>
+                    <li>题目按创建顺序等待使用</li>
                     <li>后台不再显示题干和选项</li>
                     <li>不能编辑或删除已封存题目</li>
-                    <li>每日题仍会保存独立快照</li>
+                    <li>每道题只会成为一次每日题</li>
                 </ul>
                 <div class="form-actions">
                     <button class="btn" type="submit">@Icon("lock")确认并封存</button>

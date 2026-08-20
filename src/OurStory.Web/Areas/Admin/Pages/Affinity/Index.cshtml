@@ -20,7 +20,7 @@
         <div class="admin-empty affinity-admin-empty">
             <span>@Icon("sparkles")</span>
             <strong>暂无封存题目</strong>
-            <p>创建题目后将自动加入每日题库，并在使用时保持内容安全。</p>
+            <p>创建题目后会按顺序等待使用，并始终保持内容安全。</p>
         </div>
     }
     else
@@ -42,11 +42,12 @@
                         <span>@Icon("tag")<small>分类</small><strong>@question.Category</strong></span>
                         <span>@Icon("list-checks")<small>选项</small><strong>@question.OptionCount 项</strong></span>
                         <span>@Icon("coins")<small>奖励</small><strong>@question.RewardPoints 心意</strong></span>
+                        <span>@Icon("user-round")<small>创建者</small><strong>@question.CreatorName</strong></span>
                     </div>
 
                     <footer>
                         <span>@Icon("calendar-days")创建于 @question.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
-                        <span>@Icon("history")已进入每日题 @question.UsedCount 次</span>
+                        <span>@Icon(question.UsedCount > 0 ? "circle-check" : "hourglass")@(question.UsedCount > 0 ? "已使用" : "等待使用")</span>
                         <span>@Icon("sparkles")@(question.Type == AffinityQuestionType.SingleChoice ? "单选题" : question.Type.ToString())</span>
                     </footer>
                 </article>

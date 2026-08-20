@@ -52,7 +52,8 @@ public interface IAffinityService {
     /// 创建并封存题目
     /// </summary>
     /// <param name="model">题目创建模型</param>
+    /// <param name="creatorUserId">创建者用户编号</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>创建后的题目信息</returns>
-    Task<AffinityQuestionCard> CreateQuestionAsync(AffinityQuestionCreateModel model, CancellationToken cancellationToken = default);
+    Task<AffinityQuestionCard> CreateQuestionAsync(AffinityQuestionCreateModel model, int creatorUserId, CancellationToken cancellationToken = default);
 }

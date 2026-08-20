@@ -9,7 +9,7 @@ using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Notifications;
-using System.Security.Cryptography;
+using OurStory.Services.Settings;
 using System.Text.Json;
 
 namespace OurStory.Services.Affinity;
@@ -18,9 +18,8 @@ internal sealed class AffinityService(
     OurStoryDbContext db,
     SiteClock clock,
     INotificationQueue notifications,
-    IHeartPointService heartPoints) : IAffinityService {
-    private const int RecentQuestionWindow = 7;
-
+    IHeartPointService heartPoints,
+    ISettingsService settings) : IAffinityService {
     public async Task<AffinityDashboard> GetDashboardAsync(
         int userId,
         UserRole role,
@@ -156,11 +155,13 @@ internal sealed class AffinityService(
                 OptionCount = item.Options.Count,
                 UsedCount = item.DailyQuestions.Count,
                 item.RewardPoints,
+                CreatorRole = item.CreatedByUser == null ? (UserRole?)null : item.CreatedByUser.Role,
                 item.CreatedAt
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var site = await settings.GetAsync(cancellationToken);
         return [.. questions.Select(item => new AffinityQuestionCard(
             item.Id,
             item.Category,
@@ -170,21 +171,28 @@ internal sealed class AffinityService(
             item.OptionCount,
             item.UsedCount,
             item.RewardPoints,
+            item.CreatorRole is { } role ? site.RoleName(role) : "系统预置",
             clock.ToLocal(item.CreatedAt)))];
     }
 
     public async Task<AffinityQuestionCard> CreateQuestionAsync(
         AffinityQuestionCreateModel model,
+        int creatorUserId,
         CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(model);
         var text = model.Text.Trim();
         var category = model.Category.Trim();
         var options = NormalizeOptions(model.Options);
+        var creatorRole = await db.Users
+            .Where(user => user.Id == creatorUserId && user.IsActive)
+            .Select(user => (UserRole?)user.Role)
+            .SingleOrDefaultAsync(cancellationToken);
         if (model.Type != AffinityQuestionType.SingleChoice
             || text.Length is < 2 or > 300
-            || category.Length is < 1 or > 30
+            || !AffinityQuestionCategories.Contains(category)
             || options.Count is < 2 or > 8
-            || model.RewardPoints is < HeartPointRules.MinReward or > HeartPointRules.MaxReward) {
+            || model.RewardPoints is < HeartPointRules.MinAffinityReward or > HeartPointRules.MaxReward
+            || creatorRole is null) {
             throw new ArgumentException("题干、分类、选项或奖励不符合要求。", nameof(model));
         }
 
@@ -196,6 +204,7 @@ internal sealed class AffinityService(
             RewardPoints = model.RewardPoints,
             IsActive = true,
             IsSealed = true,
+            CreatedByUserId = creatorUserId,
             CreatedAt = now,
             UpdatedAt = now,
             Options = [.. options.Select((option, index) => new AffinityQuestionOption {
@@ -206,6 +215,7 @@ internal sealed class AffinityService(
         _ = db.AffinityQuestions.Add(question);
         _ = await db.SaveChangesAsync(cancellationToken);
 
+        var site = await settings.GetAsync(cancellationToken);
         return new AffinityQuestionCard(
             question.Id,
             question.Category,
@@ -215,6 +225,7 @@ internal sealed class AffinityService(
             question.Options.Count,
             0,
             question.RewardPoints,
+            site.RoleName(creatorRole.Value),
             clock.ToLocal(question.CreatedAt));
     }
 
@@ -242,25 +253,16 @@ internal sealed class AffinityService(
             return existing;
         }
 
-        var recentIds = await db.AffinityDailyQuestions
-            .Where(item => item.QuestionId != null)
-            .OrderByDescending(item => item.Day)
-            .Take(RecentQuestionWindow)
-            .Select(item => item.QuestionId!.Value)
-            .ToListAsync(cancellationToken);
-
-        var candidates = await db.AffinityQuestions
-            .Where(item => item.IsActive && item.IsSealed && item.Options.Count >= 2)
+        var question = await db.AffinityQuestions
+            .Where(item => item.IsActive && item.IsSealed && item.Options.Count >= 2 && item.DailyQuestions.Count == 0)
             .Include(item => item.Options)
+            .OrderBy(item => item.CreatedAt)
+            .ThenBy(item => item.Id)
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
-        if (candidates.Count == 0) {
+            .FirstOrDefaultAsync(cancellationToken);
+        if (question is null) {
             return null;
         }
-
-        var fresh = candidates.Where(item => !recentIds.Contains(item.Id)).ToList();
-        var pool = fresh.Count > 0 ? fresh : candidates;
-        var question = pool[RandomNumberGenerator.GetInt32(pool.Count)];
         var options = question.Options.OrderBy(item => item.SortOrder).Select(item => item.Text).ToArray();
         var daily = new AffinityDailyQuestion {
             Day = day,

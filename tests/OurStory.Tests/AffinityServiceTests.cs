@@ -17,7 +17,7 @@ public class AffinityServiceTests {
         var (boyId, girlId) = await harness.SeedCoupleAsync();
         var queue = TestDoubles.Notifications();
         var service = Service(harness, queue);
-        _ = await service.CreateQuestionAsync(Question());
+        _ = await service.CreateQuestionAsync(Question(), boyId);
 
         var initial = await service.GetDashboardAsync(boyId, UserRole.Boy);
         var daily = Assert.IsType<AffinityToday>(initial.Today);
@@ -53,7 +53,7 @@ public class AffinityServiceTests {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
         var service = Service(harness);
-        _ = await service.CreateQuestionAsync(Question());
+        _ = await service.CreateQuestionAsync(Question(), boyId);
         var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
 
         Assert.Equal(AffinitySubmitResult.InvalidOption, await service.SubmitAsync(daily.DailyQuestionId, 99, boyId, UserRole.Boy));
@@ -65,14 +65,16 @@ public class AffinityServiceTests {
     [Fact]
     public async Task 创建后只返回封存元数据且没有内容管理入口() {
         await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
         var service = Service(harness);
-        var created = await service.CreateQuestionAsync(Question());
+        var created = await service.CreateQuestionAsync(Question(), boyId);
 
         var card = Assert.Single(await service.GetSealedQuestionsAsync());
         Assert.Equal(created.Id, card.Id);
         Assert.True(card.IsSealed);
         Assert.Equal(3, card.OptionCount);
         Assert.Equal(7, card.RewardPoints);
+        Assert.Equal("男主", card.CreatorName);
         Assert.Null(typeof(AffinityQuestionCard).GetProperty("Text"));
         Assert.Null(typeof(AffinityQuestionCard).GetProperty("Options"));
         Assert.DoesNotContain(typeof(IAffinityService).GetMethods(), method =>
@@ -87,7 +89,7 @@ public class AffinityServiceTests {
         var (boyId, _) = await harness.SeedCoupleAsync();
         var points = Points(harness);
         var service = Service(harness, heartPoints: points);
-        _ = await service.CreateQuestionAsync(Question());
+        _ = await service.CreateQuestionAsync(Question(), boyId);
         var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
 
         Assert.Equal(7, daily.RewardPoints);
@@ -109,6 +111,44 @@ public class AffinityServiceTests {
     }
 
     [Fact]
+    public async Task 已经成为每日题的题目不会再次使用() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        var first = await service.CreateQuestionAsync(Question(), boyId);
+        var second = await service.CreateQuestionAsync(Question(text: "周末最想去哪里？"), boyId);
+
+        _ = harness.Db.AffinityDailyQuestions.Add(new() {
+            Day = "2026-08-19",
+            QuestionId = first.Id,
+            QuestionText = "已使用题目",
+            Category = "日常",
+            Type = AffinityQuestionType.SingleChoice,
+            OptionsJson = "[\"A\",\"B\"]",
+            RewardPoints = 7
+        });
+        _ = await harness.Db.SaveChangesAsync();
+
+        var today = Assert.IsType<AffinityToday>((await service.GetDashboardAsync(boyId, UserRole.Boy)).Today);
+        Assert.Equal(second.Id, await harness.Db.AffinityDailyQuestions
+            .Where(item => item.Id == today.DailyQuestionId)
+            .Select(item => item.QuestionId!.Value)
+            .SingleAsync());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task 答题奖励必须在一到一百之间(int reward) {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateQuestionAsync(Question(reward: reward), boyId));
+    }
+
+    [Fact]
     public async Task 访客不能获取或提交答题内容() {
         await using var harness = SqliteHarness.Create();
         var service = Service(harness);
@@ -122,16 +162,18 @@ public class AffinityServiceTests {
         SqliteHarness harness,
         NotificationQueueSpy? queue = null,
         IHeartPointService? heartPoints = null) =>
-        new(harness.Db, TestDoubles.Clock(), queue ?? TestDoubles.Notifications(), heartPoints ?? TestDoubles.NoPoints());
+        new(harness.Db, TestDoubles.Clock(), queue ?? TestDoubles.Notifications(), heartPoints ?? TestDoubles.NoPoints(), new SettingsStub());
 
     private static HeartPointService Points(SqliteHarness harness) =>
         new(harness.Db, new SettingsStub(), TestDoubles.Clock());
 
-    private static AffinityQuestionCreateModel Question() => new() {
-        Text = "今晚最想一起做什么？",
+    private static AffinityQuestionCreateModel Question(
+        string text = "今晚最想一起做什么？",
+        int reward = 7) => new() {
+        Text = text,
         Category = "日常",
         Type = AffinityQuestionType.SingleChoice,
         Options = ["散步", "看电影", "吃夜宵"],
-        RewardPoints = 7
+        RewardPoints = reward
     };
 }
