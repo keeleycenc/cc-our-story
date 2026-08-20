@@ -67,7 +67,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
             return Page();
         }
 
-        TempData["Flash"] = "题目已经封存。再次打开列表时，只会看到不泄漏内容的记录信息。";
+        TempData["Flash"] = "题目已创建并经封存";
         return Redirect("/admin/affinity");
     }
 
@@ -113,7 +113,7 @@ public class CreateModel(IAffinityService affinity) : PageModel {
         /// <summary>
         /// 获取或设置答题奖励值
         /// </summary>
-        [Range(HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward, ErrorMessage = "答题奖励应为 1 到 100 心意")]
+        [Range(HeartPointRules.MinAffinityReward, HeartPointRules.MaxReward, ErrorMessage = "答题奖励应为 1 到 20 心意")]
         public int RewardPoints { get; set; } = 5;
     }
 }

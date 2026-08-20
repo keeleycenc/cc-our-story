@@ -20,5 +20,5 @@ public static class HeartPointRules {
     /// <summary>
     /// 单次奖励上限
     /// </summary>
-    public const int MaxReward = 100;
+    public const int MaxReward = 20;
 }
