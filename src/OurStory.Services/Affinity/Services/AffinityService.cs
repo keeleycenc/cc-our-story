@@ -48,7 +48,11 @@ internal sealed class AffinityService(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var matched = completed.Count(AnswersMatch);
+        var sameChoiceAnswerDays = completed.Count(item =>
+            (item.Type is AffinityQuestionType.SingleChoice or AffinityQuestionType.MultipleChoice)
+            && AnswersAreSame(item));
+        var createdQuestions = await db.AffinityQuestions
+            .CountAsync(question => question.CreatedByUserId == userId, cancellationToken);
         var total = completed.Count;
         var historyEntities = completed
             .OrderByDescending(item => item.Day)
@@ -57,7 +61,11 @@ internal sealed class AffinityService(
             .Take(pageSize)
             .ToList();
 
-        var stats = new AffinityStats(answerDays.Count, CurrentStreak(answerDays, clock.Today), total, matched);
+        var stats = new AffinityStats(
+            answerDays.Count,
+            CurrentStreak(answerDays, clock.Today),
+            sameChoiceAnswerDays,
+            createdQuestions);
         var history = historyEntities.Select(item => ToHistory(item, role)).ToList();
         return new AffinityDashboard(today, stats, new PagedList<AffinityHistoryItem>(history, page, pageSize, total));
     }
@@ -433,7 +441,7 @@ internal sealed class AffinityService(
             _ => false
         };
 
-    private static bool AnswersMatch(AffinityDailyQuestion daily) {
+    private static bool AnswersAreSame(AffinityDailyQuestion daily) {
         var answers = daily.Answers.Take(2).ToArray();
         return answers.Length == 2
             && AnswerValuesEqual(daily.Type, ToAnswerValue(answers[0]), ToAnswerValue(answers[1]));

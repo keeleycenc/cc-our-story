@@ -44,13 +44,13 @@ public class AffinityServiceTests {
 
         var revealed = await service.GetDashboardAsync(boyId, UserRole.Boy);
         Assert.True(revealed.Today!.IsRevealed);
-        Assert.True(revealed.Today.IsMatch);
+        Assert.True(revealed.Today.HasSameAnswer);
         _ = Assert.NotNull(revealed.Today.PartnerAnsweredAt);
-        Assert.Equal(1, revealed.Stats.AnsweredDays);
-        Assert.Equal(1, revealed.Stats.RevealedDays);
-        Assert.Equal(1, revealed.Stats.MatchedDays);
-        Assert.Equal(100, revealed.Stats.MatchRate);
+        Assert.Equal(1, revealed.Stats.TotalAnswers);
+        Assert.Equal(1, revealed.Stats.SameChoiceAnswerDays);
+        Assert.Equal(1, revealed.Stats.CreatedQuestions);
         var history = Assert.Single(revealed.History.Items);
+        Assert.True(history.HasSameAnswer);
         Assert.Equal(20, history.LoveDay);
         Assert.Equal(UserRole.Boy, history.CreatorRole);
         Assert.Equal(2, queue.Sent.Count);
@@ -228,7 +228,7 @@ public class AffinityServiceTests {
     }
 
     [Fact]
-    public async Task 多选答案忽略选择顺序并按完整集合判断默契() {
+    public async Task 多选答案忽略选择顺序并按完整集合统计相同答案() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();
         var service = Service(harness);
@@ -239,7 +239,8 @@ public class AffinityServiceTests {
         Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(2, 0), girlId, UserRole.Girl));
 
         var dashboard = await service.GetDashboardAsync(boyId, UserRole.Boy);
-        Assert.True(dashboard.Today!.IsMatch);
+        Assert.True(dashboard.Today!.HasSameAnswer);
+        Assert.Equal(1, dashboard.Stats.SameChoiceAnswerDays);
         Assert.Equal([0, 2], dashboard.Today.MyAnswer!.SelectedOptionIndexes);
         Assert.Equal("散步、吃夜宵", Assert.Single(dashboard.History.Items).MyAnswer);
     }
@@ -275,7 +276,8 @@ public class AffinityServiceTests {
 
         var dashboard = await service.GetDashboardAsync(boyId, UserRole.Boy);
         Assert.True(dashboard.Today!.IsRevealed);
-        Assert.True(dashboard.Today.IsMatch);
+        Assert.True(dashboard.Today.HasSameAnswer);
+        Assert.Equal(0, dashboard.Stats.SameChoiceAnswerDays);
         Assert.Equal("雨天窝在沙发看电影", dashboard.Today.MyAnswer!.Text);
         Assert.Equal("雨天窝在沙发看电影", Assert.Single(dashboard.History.Items).PartnerAnswer);
     }

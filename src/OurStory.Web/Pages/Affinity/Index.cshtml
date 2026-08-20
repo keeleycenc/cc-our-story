@@ -11,9 +11,9 @@
 <main id="main" class="affinity-page">
     <section class="affinity-hero">
         <span class="affinity-mark">@Icon("sparkles")</span>
-        <p>DAILY MIND SYNC</p>
+        <p>DAILY HEART TALK</p>
         <h1>心有灵犀</h1>
-        <span>每天一个小问题，看看你们到底有多懂彼此</span>
+        <span>每天一个小问题，离彼此更近一点</span>
         <a class="affinity-manage" href="/admin/affinity">@Icon("pen-line")管理心有灵犀</a>
     </section>
 
@@ -27,12 +27,11 @@
             <p class="affinity-notice is-error">@Icon("circle-alert")@Model.Error</p>
         }
 
-        <section class="affinity-stats" aria-label="默契统计">
-            <article class="affinity-stat is-rose"><span>@Icon("message-circle-heart")我的答题</span><strong>@stats.AnsweredDays</strong><small>个认真回答的日子</small></article>
-            <article class="affinity-stat is-gold"><span>@Icon("history")连续答题</span><strong>@stats.CurrentStreak</strong><small>天正在延续的默契</small></article>
-            <article class="affinity-stat is-mint"><span>@Icon("eye")共同揭晓</span><strong>@stats.RevealedDays</strong><small>次一起打开的答案</small></article>
-            <article class="affinity-stat is-lilac"><span>@Icon("heart")默契次数</span><strong>@stats.MatchedDays</strong><small>次想到了一起</small></article>
-            <article class="affinity-stat is-rate"><span>@Icon("sparkles")默契率</span><strong>@stats.MatchRate<small>%</small></strong><small>共同答案中的同频比例</small></article>
+        <section class="affinity-stats" aria-label="答题统计">
+            <article class="affinity-stat is-rose"><span>@Icon("message-circle-heart")累计答题</span><strong>@stats.TotalAnswers</strong><small>次认真写下自己的答案</small></article>
+            <article class="affinity-stat is-gold"><span>@Icon("history")连续答题</span><strong>@stats.CurrentStreak</strong><small>天一直在认真回答</small></article>
+            <article class="affinity-stat is-lilac"><span>@Icon("circle-check")答案相同</span><strong>@stats.SameChoiceAnswerDays</strong><small>次在选择题中选择相同</small></article>
+            <article class="affinity-stat is-mint"><span>@Icon("pen-line")我的出题</span><strong>@stats.CreatedQuestions</strong><small>道由我留给彼此的问题</small></article>
         </section>
 
         @if (today is null)
@@ -126,7 +125,7 @@
                         ? today.PartnerAnswer!.Text
                         : string.Join("、", today.PartnerAnswer!.SelectedOptionIndexes.Select(index => today.Options[index]));
                     <div class="reveal-state">
-                        <p class="reveal-title">@(today.IsMatch ? "🎉 今日默契达成" : "答案不同，也是在了解彼此")</p>
+                        <p class="reveal-title">答案已揭晓</p>
                         <div class="reveal-answers">
                             <div>
                                 <header>
@@ -138,7 +137,7 @@
                                 </header>
                                 <strong>@myAnswer</strong>
                             </div>
-                            <span class="reveal-link">@(today.IsMatch ? Icon("heart") : Icon("sparkles"))</span>
+                            <span class="reveal-link">@Icon("sparkles")</span>
                             <div>
                                 <header>
                                     <span>@Model.PartnerName</span>
@@ -150,7 +149,7 @@
                                 <strong>@partnerAnswer</strong>
                             </div>
                         </div>
-                        <p>@(today.IsMatch ? "你们想到一起去了，默契 +1" : "原来 TA 是这样想的，又多懂彼此一点啦")</p>
+                        <p>每一个答案，都在帮你们更了解彼此</p>
                     </div>
                 }
             </section>
@@ -174,7 +173,7 @@
                         var itemCreatorName = item.CreatorRole is { } itemCreatorRole
                             ? Model.Site.RoleName(itemCreatorRole)
                             : "系统预置";
-                        <article class="history-card@(item.IsMatch ? " is-match" : null)">
+                        <article class="history-card">
                             <div class="history-meta">
                                 <div class="history-origin">
                                     <time datetime="@item.Day">@item.Day.Replace("-", ".")</time>
@@ -186,7 +185,7 @@
                                         <span class="history-love-day">@Icon("clock")第 @item.LoveDay 天</span>
                                     }
                                     <span>@item.Category</span>
-                                    <b>@(item.IsMatch ? "默契" : "不同答案")</b>
+                                    <b>@(item.HasSameAnswer ? "相同答案" : "不同答案")</b>
                                 </div>
                             </div>
 

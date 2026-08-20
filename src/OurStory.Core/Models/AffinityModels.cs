@@ -34,7 +34,7 @@ public sealed record AffinityToday(
     DateTime? MyAnsweredAt,
     AffinityAnswerValue? PartnerAnswer,
     DateTime? PartnerAnsweredAt,
-    bool IsMatch) {
+    bool HasSameAnswer) {
 
     /// <summary>
     /// 获取是否已完成答题
@@ -51,15 +51,10 @@ public sealed record AffinityToday(
 /// 当前用户与双方共同答题的统计
 /// </summary>
 public sealed record AffinityStats(
-    int AnsweredDays,
+    int TotalAnswers,
     int CurrentStreak,
-    int RevealedDays,
-    int MatchedDays) {
-    /// <summary>
-    /// 获取匹配率百分比
-    /// </summary>
-    public int MatchRate => RevealedDays == 0 ? 0 : (int)Math.Round(MatchedDays * 100d / RevealedDays);
-}
+    int SameChoiceAnswerDays,
+    int CreatedQuestions);
 
 /// <summary>
 /// 双方已经揭晓的一条历史记录
@@ -76,7 +71,7 @@ public sealed record AffinityHistoryItem(
     string PartnerAnswer,
     DateTime PartnerAnsweredAt,
     int RewardPoints,
-    bool IsMatch);
+    bool HasSameAnswer);
 
 /// <summary>
 /// 获取亲密度主页数据
