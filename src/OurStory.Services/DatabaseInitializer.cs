@@ -92,7 +92,10 @@ public class DatabaseInitializer(
             _ = db.AffinityQuestions.Add(new AffinityQuestion {
                 Text = seed.Text,
                 Category = seed.Category,
+                Type = AffinityQuestionType.SingleChoice,
+                RewardPoints = 5,
                 IsActive = true,
+                IsSealed = true,
                 CreatedAt = now,
                 UpdatedAt = now,
                 Options = [.. seed.Options.Select((text, index) => new AffinityQuestionOption {

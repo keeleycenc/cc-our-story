@@ -100,6 +100,30 @@ internal class HeartPointService(
         return await TryInsertAsync(entry, cancellationToken) ? amount : 0;
     }
 
+    public async Task<int> AwardOnceAsync(
+        int userId,
+        HeartPointReason reason,
+        string sourceKey,
+        int amount,
+        string note,
+        CancellationToken cancellationToken = default) {
+        amount = Math.Clamp(amount, HeartPointRules.MinReward, HeartPointRules.MaxReward);
+        if (amount == 0 || string.IsNullOrWhiteSpace(sourceKey)) {
+            return 0;
+        }
+
+        var entry = new HeartPointEntry {
+            UserId = userId,
+            ChangeAmount = amount,
+            Reason = reason,
+            SourceKey = sourceKey.Trim(),
+            Note = string.IsNullOrWhiteSpace(note) ? "心意变动" : note.Trim(),
+            CreatedAt = SiteClock.UtcNow
+        };
+
+        return await TryInsertAsync(entry, cancellationToken) ? amount : 0;
+    }
+
     public async Task<bool> IsBackfilledAsync(CancellationToken cancellationToken = default) =>
         !string.IsNullOrWhiteSpace(await settings.GetRawAsync(BackfilledAtKey, cancellationToken));
 

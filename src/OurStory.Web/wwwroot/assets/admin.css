@@ -1096,11 +1096,37 @@ h2 > .push-spinner[hidden] { display: none }
 .admin-empty-state p { margin-top: 5px; font-size: 12px }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
 
-.affinity-active-field { justify-content: end }
-.affinity-check { display: flex; align-items: center; gap: 8px; min-height: 42px; color: var(--muted); font-size: 12px }
-.affinity-check input { width: 17px; height: 17px; accent-color: var(--pink) }
-.admin-affinity-list .admin-moment-item.is-off { opacity: .58 }
-.affinity-option-preview { overflow: hidden; margin: 8px 0 0; color: var(--faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap }
+.affinity-toolbar { align-items: flex-start }
+.affinity-toolbar > div { min-width: 0 }
+.affinity-toolbar > div > strong { display: block; margin-bottom: 9px; color: var(--ink); font: 400 18px var(--serif) }
+.affinity-toolbar .admin-panel-hint { max-width: 660px; margin: 0; line-height: 1.7 }
+.affinity-toolbar > .btn { flex: none }
+.sealed-question-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.sealed-question-card { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, var(--surface), var(--surface-soft)); box-shadow: var(--shadow-sm) }
+.sealed-question-card > header { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 18px 19px 14px }
+.sealed-question-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: var(--pink-soft); color: var(--pink-dark); font-size: 18px }
+.sealed-question-card header div { display: grid; min-width: 0; gap: 3px }
+.sealed-question-card header div > span { color: var(--faint); font: 700 8px Arial; letter-spacing: .13em }
+.sealed-question-card header strong { color: var(--ink); font: 400 16px var(--serif) }
+.affinity-sealed-tag { background: var(--pink-soft); color: var(--pink-dark) }
+.sealed-question-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 19px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--line) }
+.sealed-question-summary > span { display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 2px 6px; min-width: 0; padding: 12px; background: var(--surface) }
+.sealed-question-summary .icon { grid-row: 1 / 3; color: var(--pink-dark); font-size: 14px }
+.sealed-question-summary small { color: var(--faint); font-size: 8px }
+.sealed-question-summary strong { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap }
+.sealed-question-card > footer { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 14px 19px 17px; color: var(--faint); font-size: 9px }
+.sealed-question-card > footer span { display: inline-flex; align-items: center; gap: 5px }
+.affinity-admin-empty { display: grid; justify-items: center; gap: 7px; padding: 55px 20px }
+.affinity-admin-empty > span { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 18px; background: var(--pink-soft); color: var(--pink-dark); font-size: 23px }
+.affinity-admin-empty strong { color: var(--ink); font: 400 18px var(--serif) }
+.affinity-admin-empty p { margin: 0; color: var(--faint); font-size: 11px }
+.affinity-editor-layout .editor-body > .admin-panel { min-height: 620px }
+.affinity-options-field { margin-bottom: 0 }
+.affinity-seal-panel { border-color: color-mix(in srgb, var(--pink) 25%, var(--line)); background: linear-gradient(145deg, var(--surface), var(--pink-softer)) }
+.affinity-seal-panel ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none }
+.affinity-seal-panel li { position: relative; padding-left: 17px; color: var(--muted); font-size: 11px; line-height: 1.55 }
+.affinity-seal-panel li::before { position: absolute; left: 0; content: "✓"; color: var(--pink-dark); font-weight: 700 }
+.affinity-seal-panel .form-actions { margin-top: 18px }
 .anniversary-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px }
 .anniversary-calendar-field { display: grid; gap: 12px; margin: 0 0 16px; padding: 0; border: 0 }
 .anniversary-calendar-field > legend { margin-bottom: 7px; color: var(--muted); font-size: 12px }
@@ -1731,6 +1757,10 @@ body.auth-page {
 }
 
 @media (max-width: 760px) {
+    .sealed-question-grid { grid-template-columns: 1fr }
+    .affinity-toolbar { align-items: stretch; flex-direction: column }
+    .affinity-toolbar > .btn { justify-content: center }
+    .sealed-question-summary { grid-template-columns: 1fr }
     body.admin {
         display: flex;
         flex-direction: column;

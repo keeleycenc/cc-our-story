@@ -1,0 +1,84 @@
+@page "/admin/affinity/create"
+@model OurStory.Web.Areas.Admin.Pages.Affinity.CreateModel
+@{
+    ViewData["ActiveMenu"] = "affinity";
+    ViewData["Eyebrow"] = "NEW SEALED QUESTION";
+    ViewData["Title"] = "创建心有灵犀题目";
+    ViewData["BackUrl"] = "/admin/affinity";
+    ViewData["BackText"] = "返回封存记录";
+}
+
+<form method="post" data-dirty-guard>
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    }
+
+    <div class="editor-layout affinity-editor-layout">
+        <div class="editor-body">
+            <div class="admin-panel">
+                <h2>@Icon("sparkles")题目内容</h2>
+                <p class="admin-panel-hint">请在提交前仔细确认。创建成功后题干和选项会立即封存，后台不再提供查看、编辑或删除入口。</p>
+
+                <label class="field">
+                    <span>题目</span>
+                    <textarea asp-for="Input.Text" rows="5" maxlength="300" required autofocus
+                              placeholder="如果今晚突然空出三个小时，你最想和 TA 做什么？"></textarea>
+                    <small>使用双方都容易理解的表述，避免答案存在明显对错。</small>
+                </label>
+
+                <label class="field affinity-options-field">
+                    <span>选项</span>
+                    <textarea asp-for="Input.Options" rows="9" maxlength="1000" required
+                              placeholder="出去吃点东西&#10;看一部电影&#10;随便散散步&#10;什么都不做，待在一起"></textarea>
+                    <small>每行一个选项，支持 2–8 项。封存后只会公开“选项数量”，不会显示选项内容。</small>
+                </label>
+            </div>
+        </div>
+
+        <div class="editor-side">
+            <div class="admin-panel">
+                <h2>@Icon("settings")题目参数</h2>
+
+                <label class="field">
+                    <span>题型</span>
+                    <select asp-for="Input.Type">
+                        <option value="@AffinityQuestionType.SingleChoice">单选题</option>
+                    </select>
+                    <small>题型参数已独立保存，后续可继续扩展多选、开放题或猜 TA。</small>
+                </label>
+
+                <label class="field">
+                    <span>分类</span>
+                    <input asp-for="Input.Category" maxlength="30" list="affinity-categories" required>
+                    <datalist id="affinity-categories">
+                        <option value="日常"></option><option value="爱情"></option><option value="回忆"></option>
+                        <option value="未来"></option><option value="吃喝玩乐"></option><option value="二选一"></option>
+                        <option value="脑洞"></option><option value="猜 TA"></option>
+                    </datalist>
+                </label>
+
+                <div class="field slider-field" data-slider-field>
+                    <span class="slider-head">答题奖励 <b data-slider-value data-slider-unit=" 心意">@Model.Input.RewardPoints 心意</b></span>
+                    <input asp-for="Input.RewardPoints" type="range"
+                           min="@HeartPointRules.MinReward" max="@HeartPointRules.MaxReward" step="1" data-slider>
+                    <span class="slider-scale"><i>@HeartPointRules.MinReward</i><i>@HeartPointRules.MaxReward</i></span>
+                    <small>每个人完成当天题目时各获得一次；设为 0 可关闭本题奖励</small>
+                </div>
+            </div>
+
+            <div class="admin-panel affinity-seal-panel">
+                <h2>@Icon("lock")封存确认</h2>
+                <ul>
+                    <li>创建后立即进入每日抽题池</li>
+                    <li>后台不再显示题干和选项</li>
+                    <li>不能编辑或删除已封存题目</li>
+                    <li>每日题仍会保存独立快照</li>
+                </ul>
+                <div class="form-actions">
+                    <button class="btn" type="submit">@Icon("lock")确认并封存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

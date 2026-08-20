@@ -38,6 +38,16 @@ public class AffinityDailyQuestion {
     public string Category { get; set; } = string.Empty;
 
     /// <summary>
+    /// 获取或设置题型快照
+    /// </summary>
+    public AffinityQuestionType Type { get; set; } = AffinityQuestionType.SingleChoice;
+
+    /// <summary>
+    /// 获取或设置每位参与者的答题奖励快照
+    /// </summary>
+    public int RewardPoints { get; set; }
+
+    /// <summary>
     /// 获取或设置题目选项快照 JSON
     /// </summary>
     public string OptionsJson { get; set; } = "[]";

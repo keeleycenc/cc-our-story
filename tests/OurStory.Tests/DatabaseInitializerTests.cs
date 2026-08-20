@@ -43,6 +43,9 @@ public class DatabaseInitializerTests {
         Assert.True(questions.Count >= 10);
         Assert.All(questions, question => {
             Assert.True(question.IsActive);
+            Assert.True(question.IsSealed);
+            Assert.Equal(AffinityQuestionType.SingleChoice, question.Type);
+            Assert.Equal(5, question.RewardPoints);
             Assert.InRange(question.Options.Count, 2, 8);
         });
     }

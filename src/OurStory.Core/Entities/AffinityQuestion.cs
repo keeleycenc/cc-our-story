@@ -23,6 +23,21 @@ public class AffinityQuestion {
     public string Category { get; set; } = string.Empty;
 
     /// <summary>
+    /// 获取或设置题型
+    /// </summary>
+    public AffinityQuestionType Type { get; set; } = AffinityQuestionType.SingleChoice;
+
+    /// <summary>
+    /// 获取或设置每位参与者完成本题可获得的心意值
+    /// </summary>
+    public int RewardPoints { get; set; } = 5;
+
+    /// <summary>
+    /// 获取或设置题目是否已封存。封存后内容不可通过后台管理功能读取或修改
+    /// </summary>
+    public bool IsSealed { get; set; } = true;
+
+    /// <summary>
     /// 获取或设置题目是否启用
     /// </summary>
     public bool IsActive { get; set; } = true;

@@ -126,10 +126,10 @@ internal class SettingsService(OurStoryDbContext db, IMemoryCache cache) : ISett
         settings.CommentsRequireMail = Flag(raw, SettingKeys.CommentsRequireMail, settings.CommentsRequireMail);
         settings.AllowGuestComments = Flag(raw, SettingKeys.AllowGuestComments, settings.AllowGuestComments);
 
-        settings.RewardVisit = Math.Clamp(Number(raw, SettingKeys.RewardVisit, settings.RewardVisit), 0, 100);
-        settings.RewardHeartbeat = Math.Clamp(Number(raw, SettingKeys.RewardHeartbeat, settings.RewardHeartbeat), 0, 100);
-        settings.RewardMoment = Math.Clamp(Number(raw, SettingKeys.RewardMoment, settings.RewardMoment), 0, 100);
-        settings.RewardAnniversary = Math.Clamp(Number(raw, SettingKeys.RewardAnniversary, settings.RewardAnniversary), 0, 100);
+        settings.RewardVisit = Math.Clamp(Number(raw, SettingKeys.RewardVisit, settings.RewardVisit), HeartPointRules.MinReward, HeartPointRules.MaxReward);
+        settings.RewardHeartbeat = Math.Clamp(Number(raw, SettingKeys.RewardHeartbeat, settings.RewardHeartbeat), HeartPointRules.MinReward, HeartPointRules.MaxReward);
+        settings.RewardMoment = Math.Clamp(Number(raw, SettingKeys.RewardMoment, settings.RewardMoment), HeartPointRules.MinReward, HeartPointRules.MaxReward);
+        settings.RewardAnniversary = Math.Clamp(Number(raw, SettingKeys.RewardAnniversary, settings.RewardAnniversary), HeartPointRules.MinReward, HeartPointRules.MaxReward);
         settings.ShopListingDays = Math.Clamp(Number(raw, SettingKeys.ShopListingDays, settings.ShopListingDays), 1, 3650);
         settings.ShopValidDays = Math.Clamp(Number(raw, SettingKeys.ShopValidDays, settings.ShopValidDays), 1, 3650);
 

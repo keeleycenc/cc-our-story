@@ -24,7 +24,7 @@ public class IndexModel(IAffinityService affinity, ISettingsService settings) : 
     /// </summary>
     public AffinityDashboard Dashboard { get; private set; } = new(
         null,
-        new AffinityStats(0, 0),
+        new AffinityStats(0, 0, 0, 0),
         PagedList<AffinityHistoryItem>.Empty(PageSize));
 
     /// <summary>

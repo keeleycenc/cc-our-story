@@ -231,6 +231,14 @@ internal sealed class HeartPointStub : IHeartPointService {
     public Task<int> AwardDailyAsync(int userId, HeartPointReason reason, string day, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
 
+    public Task<int> AwardOnceAsync(
+        int userId,
+        HeartPointReason reason,
+        string sourceKey,
+        int amount,
+        string note,
+        CancellationToken cancellationToken = default) => Task.FromResult(amount);
+
     public Task<HeartPointBackfillResult> BackfillAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(new HeartPointBackfillResult(false, 0, 0));
 

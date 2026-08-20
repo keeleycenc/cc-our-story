@@ -47,6 +47,24 @@ public interface IHeartPointService {
     Task<int> AwardDailyAsync(int userId, HeartPointReason reason, string day, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步发放一次性奖励
+    /// </summary>
+    /// <param name="userId">用户编号</param>
+    /// <param name="reason">奖励原因</param>
+    /// <param name="sourceKey">奖励来源唯一标识</param>
+    /// <param name="amount">奖励数量</param>
+    /// <param name="note">奖励备注</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>实际发放数量，重复发放时返回 0</returns>
+    Task<int> AwardOnceAsync(
+        int userId,
+        HeartPointReason reason,
+        string sourceKey,
+        int amount,
+        string note,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步把商城上线之前就发生过的事补记成心意
     /// </summary>
     /// <param name="cancellationToken">取消令牌</param>

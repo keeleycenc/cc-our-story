@@ -27,10 +27,10 @@
         }
 
         <section class="affinity-stats" aria-label="默契统计">
-            <div><strong>@stats.AnsweredDays</strong><span>共同答题</span></div>
-            <i></i>
+            <div><strong>@stats.AnsweredDays</strong><span>我的答题</span></div>
+            <div><strong>@stats.CurrentStreak</strong><span>连续答题</span></div>
+            <div><strong>@stats.RevealedDays</strong><span>共同揭晓</span></div>
             <div><strong>@stats.MatchedDays</strong><span>默契次数</span></div>
-            <i></i>
             <div><strong>@stats.MatchRate<small>%</small></strong><span>默契率</span></div>
         </section>
 
@@ -70,6 +70,10 @@
                             }
                         </fieldset>
                         <button class="affinity-button" type="submit">藏好我的答案 @Icon("arrow-right")</button>
+                        @if (today.RewardPoints > 0)
+                        {
+                            <span class="answer-reward">@Icon("coins")完成作答可获得 @today.RewardPoints 心意</span>
+                        }
                         <small>@Icon("lock")提交后不能修改；在 TA 完成前，彼此都看不到答案</small>
                     </form>
                 }
@@ -79,7 +83,17 @@
                         <span class="waiting-hearts">@Icon("heart")@Icon("sparkles")</span>
                         <h3>你的答案已经藏好</h3>
                         <p>等待 @Model.PartnerName 回答……双方完成后会在这里一起揭晓。</p>
-                        <span class="my-hidden-answer">@Icon("lock")你的选择：@today.Options[today.MyOptionIndex!.Value]</span>
+                        <div class="waiting-answer-meta">
+                            <span class="my-hidden-answer">@Icon("lock")你的选择：@today.Options[today.MyOptionIndex!.Value]</span>
+                            @if (today.MyAnsweredAt is { } answeredAt)
+                            {
+                                <span class="my-hidden-answer">@Icon("clock")作答于 @answeredAt.ToString("HH:mm")</span>
+                            }
+                            @if (today.RewardPoints > 0)
+                            {
+                                <span class="my-hidden-answer">@Icon("coins")已获得 @today.RewardPoints 心意</span>
+                            }
+                        </div>
                     </div>
                 }
                 else
@@ -90,11 +104,27 @@
                             <div>
                                 <span>@Model.MyName</span>
                                 <strong>@today.Options[today.MyOptionIndex!.Value]</strong>
+                                @if (today.MyAnsweredAt is { } myTime)
+                                {
+                                    <small>@Icon("clock")@myTime.ToString("HH:mm") 作答</small>
+                                }
+                                @if (today.RewardPoints > 0)
+                                {
+                                    <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
+                                }
                             </div>
                             <span class="reveal-link">@(today.IsMatch ? Icon("heart") : Icon("sparkles"))</span>
                             <div>
                                 <span>@Model.PartnerName</span>
                                 <strong>@today.Options[today.PartnerOptionIndex!.Value]</strong>
+                                @if (today.PartnerAnsweredAt is { } partnerTime)
+                                {
+                                    <small>@Icon("clock")@partnerTime.ToString("HH:mm") 作答</small>
+                                }
+                                @if (today.RewardPoints > 0)
+                                {
+                                    <small class="answer-points">@Icon("coins")+@today.RewardPoints 心意</small>
+                                }
                             </div>
                         </div>
                         <p>@(today.IsMatch ? "你们想到一起去了，默契 +1" : "原来 TA 是这样想的，又多懂彼此一点啦")</p>
@@ -122,8 +152,14 @@
                             <div class="history-meta"><time>@item.Day.Replace("-", ".")</time><span>@item.Category</span><b>@(item.IsMatch ? "默契" : "不同答案")</b></div>
                             <h3>@item.Question</h3>
                             <dl>
-                                <div><dt>@Model.MyName</dt><dd>@item.MyAnswer</dd></div>
-                                <div><dt>@Model.PartnerName</dt><dd>@item.PartnerAnswer</dd></div>
+                                <div>
+                                    <dt>@Model.MyName</dt><dd>@item.MyAnswer</dd>
+                                    <small>@Icon("clock")@item.MyAnsweredAt.ToString("HH:mm") · @Icon("coins")+@item.RewardPoints 心意</small>
+                                </div>
+                                <div>
+                                    <dt>@Model.PartnerName</dt><dd>@item.PartnerAnswer</dd>
+                                    <small>@Icon("clock")@item.PartnerAnsweredAt.ToString("HH:mm") · @Icon("coins")+@item.RewardPoints 心意</small>
+                                </div>
                             </dl>
                         </article>
                     }
