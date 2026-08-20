@@ -9,6 +9,7 @@ using OurStory.Core.Configuration;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.Accounts;
+using OurStory.Services.Affinity;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
 using OurStory.Services.HeartPoints;
@@ -76,6 +77,7 @@ public static class ServiceCollectionExtensions {
 
         _ = services.AddScoped<ISettingsService, SettingsService>();
         _ = services.AddScoped<IUserService, UserService>();
+        _ = services.AddScoped<IAffinityService, AffinityService>();
         _ = services.AddScoped<IAnniversaryService, AnniversaryService>();
         _ = services.AddScoped<IMomentService, MomentService>();
         _ = services.AddScoped<ICommentService, CommentService>();

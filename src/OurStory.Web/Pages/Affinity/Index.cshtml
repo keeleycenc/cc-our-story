@@ -1,0 +1,137 @@
+@page "/affinity"
+@model OurStory.Web.Pages.Affinity.IndexModel
+@{
+    ViewData["Title"] = "心有灵犀";
+    ViewData["ActiveNav"] = "affinity";
+    ViewData["Bundle"] = "affinity";
+    var today = Model.Dashboard.Today;
+    var stats = Model.Dashboard.Stats;
+}
+
+<main id="main" class="affinity-page">
+    <section class="affinity-hero">
+        <span class="affinity-mark">@Icon("sparkles")</span>
+        <p>DAILY MIND SYNC</p>
+        <h1>心有灵犀</h1>
+        <span>每天一个小问题，看看你们到底有多懂彼此</span>
+    </section>
+
+    <div class="affinity-shell">
+        @if (!string.IsNullOrWhiteSpace(Model.Flash))
+        {
+            <p class="affinity-notice is-ok">@Icon("circle-check")@Model.Flash</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Error))
+        {
+            <p class="affinity-notice is-error">@Icon("circle-alert")@Model.Error</p>
+        }
+
+        <section class="affinity-stats" aria-label="默契统计">
+            <div><strong>@stats.AnsweredDays</strong><span>共同答题</span></div>
+            <i></i>
+            <div><strong>@stats.MatchedDays</strong><span>默契次数</span></div>
+            <i></i>
+            <div><strong>@stats.MatchRate<small>%</small></strong><span>默契率</span></div>
+        </section>
+
+        @if (today is null)
+        {
+            <section class="today-card affinity-empty">
+                <span>@Icon("sparkles")</span>
+                <h2>今天的题目还在路上</h2>
+                <p>题库中暂时没有启用的题目，请先在后台添加或启用题目。</p>
+                <a class="affinity-button" href="/admin/affinity">管理题库</a>
+            </section>
+        }
+        else
+        {
+            <section class="today-card@(today.IsRevealed ? " is-revealed" : today.HasAnswered ? " is-waiting" : null)">
+                <header>
+                    <span class="today-label">今日问题 · @today.Day.Replace("-", ".")</span>
+                    <span class="category">@today.Category</span>
+                </header>
+                <h2>@today.Question</h2>
+
+                @if (!today.HasAnswered)
+                {
+                    <form method="post" asp-page-handler="Answer" class="answer-form">
+                        <input type="hidden" name="dailyQuestionId" value="@today.DailyQuestionId">
+                        <fieldset>
+                            <legend class="sr-only">请选择一个答案</legend>
+                            @for (var index = 0; index < today.Options.Count; index++)
+                            {
+                                var letter = ((char)('A' + index)).ToString();
+                                <label class="answer-option">
+                                    <input type="radio" name="optionIndex" value="@index" required>
+                                    <span class="answer-letter">@letter</span>
+                                    <span>@today.Options[index]</span>
+                                    @Icon("circle-check")
+                                </label>
+                            }
+                        </fieldset>
+                        <button class="affinity-button" type="submit">藏好我的答案 @Icon("arrow-right")</button>
+                        <small>@Icon("lock")提交后不能修改；在 TA 完成前，彼此都看不到答案</small>
+                    </form>
+                }
+                else if (!today.IsRevealed)
+                {
+                    <div class="waiting-state">
+                        <span class="waiting-hearts">@Icon("heart")@Icon("sparkles")</span>
+                        <h3>你的答案已经藏好</h3>
+                        <p>等待 @Model.PartnerName 回答……双方完成后会在这里一起揭晓。</p>
+                        <span class="my-hidden-answer">@Icon("lock")你的选择：@today.Options[today.MyOptionIndex!.Value]</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="reveal-state">
+                        <p class="reveal-title">@(today.IsMatch ? "🎉 今日默契达成" : "答案不同，也是在了解彼此")</p>
+                        <div class="reveal-answers">
+                            <div>
+                                <span>@Model.MyName</span>
+                                <strong>@today.Options[today.MyOptionIndex!.Value]</strong>
+                            </div>
+                            <span class="reveal-link">@(today.IsMatch ? Icon("heart") : Icon("sparkles"))</span>
+                            <div>
+                                <span>@Model.PartnerName</span>
+                                <strong>@today.Options[today.PartnerOptionIndex!.Value]</strong>
+                            </div>
+                        </div>
+                        <p>@(today.IsMatch ? "你们想到一起去了，默契 +1" : "原来 TA 是这样想的，又多懂彼此一点啦")</p>
+                    </div>
+                }
+            </section>
+        }
+
+        <section class="affinity-history" aria-labelledby="history-title">
+            <header>
+                <div><p>OUR ANSWERS</p><h2 id="history-title">答题足迹</h2></div>
+                <span>只展示两个人都完成的题目</span>
+            </header>
+
+            @if (Model.Dashboard.History.Items.Count == 0)
+            {
+                <p class="history-empty">第一份共同答案，会从这里开始被好好收藏。</p>
+            }
+            else
+            {
+                <div class="history-list">
+                    @foreach (var item in Model.Dashboard.History.Items)
+                    {
+                        <article class="history-card@(item.IsMatch ? " is-match" : null)">
+                            <div class="history-meta"><time>@item.Day.Replace("-", ".")</time><span>@item.Category</span><b>@(item.IsMatch ? "默契" : "不同答案")</b></div>
+                            <h3>@item.Question</h3>
+                            <dl>
+                                <div><dt>@Model.MyName</dt><dd>@item.MyAnswer</dd></div>
+                                <div><dt>@Model.PartnerName</dt><dd>@item.PartnerAnswer</dd></div>
+                            </dl>
+                        </article>
+                    }
+                </div>
+
+                var pager = new PaginationModel(Model.Dashboard.History.Page, Model.Dashboard.History.TotalPages, "/affinity");
+                <partial name="_Pagination" model="pager" />
+            }
+        </section>
+    </div>
+</main>

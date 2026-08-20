@@ -69,6 +69,33 @@ public class MigrationTests {
     }
 
     [Fact]
+    public async Task 心有灵犀迁移会建立每日和答案唯一约束() {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using var db = new OurStoryDbContext(
+            new DbContextOptionsBuilder<OurStoryDbContext>().UseSqlite(connection).Options);
+        await db.Database.MigrateAsync();
+
+        var boy = new User { UserName = "boy-affinity", Role = UserRole.Boy, PasswordHash = "test" };
+        _ = db.Users.Add(boy);
+        _ = await db.SaveChangesAsync();
+        var daily = new AffinityDailyQuestion {
+            Day = "2026-08-20",
+            QuestionText = "测试题目",
+            Category = "日常",
+            OptionsJson = "[\"一\",\"二\"]"
+        };
+        _ = db.AffinityDailyQuestions.Add(daily);
+        _ = await db.SaveChangesAsync();
+
+        db.AffinityAnswers.AddRange(
+            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, OptionIndex = 0 },
+            new AffinityAnswer { DailyQuestionId = daily.Id, UserId = boy.Id, Role = UserRole.Boy, OptionIndex = 1 });
+
+        _ = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task 同一来源的流水在库上就是唯一的() {
         await using var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync();

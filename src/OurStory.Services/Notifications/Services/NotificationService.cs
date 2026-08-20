@@ -57,6 +57,7 @@ internal sealed class NotificationService(
         setting.Shop = preferences.Shop;
         setting.MissYou = preferences.MissYou;
         setting.Comments = preferences.Comments;
+        setting.Affinity = preferences.Affinity;
         setting.RemindMinutes = Math.Clamp(preferences.RemindMinutes, 0, 1439);
         setting.UpdatedAt = SiteClock.UtcNow;
 

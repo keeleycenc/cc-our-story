@@ -57,6 +57,11 @@ public class NotificationSetting {
     public bool Comments { get; set; } = true;
 
     /// <summary>
+    /// 获取或设置对方完成今日心有灵犀回答时要不要提醒我
+    /// </summary>
+    public bool Affinity { get; set; } = true;
+
+    /// <summary>
     /// 获取或设置纪念日提醒的时刻，从当天零点算起的分钟数，按站点时区理解
     /// </summary>
     /// <remarks>
@@ -93,6 +98,7 @@ public class NotificationSetting {
         NotificationTopic.Shop => Enabled && Shop,
         NotificationTopic.MissYou => Enabled && MissYou,
         NotificationTopic.Comment => Enabled && Comments,
+        NotificationTopic.Affinity => Enabled && Affinity,
         _ => false
     };
 }

@@ -1095,6 +1095,12 @@ h2 > .push-spinner[hidden] { display: none }
 .admin-empty-state h2 { margin-top: 13px; color: var(--ink); font: 400 20px var(--serif) }
 .admin-empty-state p { margin-top: 5px; font-size: 12px }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+
+.affinity-active-field { justify-content: end }
+.affinity-check { display: flex; align-items: center; gap: 8px; min-height: 42px; color: var(--muted); font-size: 12px }
+.affinity-check input { width: 17px; height: 17px; accent-color: var(--pink) }
+.admin-affinity-list .admin-moment-item.is-off { opacity: .58 }
+.affinity-option-preview { overflow: hidden; margin: 8px 0 0; color: var(--faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap }
 .anniversary-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px }
 .anniversary-calendar-field { display: grid; gap: 12px; margin: 0 0 16px; padding: 0; border: 0 }
 .anniversary-calendar-field > legend { margin-bottom: 7px; color: var(--muted); font-size: 12px }

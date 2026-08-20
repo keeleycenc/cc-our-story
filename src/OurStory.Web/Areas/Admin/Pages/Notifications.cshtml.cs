@@ -90,6 +90,7 @@ public class NotificationsModel(
             Shop = preferences.Shop,
             MissYou = preferences.MissYou,
             Comments = preferences.Comments,
+            Affinity = preferences.Affinity,
             RemindAt = ToText(preferences.RemindMinutes)
         };
 
@@ -120,6 +121,7 @@ public class NotificationsModel(
                 Shop = Input.Shop,
                 MissYou = Input.MissYou,
                 Comments = Input.Comments,
+                Affinity = Input.Affinity,
                 RemindMinutes = ToMinutes(Input.RemindAt)
             },
             cancellationToken);
@@ -202,6 +204,11 @@ public class NotificationsModel(
         /// 获取或设置点点滴滴下面来了新留言时要不要提醒
         /// </summary>
         public bool Comments { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置是否接收心有灵犀答题提醒
+        /// </summary>
+        public bool Affinity { get; set; } = true;
 
         /// <summary>
         /// 获取或设置纪念日提醒时间，形如 21:00，按站点时区理解

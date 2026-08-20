@@ -183,6 +183,11 @@ public sealed class NotificationPreferences {
     public bool Comments { get; set; } = true;
 
     /// <summary>
+    /// 获取或设置是否接收心有灵犀答题提醒
+    /// </summary>
+    public bool Affinity { get; set; } = true;
+
+    /// <summary>
     /// 获取或设置纪念日提醒时刻，从零点算起的分钟数
     /// </summary>
     public int RemindMinutes { get; set; } = NotificationSetting.DefaultRemindMinutes;
@@ -200,6 +205,7 @@ public sealed class NotificationPreferences {
             Shop = setting.Shop,
             MissYou = setting.MissYou,
             Comments = setting.Comments,
+            Affinity = setting.Affinity,
             RemindMinutes = setting.RemindMinutes
         };
     }

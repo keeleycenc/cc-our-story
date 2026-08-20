@@ -9,68 +9,88 @@ using OurStory.Data.Conventions;
 namespace OurStory.Data;
 
 /// <summary>
-/// 整站唯一的数据库上下文。
+/// 获取整站唯一的数据库上下文
 ///
 /// 表都很小（两个人的站点），所以没有分库分表之类的考虑
 /// </summary>
 public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : DbContext(options) {
     /// <summary>
-    /// 执行 Users 操作
+    /// 获取用户数据集合
     /// </summary>
     public DbSet<User> Users => Set<User>();
 
     /// <summary>
-    /// 执行 Moments 操作
+    /// 获取动态数据集合
     /// </summary>
     public DbSet<Moment> Moments => Set<Moment>();
 
     /// <summary>
-    /// 执行 Anniversaries 操作
+    /// 获取纪念日数据集合
     /// </summary>
     public DbSet<Anniversary> Anniversaries => Set<Anniversary>();
 
     /// <summary>
-    /// 执行 Comments 操作
+    /// 获取评论数据集合
     /// </summary>
     public DbSet<Comment> Comments => Set<Comment>();
 
     /// <summary>
-    /// 执行 Heartbeats 操作
+    /// 获取心跳数据集合
     /// </summary>
     public DbSet<Heartbeat> Heartbeats => Set<Heartbeat>();
 
     /// <summary>
-    /// 执行 Settings 操作
+    /// 获取设置数据集合
     /// </summary>
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
 
     /// <summary>
-    /// 执行 HeartPointEntries 操作
+    /// 获取心点记录数据集合
     /// </summary>
     public DbSet<HeartPointEntry> HeartPointEntries => Set<HeartPointEntry>();
 
     /// <summary>
-    /// 执行 ShopItems 操作
+    /// 获取商店物品数据集合
     /// </summary>
     public DbSet<ShopItem> ShopItems => Set<ShopItem>();
 
     /// <summary>
-    /// 执行 ShopPresets 操作
+    /// 获取商店预设数据集合
     /// </summary>
     public DbSet<ShopPreset> ShopPresets => Set<ShopPreset>();
 
     /// <summary>
-    /// 执行 PushDevices 操作
+    /// 获取推送设备数据集合
     /// </summary>
     public DbSet<PushDevice> PushDevices => Set<PushDevice>();
 
     /// <summary>
-    /// 执行 NotificationSettings 操作
+    /// 获取通知设置数据集合
     /// </summary>
     public DbSet<NotificationSetting> NotificationSettings => Set<NotificationSetting>();
 
     /// <summary>
-    /// 执行 OnModelCreating 操作
+    /// 获取心有灵犀题目数据集合
+    /// </summary>
+    public DbSet<AffinityQuestion> AffinityQuestions => Set<AffinityQuestion>();
+
+    /// <summary>
+    /// 获取心有灵犀题目选项数据集合
+    /// </summary>
+    public DbSet<AffinityQuestionOption> AffinityQuestionOptions => Set<AffinityQuestionOption>();
+
+    /// <summary>
+    /// 获取心有灵犀每日题目数据集合
+    /// </summary>
+    public DbSet<AffinityDailyQuestion> AffinityDailyQuestions => Set<AffinityDailyQuestion>();
+
+    /// <summary>
+    /// 获取心有灵犀答案数据集合
+    /// </summary>
+    public DbSet<AffinityAnswer> AffinityAnswers => Set<AffinityAnswer>();
+
+    /// <summary>
+    /// 执行模型创建配置
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);

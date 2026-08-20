@@ -203,7 +203,12 @@ public enum NotificationTopic {
     /// <summary>
     /// 后台点的「通知测试」，只发给自己，同样不受那几项开关影响
     /// </summary>
-    Test = 6
+    Test = 6,
+
+    /// <summary>
+    /// 心有灵犀：对方完成了今日回答
+    /// </summary>
+    Affinity = 7
 }
 
 /// <summary>

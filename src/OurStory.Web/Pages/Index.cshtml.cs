@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core;
 using OurStory.Core.Models;
 using OurStory.Services.Heartbeats;
+using OurStory.Services.Affinity;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
@@ -24,6 +25,7 @@ public class IndexModel(
     IAnniversaryService anniversaries,
     IHeartbeatService heartbeats,
     IShopService shop,
+    IAffinityService affinity,
     VisitorIdentityAccessor visitors,
     HeartbeatTokenService tokens,
     MomentUnlockStore unlockStore) : PageModel {
@@ -67,8 +69,15 @@ public class IndexModel(
     /// </summary>
     public string HeartbeatToken { get; private set; } = string.Empty;
 
-    /// <summary>每次打开首页随机挑一句。</summary>
+    /// <summary>
+    /// 每次打开首页随机挑一句
+    /// </summary>
     public string LoveLetter { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// 首页心有灵犀入口的今日状态
+    /// </summary>
+    public string AffinityStatus { get; private set; } = "今日待回答";
 
     /// <summary>
     /// 获取 IsGuest
@@ -97,6 +106,10 @@ public class IndexModel(
         var who = await visitors.GetAsync(cancellationToken);
         Heartbeat = await heartbeats.GetSummaryAsync(who, cancellationToken);
         HeartbeatToken = tokens.Issue(who);
+
+        AffinityStatus = User.UserId() is { } userId
+            ? await affinity.GetTodayStatusAsync(userId, User.Role(), cancellationToken)
+            : "登录后参与";
 
         LoveLetter = Site.LoveLetters.Count == 0
             ? string.Empty

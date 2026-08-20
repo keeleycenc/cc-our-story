@@ -11,6 +11,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Options;
 using OurStory.Data;
 using OurStory.Services.Accounts;
+using OurStory.Services.Affinity;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
 using System.Security.Cryptography;
@@ -24,31 +25,48 @@ namespace OurStory.Services;
 public record SeededAccount(string UserName, string Password, UserRole Role);
 
 /// <summary>
-/// 
+/// 获取数据库初始化服务接口
 /// </summary>
 public interface IDatabaseInitializer {
     /// <summary>
-    /// 
+    /// 初始化数据库数据
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">获取取消令牌</param>
+    /// <returns>获取已初始化的账户列表</returns>
     Task<IReadOnlyList<SeededAccount>> InitializeAsync(CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// 获取数据库初始化服务
+/// </summary>
+/// <param name="db">获取数据库上下文</param>
+/// <param name="settings">获取设置服务</param>
+/// <param name="heartPoints">获取心点服务</param>
+/// <param name="configuration">获取活动配置</param>
+/// <param name="logger">获取日志记录器</param>
 public class DatabaseInitializer(
     OurStoryDbContext db,
     ISettingsService settings,
     IHeartPointService heartPoints,
     ActiveConfiguration configuration,
     ILogger<DatabaseInitializer> logger) : IDatabaseInitializer {
-    /// <summary>访客指纹用的盐，存在设置表里，重启后统计不会断</summary>
-    public const string VisitorSecretKey = "system.visitorSecret";
-
-    /// <summary>自带心愿预设放进去的时间，有值就再也不放第二次</summary>
-    public const string ShopPresetsSeededKey = "shop.presetsSeededAt";
-
     private readonly SiteOptions _options = configuration.Site;
 
+    /// <summary>
+    /// 获取访客指纹使用的盐配置键，存储在设置表中，重启后统计不会中断
+    /// </summary>
+    public const string VisitorSecretKey = "system.visitorSecret";
+
+    /// <summary>
+    /// 获取商店预设初始化时间配置键，有值后不会重复初始化
+    /// </summary>
+    public const string ShopPresetsSeededKey = "shop.presetsSeededAt";
+
+    /// <summary>
+    /// 初始化数据库数据
+    /// </summary>
+    /// <param name="cancellationToken">获取取消令牌</param>
+    /// <returns>获取已初始化的账户列表</returns>
     public async Task<IReadOnlyList<SeededAccount>> InitializeAsync(CancellationToken cancellationToken = default) {
         await db.Database.MigrateAsync(cancellationToken);
 
@@ -56,9 +74,38 @@ public class DatabaseInitializer(
         var seeded = await EnsureAccountsAsync(cancellationToken);
 
         await EnsureShopPresetsAsync(cancellationToken);
+        await EnsureAffinityQuestionsAsync(cancellationToken);
         await EnsureHeartPointsAsync(cancellationToken);
 
         return seeded;
+    }
+
+    #region 私有方法
+
+    private async Task EnsureAffinityQuestionsAsync(CancellationToken cancellationToken) {
+        if (await db.AffinityQuestions.AnyAsync(cancellationToken)) {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var seed in DefaultAffinityQuestions.All) {
+            _ = db.AffinityQuestions.Add(new AffinityQuestion {
+                Text = seed.Text,
+                Category = seed.Category,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                Options = [.. seed.Options.Select((text, index) => new AffinityQuestionOption {
+                    Text = text,
+                    SortOrder = index
+                })]
+            });
+        }
+
+        _ = await db.SaveChangesAsync(cancellationToken);
+        if (logger.IsEnabled(LogLevel.Information)) {
+            logger.LogInformation("已初始化 {Count} 道心有灵犀题目。", DefaultAffinityQuestions.All.Count);
+        }
     }
 
     private async Task EnsureShopPresetsAsync(CancellationToken cancellationToken) {
@@ -169,4 +216,6 @@ public class DatabaseInitializer(
         var cleaned = new string([.. (userName ?? string.Empty).Where(char.IsAsciiLetterOrDigit)]);
         return cleaned.Length > 0 ? cleaned.ToLowerInvariant() : fallback;
     }
+
+    #endregion
 }

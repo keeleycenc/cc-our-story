@@ -34,6 +34,20 @@ public class DatabaseInitializerTests {
     }
 
     [Fact]
+    public async Task 首次启动会放入心有灵犀默认题库() {
+        await using var harness = SqliteHarness.Create(createSchema: false);
+
+        _ = await Initializer(harness).InitializeAsync();
+
+        var questions = await harness.Db.AffinityQuestions.Include(item => item.Options).AsNoTracking().ToListAsync();
+        Assert.True(questions.Count >= 10);
+        Assert.All(questions, question => {
+            Assert.True(question.IsActive);
+            Assert.InRange(question.Options.Count, 2, 8);
+        });
+    }
+
+    [Fact]
     public async Task 预设被删光之后不会重新塞回来() {
         await using var harness = SqliteHarness.Create(createSchema: false);
         var settings = new SettingsStub();

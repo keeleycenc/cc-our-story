@@ -1,0 +1,91 @@
+@page "/admin/affinity"
+@model OurStory.Web.Areas.Admin.Pages.Affinity.IndexModel
+@{
+    ViewData["ActiveMenu"] = "affinity";
+    ViewData["Eyebrow"] = "DAILY MIND SYNC";
+    ViewData["Title"] = "心有灵犀题库";
+}
+
+<form method="post" asp-page-handler="Save" class="admin-panel">
+    <h2>@Icon(Model.EditingId is null ? "plus" : "pen-line")@(Model.EditingId is null ? "添加题目" : "编辑题目")</h2>
+    <p class="admin-panel-hint">每日从启用题目中抽取一道，并避开最近使用的题目。选项请每行填写一个。</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    }
+
+    <input asp-for="Input.Id" type="hidden">
+    <div class="form-grid">
+        <label class="field" style="grid-column:1/-1">
+            <span>题目</span>
+            <textarea asp-for="Input.Text" rows="3" maxlength="300" placeholder="如果今晚突然空出三个小时，你最想和 TA 做什么？"></textarea>
+        </label>
+        <label class="field">
+            <span>分类</span>
+            <input asp-for="Input.Category" maxlength="30" list="affinity-categories">
+            <datalist id="affinity-categories">
+                <option value="日常"></option><option value="爱情"></option><option value="回忆"></option>
+                <option value="未来"></option><option value="吃喝玩乐"></option><option value="二选一"></option>
+                <option value="脑洞"></option><option value="猜 TA"></option>
+            </datalist>
+        </label>
+        <label class="field affinity-active-field">
+            <span>状态</span>
+            <span class="affinity-check"><input asp-for="Input.IsActive" type="checkbox"> 保存后立即启用</span>
+        </label>
+        <label class="field" style="grid-column:1/-1">
+            <span>选项（2–8 个）</span>
+            <textarea asp-for="Input.Options" rows="6" maxlength="1000" placeholder="出去吃点东西&#10;看一部电影&#10;随便散散步&#10;什么都不做，待在一起"></textarea>
+        </label>
+    </div>
+    <div class="form-actions">
+        <button class="btn" type="submit">@Icon("save")@(Model.EditingId is null ? "加入题库" : "保存修改")</button>
+        @if (Model.EditingId is not null)
+        {
+            <a class="btn btn-ghost" href="/admin/affinity">取消编辑</a>
+        }
+    </div>
+</form>
+
+<div class="admin-panel">
+    <h2>@Icon("sparkles")全部题目 <small class="tag">@Model.Questions.Count 道</small></h2>
+    <p class="admin-panel-hint">编辑或删除不会改变已经生成的每日题目与历史答案。</p>
+
+    @if (Model.Questions.Count == 0)
+    {
+        <p class="admin-empty">题库还是空的，先添加第一道题吧。</p>
+    }
+    else
+    {
+        <div class="admin-moment-list admin-affinity-list">
+            @foreach (var question in Model.Questions)
+            {
+                <article class="admin-moment-item@(question.IsActive ? null : " is-off")">
+                    <div class="admin-moment-body">
+                        <h3>@question.Text</h3>
+                        <div class="admin-moment-meta">
+                            <span class="tag">@question.Category</span>
+                            <span>@Icon("list-checks")@question.Options.Count 个选项</span>
+                            <span>@Icon("history")使用 @question.UsedCount 次</span>
+                            @if (!question.IsActive) { <span class="tag">已停用</span> }
+                        </div>
+                        <p class="affinity-option-preview">@string.Join(" · ", question.Options)</p>
+                    </div>
+                    <div class="admin-moment-actions">
+                        <a class="btn btn-ghost btn-small" href="/admin/affinity?edit=@question.Id">@Icon("pen-line")编辑</a>
+                        <form method="post" asp-page-handler="Toggle">
+                            <input type="hidden" name="id" value="@question.Id">
+                            <input type="hidden" name="active" value="@((!question.IsActive).ToString().ToLowerInvariant())">
+                            <button class="btn btn-ghost btn-small" type="submit">@Icon(question.IsActive ? "eye-off" : "eye")@(question.IsActive ? "停用" : "启用")</button>
+                        </form>
+                        <form method="post" asp-page-handler="Delete" data-confirm="确认删除这道题？已生成的历史题目和答案仍会保留。">
+                            <input type="hidden" name="id" value="@question.Id">
+                            <button class="btn btn-danger btn-small" type="submit">@Icon("trash-2")删除</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
