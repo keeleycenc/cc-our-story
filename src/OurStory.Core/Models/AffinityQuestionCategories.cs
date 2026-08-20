@@ -11,8 +11,8 @@ public static class AffinityQuestionCategories {
     /// 获取后台创建题目时可选的全部分类
     /// </summary>
     public static IReadOnlyList<string> All { get; } = [
-        "日常", "爱情", "回忆", "未来", "吃喝玩乐", "旅行出游",
-        "生活习惯", "兴趣偏好", "价值观", "二选一", "默契挑战", "脑洞", "脑洞假设", "猜猜 TA"
+        "日常", "爱情", "回忆", "未来",
+        "旅行出游", "兴趣偏好", "相处方式", "默契挑战"
     ];
 
     /// <summary>

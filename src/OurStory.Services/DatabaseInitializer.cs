@@ -14,6 +14,7 @@ using OurStory.Services.Accounts;
 using OurStory.Services.Affinity;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Settings;
+using System.Globalization;
 using System.Security.Cryptography;
 
 namespace OurStory.Services;
@@ -63,6 +64,11 @@ public class DatabaseInitializer(
     public const string ShopPresetsSeededKey = "shop.presetsSeededAt";
 
     /// <summary>
+    /// 获取心有灵犀预设题库已导入版本配置键
+    /// </summary>
+    public const string AffinityQuestionsVersionKey = "affinity.questionsPresetVersion";
+
+    /// <summary>
     /// 初始化数据库数据
     /// </summary>
     /// <param name="cancellationToken">获取取消令牌</param>
@@ -83,12 +89,30 @@ public class DatabaseInitializer(
     #region 私有方法
 
     private async Task EnsureAffinityQuestionsAsync(CancellationToken cancellationToken) {
-        if (await db.AffinityQuestions.AnyAsync(cancellationToken)) {
+        var rawVersion = await settings.GetRawAsync(AffinityQuestionsVersionKey, cancellationToken);
+        var appliedVersion = int.TryParse(rawVersion, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedVersion)
+            ? Math.Max(0, parsedVersion)
+            : 0;
+
+        if (appliedVersion >= DefaultAffinityQuestions.CurrentVersion) {
             return;
         }
 
+        var candidates = DefaultAffinityQuestions.All
+            .Where(seed => seed.IntroducedInVersion > appliedVersion &&
+                seed.IntroducedInVersion <= DefaultAffinityQuestions.CurrentVersion)
+            .ToList();
+        var candidateTexts = candidates.Select(seed => seed.Text).ToList();
+        var existingTexts = candidateTexts.Count == 0
+            ? []
+            : await db.AffinityQuestions
+                .Where(question => candidateTexts.Contains(question.Text))
+                .Select(question => question.Text)
+                .ToHashSetAsync(cancellationToken);
+
         var now = DateTimeOffset.UtcNow;
-        foreach (var seed in DefaultAffinityQuestions.All) {
+        var addedCount = 0;
+        foreach (var seed in candidates.Where(seed => !existingTexts.Contains(seed.Text))) {
             _ = db.AffinityQuestions.Add(new AffinityQuestion {
                 Text = seed.Text,
                 Category = seed.Category,
@@ -103,11 +127,23 @@ public class DatabaseInitializer(
                     SortOrder = index
                 })]
             });
+            addedCount++;
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
-        if (logger.IsEnabled(LogLevel.Information)) {
-            logger.LogInformation("已初始化 {Count} 道心有灵犀题目。", DefaultAffinityQuestions.All.Count);
+        if (addedCount > 0) {
+            _ = await db.SaveChangesAsync(cancellationToken);
+        }
+
+        await settings.SetRawAsync(
+            AffinityQuestionsVersionKey,
+            DefaultAffinityQuestions.CurrentVersion.ToString(CultureInfo.InvariantCulture),
+            cancellationToken);
+
+        if (addedCount > 0 && logger.IsEnabled(LogLevel.Information)) {
+            logger.LogInformation(
+                "心有灵犀预设题库已升级至版本 {Version}，新增 {Count} 道题目。",
+                DefaultAffinityQuestions.CurrentVersion,
+                addedCount);
         }
     }
 

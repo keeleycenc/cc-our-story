@@ -9,6 +9,7 @@ using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Services;
+using OurStory.Services.Affinity;
 using OurStory.Services.HeartPoints;
 using Xunit;
 
@@ -36,11 +37,15 @@ public class DatabaseInitializerTests {
     [Fact]
     public async Task 首次启动会放入心有灵犀默认题库() {
         await using var harness = SqliteHarness.Create(createSchema: false);
+        var settings = new SettingsStub();
 
-        _ = await Initializer(harness).InitializeAsync();
+        _ = await Initializer(harness, settings).InitializeAsync();
 
         var questions = await harness.Db.AffinityQuestions.Include(item => item.Options).AsNoTracking().ToListAsync();
-        Assert.True(questions.Count >= 10);
+        Assert.Equal(DefaultAffinityQuestions.All.Count, questions.Count);
+        Assert.Equal(
+            DefaultAffinityQuestions.CurrentVersion.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            await settings.GetRawAsync(DatabaseInitializer.AffinityQuestionsVersionKey));
         Assert.All(questions, question => {
             Assert.True(question.IsActive);
             Assert.True(question.IsSealed);
@@ -48,6 +53,36 @@ public class DatabaseInitializerTests {
             Assert.Equal(5, question.RewardPoints);
             Assert.InRange(question.Options.Count, 2, 8);
         });
+    }
+
+    [Fact]
+    public async Task 旧数据库只补入尚未存在的新版心有灵犀预设() {
+        await using var harness = SqliteHarness.Create(createSchema: false);
+        var settings = new SettingsStub();
+
+        _ = await Initializer(harness, settings).InitializeAsync();
+        var keep = await harness.Db.AffinityQuestions.OrderBy(item => item.Id).FirstAsync();
+        _ = await harness.Db.AffinityQuestions.Where(item => item.Id != keep.Id).ExecuteDeleteAsync();
+        await settings.SetRawAsync(DatabaseInitializer.AffinityQuestionsVersionKey, "0");
+
+        _ = await Initializer(harness, settings).InitializeAsync();
+        _ = await Initializer(harness, settings).InitializeAsync();
+
+        Assert.Equal(DefaultAffinityQuestions.All.Count, await harness.Db.AffinityQuestions.CountAsync());
+        Assert.Equal(1, await harness.Db.AffinityQuestions.CountAsync(item => item.Text == keep.Text));
+    }
+
+    [Fact]
+    public async Task 已导入当前版本后不会恢复被手动删除的心有灵犀预设() {
+        await using var harness = SqliteHarness.Create(createSchema: false);
+        var settings = new SettingsStub();
+
+        _ = await Initializer(harness, settings).InitializeAsync();
+        _ = await harness.Db.AffinityQuestions.ExecuteDeleteAsync();
+
+        _ = await Initializer(harness, settings).InitializeAsync();
+
+        Assert.Equal(0, await harness.Db.AffinityQuestions.CountAsync());
     }
 
     [Fact]
