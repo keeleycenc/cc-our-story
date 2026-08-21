@@ -109,7 +109,7 @@ public class IndexModel(
 
         AffinityStatus = User.UserId() is { } userId
             ? await affinity.GetTodayStatusAsync(userId, User.Role(), cancellationToken)
-            : "登录后参与";
+            : "登录后参与 · 仅限情侣";
 
         LoveLetter = Site.LoveLetters.Count == 0
             ? string.Empty

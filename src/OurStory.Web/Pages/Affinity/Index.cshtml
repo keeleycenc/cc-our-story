@@ -10,7 +10,6 @@
 
 <main id="main" class="affinity-page">
     <section class="affinity-hero">
-        <span class="affinity-mark">@Icon("sparkles")</span>
         <p>DAILY HEART TALK</p>
         <h1>心有灵犀</h1>
         <span>每天一个小问题，离彼此更近一点</span>
@@ -60,6 +59,7 @@
                         <span class="category">@today.Category</span>
                     </span>
                 </header>
+                <p class="today-question-label">TODAY'S QUESTION</p>
                 <h2>@today.Question</h2>
 
                 @if (!today.HasAnswered)
@@ -133,6 +133,7 @@
                                         <time datetime="@myTime.ToString("O")">@myTime.ToString("HH:mm")</time>
                                     }
                                 </header>
+                                <span class="today-answer-quote">@Icon("quote")</span>
                                 <strong>@myAnswer</strong>
                             </div>
                             <span class="reveal-link">@Icon("sparkles")</span>
@@ -144,10 +145,11 @@
                                         <time datetime="@partnerTime.ToString("O")">@partnerTime.ToString("HH:mm")</time>
                                     }
                                 </header>
+                                <span class="today-answer-quote">@Icon("quote")</span>
                                 <strong>@partnerAnswer</strong>
                             </div>
                         </div>
-                        <p>每一个答案，都在帮你们更了解彼此</p>
+                        <p class="reveal-note">@(Icon("sparkles"))<span>每一个答案，都在帮你们更了解彼此</span>@(Icon("sparkles"))</p>
                     </div>
                 }
             </section>

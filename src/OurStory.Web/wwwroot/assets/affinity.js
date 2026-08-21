@@ -53,3 +53,73 @@ document.querySelectorAll('.reveal-answers strong, .history-answer > p').forEach
         button.textContent = collapsed ? '展开全部 ↓' : '收起 ↑';
     });
 });
+
+function targetHistoryCard() {
+    if (!window.location.hash) return null;
+
+    var targetId;
+    try {
+        targetId = decodeURIComponent(window.location.hash.slice(1));
+    } catch (_) {
+        return null;
+    }
+
+    var target = document.getElementById(targetId);
+    return target && target.classList.contains('history-card') ? target : null;
+}
+
+function positionTargetHistoryCard() {
+    document.querySelectorAll('.history-card.is-target-highlight').forEach(function (card) {
+        card.classList.remove('is-target-highlight');
+    });
+
+    var target = targetHistoryCard();
+    if (!target) return;
+
+    function startHighlight() {
+        target.classList.add('is-target-highlight');
+        target.addEventListener('animationend', function finishHighlight(event) {
+            if (event.target !== target) return;
+            target.classList.remove('is-target-highlight');
+            target.removeEventListener('animationend', finishHighlight);
+        });
+    }
+
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var expectedTop = parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+    var startedAt = window.performance.now();
+
+    target.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start'
+    });
+
+    function waitForPosition() {
+        var top = target.getBoundingClientRect().top;
+        var reachedTarget = Math.abs(top - expectedTop) <= 2;
+        var stoppedWaiting = window.performance.now() - startedAt >= 2000;
+        if (reachedTarget || stoppedWaiting) {
+            startHighlight();
+            return;
+        }
+
+        window.requestAnimationFrame(waitForPosition);
+    }
+
+    window.requestAnimationFrame(waitForPosition);
+}
+
+function scheduleTargetHistoryPosition() {
+    var fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+    fontsReady.then(function () {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(positionTargetHistoryCard);
+        });
+    });
+}
+
+scheduleTargetHistoryPosition();
+window.addEventListener('hashchange', scheduleTargetHistoryPosition);
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) scheduleTargetHistoryPosition();
+});

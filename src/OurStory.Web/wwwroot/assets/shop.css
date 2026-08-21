@@ -1,10 +1,10 @@
 /* 心意商城与心愿仓库：货架、仓库列表、心意账单 */
 /* 1. 页面骨架 ------------------------------------------------------------ */
 .content-page { min-height: 75vh; padding: 150px max(24px, calc((100vw - 1120px)/2)) 100px }
-.page-heading { text-align: center; margin-bottom: 46px }
-.page-heading > p { font: 700 8px Arial; letter-spacing: .25em; color: var(--pink-dark) }
-.page-heading h1 { font: 400 clamp(38px, 6vw, 62px) var(--serif); margin: 12px 0 }
-.page-heading > span { font-size: 12px; color: var(--muted) }
+.page-heading { margin-bottom: 38px; text-align: center }
+.page-heading > p { margin: 0 0 8px; color: var(--pink-dark); font: 700 10px Arial, sans-serif; letter-spacing: .2em }
+.page-heading h1 { margin: 12px 0; font: 400 clamp(38px, 6vw, 62px)/1.1 var(--serif); letter-spacing: -.04em }
+.page-heading > span { display: block; color: var(--muted); font-size: 13px }
 
 .shop-stats {
     display: flex;
@@ -471,7 +471,6 @@
 
 /* 8. 响应式 -------------------------------------------------------------- */
 @media (max-width: 800px) {
-    .content-page { padding-top: 120px }
     .shop-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px }
     .shop-row { grid-template-columns: 38px minmax(0, 1fr); row-gap: 12px }
     .shop-row-mark { width: 38px; height: 38px; font-size: 17px }
@@ -479,6 +478,14 @@
     .shop-row-actions form, .shop-row-actions .shop-buy, .shop-row-actions .shop-ghost { flex: 1 }
     .shop-row-actions .shop-buy, .shop-row-actions .shop-ghost { justify-content: center; width: 100% }
     .shop-section-head { align-items: flex-start; flex-direction: column; gap: 8px }
+}
+
+@media (max-width: 700px) {
+    .content-page { padding-top: 120px }
+}
+
+@media (max-width: 500px) {
+    .page-heading h1 { font-size: 42px }
 }
 
 @media (max-width: 600px) {

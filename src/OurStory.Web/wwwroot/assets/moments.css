@@ -186,6 +186,11 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     padding-right: max(24px, calc((100vw - 1120px)/2));
 }
 
+.moments-heading { margin-bottom: 38px }
+.moments-heading > p { margin: 0 0 8px; color: var(--pink-dark); font: 700 10px Arial, sans-serif; letter-spacing: .2em }
+.moments-heading h1 { margin: 12px 0; font: 400 clamp(38px, 6vw, 62px)/1.1 var(--serif); letter-spacing: -.04em }
+.moments-heading > span { display: block; color: var(--muted); font-size: 13px }
+
 .moments-stats {
     display: flex;
     justify-content: center;
@@ -610,6 +615,14 @@ a.post-nav-item.is-next:hover .post-nav-label .icon { transform: translateX(3px)
     .moment-excerpt { -webkit-line-clamp: 3; line-clamp: 3 }
     .moment-footer { display: block }
     .moment-footer b { display: flex; margin-top: 9px }
+}
+
+@media (max-width: 700px) {
+    .content-page.moments-page { padding-top: 120px }
+}
+
+@media (max-width: 500px) {
+    .moments-heading h1 { font-size: 42px }
 }
 
 @media (max-width: 520px) {
