@@ -56,7 +56,7 @@
                         {
                             <span class="today-love-day">@Icon("clock")第 @today.LoveDay 天</span>
                         }
-                        <span class="question-type">@(today.Type switch { AffinityQuestionType.MultipleChoice => "多选 · 可选多项", AffinityQuestionType.OpenEnded => "开放题 · 自由作答", _ => "单选" })</span>
+                        <span class="question-type">@(today.Type switch { AffinityQuestionType.MultipleChoice => "可选多项", AffinityQuestionType.OpenEnded => "自由作答", _ => "单选" })</span>
                         <span class="category">@today.Category</span>
                     </span>
                 </header>

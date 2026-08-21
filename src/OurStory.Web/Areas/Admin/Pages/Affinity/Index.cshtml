@@ -58,15 +58,15 @@
 
                     <div class="sealed-question-summary">
                         <span>@Icon("tag")<small>分类</small><strong>@question.Category</strong></span>
+                        <span>@Icon("sparkles")<small>题型</small><strong>@(question.Type switch { AffinityQuestionType.SingleChoice => "单选题", AffinityQuestionType.MultipleChoice => "多选题", AffinityQuestionType.OpenEnded => "开放题", _ => question.Type.ToString() })</strong></span>
                         <span>@Icon("list-checks")<small>选项</small><strong>@(question.Type == AffinityQuestionType.OpenEnded ? "无需选项" : $"{question.OptionCount} 项")</strong></span>
-                        <span>@Icon("coins")<small>固定奖励</small><strong>@question.RewardPoints 心意</strong></span>
                         <span>@Icon("user-round")<small>创建者</small><strong>@question.CreatorName</strong></span>
                     </div>
 
                     <footer>
                         <span>@Icon("calendar-days")创建于 @question.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
                         <span>@Icon("hourglass")等待使用</span>
-                        <span>@Icon("sparkles")@(question.Type switch { AffinityQuestionType.SingleChoice => "单选题", AffinityQuestionType.MultipleChoice => "多选题", AffinityQuestionType.OpenEnded => "开放题", _ => question.Type.ToString() })</span>
+                        <span>@Icon("lock")封存只读</span>
                     </footer>
                 </article>
             }
@@ -118,7 +118,6 @@
                             <span>@Icon("sparkles")@(question.Type switch { AffinityQuestionType.SingleChoice => "单选题", AffinityQuestionType.MultipleChoice => "多选题", AffinityQuestionType.OpenEnded => "开放题", _ => question.Type.ToString() })</span>
                             <span>@Icon("user-round")@question.CreatorName 出题</span>
                             <span>@Icon("circle-check")@question.RevealedAt.ToString("yyyy-MM-dd HH:mm") 揭晓</span>
-                            <span>@Icon("coins")每人 @question.RewardPoints 心意</span>
                         </div>
                     </div>
                 </a>
