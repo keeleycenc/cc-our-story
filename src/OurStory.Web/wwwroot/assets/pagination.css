@@ -1,0 +1,60 @@
+.page-navigator {
+    --page-navigator-margin-top: 32px;
+    --page-navigator-size: 36px;
+    --page-navigator-min-width: 36px;
+    --page-navigator-radius: 12px;
+    margin-top: var(--page-navigator-margin-top)
+}
+
+.page-navigator ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none
+}
+
+.page-navigator li { display: flex }
+
+.page-navigator a,
+.page-navigator .current > span {
+    display: grid;
+    place-items: center;
+    min-width: var(--page-navigator-min-width);
+    height: var(--page-navigator-size);
+    padding: 0 11px;
+    border-radius: var(--page-navigator-radius);
+    background: var(--surface-muted);
+    font-size: 12px;
+    transition: background-color .2s, color .2s
+}
+
+.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
+.page-navigator .current > span { background: var(--ink); color: var(--paper) }
+
+.page-navigator .gap {
+    align-items: center;
+    padding: 0 2px;
+    color: var(--faint);
+    font-size: 12px;
+    user-select: none
+}
+
+.page-navigator .gap-narrow { display: none }
+
+.admin .page-navigator {
+    --page-navigator-margin-top: 22px;
+    --page-navigator-size: 34px;
+    --page-navigator-min-width: 34px;
+    --page-navigator-radius: 11px
+}
+
+@media (max-width: 600px) {
+    .page-navigator .edge, .page-navigator .far { display: none }
+    .page-navigator .gap-narrow { display: flex }
+    .page-navigator ol { gap: 6px }
+    .page-navigator a, .page-navigator .current > span { --page-navigator-min-width: 34px; padding: 0 8px }
+    .admin .page-navigator a, .admin .page-navigator .current > span { --page-navigator-min-width: 32px }
+}

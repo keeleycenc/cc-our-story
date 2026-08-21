@@ -28,3 +28,28 @@ document.querySelectorAll('[data-answer-form]').forEach(function (form) {
         else choices[0] && choices[0].focus();
     });
 });
+
+document.querySelectorAll('.reveal-answers strong, .history-answer > p').forEach(function (answer, index) {
+    answer.classList.add('answer-copy');
+
+    var collapseHeight = parseFloat(getComputedStyle(answer).getPropertyValue('--answer-collapse-height'));
+    if (!collapseHeight || answer.scrollHeight <= collapseHeight + 1) return;
+
+    var answerId = answer.id || 'affinity-answer-' + index;
+    answer.id = answerId;
+    answer.classList.add('is-collapsible', 'is-collapsed');
+
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'answer-expand';
+    button.setAttribute('aria-controls', answerId);
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = '展开全部 ↓';
+    answer.insertAdjacentElement('afterend', button);
+
+    button.addEventListener('click', function () {
+        var collapsed = answer.classList.toggle('is-collapsed');
+        button.setAttribute('aria-expanded', String(!collapsed));
+        button.textContent = collapsed ? '展开全部 ↓' : '收起 ↑';
+    });
+});

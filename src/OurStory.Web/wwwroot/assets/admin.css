@@ -573,58 +573,6 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .atmosphere-orphan { margin: 15px 0 0 }
 
-/* 翻页条：和前台共用 _Pagination 这一份局部视图，
-   当前页的底色要给到 li 里的 span，挂在 li 上会被里面的方块盖掉 */
-.page-navigator { margin-top: 22px }
-
-.page-navigator ol {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.page-navigator li { display: flex }
-
-.page-navigator a,
-.page-navigator .current > span {
-    display: grid;
-    place-items: center;
-    min-width: 34px;
-    height: 34px;
-    padding: 0 10px;
-    border-radius: 11px;
-    background: var(--surface-muted);
-    font-size: 12px;
-    transition: background-color .18s, color .18s;
-}
-
-.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
-.page-navigator .current > span { background: var(--ink); color: var(--paper) }
-
-/* 省略号只是个记号，不给方块也不给指针 */
-.page-navigator .gap {
-    align-items: center;
-    padding: 0 2px;
-    color: var(--faint);
-    font-size: 12px;
-    user-select: none;
-}
-
-/* 窄屏才用得上的那两个省略号，宽屏下页码是连着的 */
-.page-navigator .gap-narrow { display: none }
-
-/* 窄屏收起「首页 / 尾页」和外圈两个页码，首尾页码本身留着 */
-@media (max-width: 600px) {
-    .page-navigator .edge, .page-navigator .far { display: none }
-    .page-navigator .gap-narrow { display: flex }
-    .page-navigator ol { gap: 6px }
-    .page-navigator a, .page-navigator .current > span { min-width: 32px; padding: 0 8px }
-}
-
 /* 回到顶部：浮在内容区右下角，滚开一段才出现 */
 .admin-to-top {
     position: fixed;

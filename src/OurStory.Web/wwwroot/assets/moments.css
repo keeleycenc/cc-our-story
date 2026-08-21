@@ -38,49 +38,7 @@
 .read-more { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pink-dark) }
 .read-more .icon { transition: transform .2s }
 .post-card:hover .read-more .icon { transform: translateX(3px) }
-.page-navigator { margin-top: 45px }
-
-.page-navigator ol {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.page-navigator li { display: flex }
-
-.page-navigator a,
-.page-navigator .current > span {
-    display: grid;
-    place-items: center;
-    min-width: 36px;
-    height: 36px;
-    padding: 0 11px;
-    border-radius: 12px;
-    background: var(--surface-muted);
-    font-size: 12px;
-    transition: background-color .2s, color .2s;
-}
-
-.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
-.page-navigator .current > span { background: var(--ink); color: var(--paper) }
-.page-navigator .gap {
-    align-items: center;
-    padding: 0 2px;
-    color: var(--faint);
-    font-size: 12px;
-    user-select: none;
-}
-.page-navigator .gap-narrow { display: none }
-@media (max-width: 600px) {
-    .page-navigator .edge, .page-navigator .far { display: none }
-    .page-navigator .gap-narrow { display: flex }
-    .page-navigator ol { gap: 6px }
-    .page-navigator a, .page-navigator .current > span { min-width: 34px; padding: 0 8px }
-}
+.page-navigator { --page-navigator-margin-top: 45px }
 
 .article-page > article { max-width: 760px; margin: auto }
 .article-page article > header { text-align: center; margin-bottom: 55px }

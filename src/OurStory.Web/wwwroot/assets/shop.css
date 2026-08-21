@@ -422,46 +422,6 @@
 .shop-empty.is-inline { padding: 44px 20px; border: 1px dashed var(--line-strong); border-radius: 18px }
 .shop-empty .shop-link { margin-top: 22px }
 
-.page-navigator { margin-top: 32px }
-
-.page-navigator ol {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.page-navigator li { display: flex }
-
-.page-navigator a,
-.page-navigator .current > span {
-    display: grid;
-    place-items: center;
-    min-width: 36px;
-    height: 36px;
-    padding: 0 11px;
-    border-radius: 12px;
-    background: var(--surface-muted);
-    font-size: 12px;
-    transition: background-color .2s, color .2s;
-}
-
-.page-navigator a:hover { background: var(--pink-soft); color: var(--pink-dark) }
-.page-navigator .current > span { background: var(--ink); color: var(--paper) }
-
-.page-navigator .gap {
-    align-items: center;
-    padding: 0 2px;
-    color: var(--faint);
-    font-size: 12px;
-    user-select: none;
-}
-
-.page-navigator .gap-narrow { display: none }
-
 /* 7. 确认框 -------------------------------------------------------------- */
 .shop-dialog {
     position: fixed;
@@ -522,10 +482,6 @@
 }
 
 @media (max-width: 600px) {
-    .page-navigator .edge, .page-navigator .far { display: none }
-    .page-navigator .gap-narrow { display: flex }
-    .page-navigator ol { gap: 6px }
-    .page-navigator a, .page-navigator .current > span { min-width: 34px; padding: 0 8px }
     .shop-grid { grid-template-columns: 1fr }
     .ledger-item { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; padding: 12px 14px }
     .ledger-mark { width: 32px; height: 32px; font-size: 14px }

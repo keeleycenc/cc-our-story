@@ -66,6 +66,7 @@
 .reveal-answers > div > header span, .reveal-answers > div > header time { color: var(--faint); font-size: 9px }
 .reveal-answers > div > header time { font-variant-numeric: tabular-nums }
 .reveal-answers strong { color: var(--ink); font: 400 16px/1.5 var(--serif) }
+.reveal-answers strong.answer-copy { --answer-collapse-height: 252px; display: block }
 .reveal-link { display: grid; place-items: center; color: var(--pink-dark) !important; font-size: 22px !important }
 .affinity-empty { text-align: center }
 .affinity-empty > span { color: var(--pink-dark); font-size: 28px }
@@ -91,7 +92,35 @@
 .history-answer > header strong { color: var(--ink); font-size: 11px }
 .history-answer > header time { display: inline-flex; align-items: center; gap: 4px; color: var(--faint); font-size: 9px }
 .history-answer > p { margin: 15px 0 0; color: var(--ink); font: 400 15px/1.65 var(--serif); overflow-wrap: anywhere }
+.history-answer > p.answer-copy { --answer-collapse-height: 174px }
+.answer-copy.is-collapsible { position: relative }
+.answer-copy.is-collapsed {
+    max-height: var(--answer-collapse-height);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 44px), transparent 100%);
+    mask-image: linear-gradient(180deg, #000 calc(100% - 44px), transparent 100%)
+}
+.answer-expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    gap: 5px;
+    min-height: 32px;
+    margin: 13px auto 0;
+    padding: 0 13px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font: 500 10px var(--sans);
+    cursor: pointer;
+    transition: border-color .18s, color .18s, background .18s
+}
+.answer-expand:hover { border-color: var(--pink); background: var(--pink-soft); color: var(--pink-dark) }
+.answer-expand:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px }
 .history-empty { padding: 36px; border: 1px dashed var(--line-strong); border-radius: 18px; text-align: center; color: var(--faint); font-size: 11px }
+.page-navigator { --page-navigator-margin-top: 30px }
 @media (max-width: 600px) {
     .affinity-hero { padding-top: 70px }
     .affinity-shell { width: min(100% - 22px, 860px) }
@@ -110,4 +139,6 @@
     .history-badges { flex: 0 0 auto; flex-wrap: nowrap; justify-content: flex-end; gap: 4px }
     .history-badges span, .history-badges b { padding: 5px 7px }
     .history-answers { grid-template-columns: 1fr }
+    .reveal-answers strong.answer-copy { --answer-collapse-height: 228px }
+    .history-answer > p.answer-copy { --answer-collapse-height: 154px }
 }
