@@ -168,9 +168,19 @@ internal sealed class AffinityService(
         return AffinitySubmitResult.Accepted;
     }
 
-    public async Task<IReadOnlyList<AffinityQuestionCard>> GetSealedQuestionsAsync(CancellationToken cancellationToken = default) {
+    public async Task<PagedList<AffinityQuestionCard>> GetSealedQuestionsAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default) {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var total = await db.AffinityQuestions.CountAsync(cancellationToken);
         var questions = await db.AffinityQuestions
             .OrderByDescending(item => item.CreatedAt)
+            .ThenByDescending(item => item.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(item => new {
                 item.Id,
                 item.Category,
@@ -186,7 +196,7 @@ internal sealed class AffinityService(
             .ToListAsync(cancellationToken);
 
         var site = await settings.GetAsync(cancellationToken);
-        return [.. questions.Select(item => new AffinityQuestionCard(
+        var items = questions.Select(item => new AffinityQuestionCard(
             item.Id,
             item.Category,
             item.Type,
@@ -196,7 +206,8 @@ internal sealed class AffinityService(
             item.UsedCount,
             site.RewardAffinity,
             item.CreatorRole is { } role ? site.RoleName(role) : "系统预置",
-            clock.ToLocal(item.CreatedAt)))];
+            clock.ToLocal(item.CreatedAt))).ToList();
+        return new PagedList<AffinityQuestionCard>(items, page, pageSize, total);
     }
 
     public async Task<AffinityQuestionCard> CreateQuestionAsync(

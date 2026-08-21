@@ -4,18 +4,19 @@
     ViewData["ActiveMenu"] = "affinity";
     ViewData["Eyebrow"] = "SEALED QUESTIONS";
     ViewData["Title"] = "心有灵犀题目";
+    var pager = new PaginationModel(Model.Questions.Page, Model.Questions.TotalPages, "/admin/affinity");
 }
 
 <div class="admin-panel">
     <div class="admin-toolbar affinity-toolbar">
         <div>
             <strong>封存记录</strong>
-            <p class="admin-panel-hint">共 @Model.Questions.Count 份。创建后不会再显示内容，也不能编辑或删除。</p>
+            <p class="admin-panel-hint">共 @Model.Questions.TotalCount 份。创建后不会再显示内容，也不能编辑或删除。</p>
         </div>
         <a class="btn" href="/admin/affinity/create">@Icon("plus")创建题目</a>
     </div>
 
-    @if (Model.Questions.Count == 0)
+    @if (Model.Questions.TotalCount == 0)
     {
         <div class="admin-empty affinity-admin-empty">
             <span>@Icon("sparkles")</span>
@@ -26,7 +27,7 @@
     else
     {
         <div class="sealed-question-grid">
-            @foreach (var question in Model.Questions)
+            @foreach (var question in Model.Questions.Items)
             {
                 <article class="sealed-question-card">
                     <header>
@@ -53,5 +54,7 @@
                 </article>
             }
         </div>
+
+        <partial name="_Pagination" model="pager" />
     }
 </div>

@@ -78,7 +78,7 @@ public class AffinityServiceTests {
         var service = Service(harness);
         var created = await service.CreateQuestionAsync(Question(), boyId);
 
-        var card = Assert.Single(await service.GetSealedQuestionsAsync());
+        var card = Assert.Single((await service.GetSealedQuestionsAsync(1, 20)).Items);
         Assert.Equal(created.Id, card.Id);
         Assert.True(card.IsSealed);
         Assert.Equal(3, card.OptionCount);
@@ -90,6 +90,26 @@ public class AffinityServiceTests {
             method.Name.Contains("Delete", StringComparison.Ordinal)
             || method.Name.Contains("Update", StringComparison.Ordinal)
             || method.Name.Contains("GetQuestion", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task 封存题目列表按创建顺序稳定分页() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        for (var index = 0; index < 3; index++) {
+            _ = await service.CreateQuestionAsync(Question(), boyId);
+        }
+
+        var first = await service.GetSealedQuestionsAsync(1, 2);
+        var second = await service.GetSealedQuestionsAsync(2, 2);
+
+        Assert.Equal(3, first.TotalCount);
+        Assert.Equal(2, first.TotalPages);
+        Assert.Equal(2, first.Items.Count);
+        Assert.Single(second.Items);
+        Assert.True(first.Items[0].Id > first.Items[1].Id);
+        Assert.True(first.Items[1].Id > second.Items[0].Id);
     }
 
     [Fact]

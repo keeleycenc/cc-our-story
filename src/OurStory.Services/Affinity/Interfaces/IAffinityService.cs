@@ -47,11 +47,16 @@ public interface IAffinityService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 异步获取封存题目列表
+    /// 异步获取一页封存题目
     /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
     /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>封存题目列表</returns>
-    Task<IReadOnlyList<AffinityQuestionCard>> GetSealedQuestionsAsync(CancellationToken cancellationToken = default);
+    /// <returns>封存题目分页列表</returns>
+    Task<PagedList<AffinityQuestionCard>> GetSealedQuestionsAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 异步创建并封存题目
