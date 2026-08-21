@@ -175,8 +175,10 @@ internal sealed class AffinityService(
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 50);
 
-        var total = await db.AffinityQuestions.CountAsync(cancellationToken);
-        var questions = await db.AffinityQuestions
+        var available = db.AffinityQuestions
+            .Where(item => item.DailyQuestions.Count == 0);
+        var total = await available.CountAsync(cancellationToken);
+        var questions = await available
             .OrderByDescending(item => item.CreatedAt)
             .ThenByDescending(item => item.Id)
             .Skip((page - 1) * pageSize)
@@ -208,6 +210,41 @@ internal sealed class AffinityService(
             item.CreatorRole is { } role ? site.RoleName(role) : "系统预置",
             clock.ToLocal(item.CreatedAt))).ToList();
         return new PagedList<AffinityQuestionCard>(items, page, pageSize, total);
+    }
+
+    public async Task<PagedList<AffinityAnsweredQuestionCard>> GetAnsweredQuestionsAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default) {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var answered = db.AffinityDailyQuestions
+            .Where(item => item.Answers.Count >= 2);
+        var total = await answered.CountAsync(cancellationToken);
+        var records = await answered
+            .Include(item => item.Answers)
+            .Include(item => item.Question)
+                .ThenInclude(question => question!.CreatedByUser)
+            .OrderByDescending(item => item.Day)
+            .ThenByDescending(item => item.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var site = await settings.GetAsync(cancellationToken);
+        var items = records.Select(item => new AffinityAnsweredQuestionCard(
+            item.Id,
+            item.Day,
+            item.LoveDay,
+            item.QuestionText,
+            item.Category,
+            item.Type,
+            item.RewardPoints,
+            item.Question?.CreatedByUser?.Role is { } role ? site.RoleName(role) : "系统预置",
+            clock.ToLocal(item.Answers.Max(answer => answer.AnsweredAt)))).ToList();
+        return new PagedList<AffinityAnsweredQuestionCard>(items, page, pageSize, total);
     }
 
     public async Task<AffinityQuestionCard> CreateQuestionAsync(
@@ -391,6 +428,7 @@ internal sealed class AffinityService(
         var mine = daily.Answers.Single(answer => answer.Role == role);
         var partner = daily.Answers.Single(answer => answer.Role != role);
         return new AffinityHistoryItem(
+            daily.Id,
             daily.Day,
             daily.LoveDay,
             daily.Question?.CreatedByUser?.Role,

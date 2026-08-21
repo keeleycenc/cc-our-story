@@ -1078,6 +1078,23 @@ h2 > .push-spinner[hidden] { display: none }
 .sealed-question-summary strong { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap }
 .sealed-question-card > footer { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 14px 19px 17px; color: var(--faint); font-size: 9px }
 .sealed-question-card > footer span { display: inline-flex; align-items: center; gap: 5px }
+.affinity-answered-panel { scroll-margin-top: 20px }
+.affinity-readonly-tag { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 32px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: 10px }
+.affinity-readonly-tag .icon { font-size: 12px }
+.answered-question-list { display: grid; gap: 10px }
+.answered-question-card { display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center; gap: 14px; min-height: 104px; padding: 17px 19px; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--card-lilac) 26%, var(--surface))); box-shadow: var(--shadow-sm); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .18s, box-shadow .18s, transform .18s }
+.answered-question-card:hover { border-color: color-mix(in srgb, var(--pink) 55%, var(--line)); box-shadow: var(--shadow-md); transform: translateY(-1px) }
+.answered-question-card:active { transform: translateY(0) scale(.995) }
+.answered-question-card:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px }
+.answered-question-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; background: var(--card-lilac); color: var(--pink-dark); font-size: 19px }
+.answered-question-content { display: grid; min-width: 0; gap: 11px }
+.answered-question-title { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: var(--ink); font: 400 17px/1.5 var(--serif); transition: color .18s }
+.answered-question-title .icon { flex: none; color: var(--faint); font-size: 15px; transition: color .18s, transform .18s }
+.answered-question-card:hover .answered-question-title { color: var(--pink-dark) }
+.answered-question-card:hover .answered-question-title .icon { color: var(--pink-dark); transform: translateX(3px) }
+.answered-question-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 13px; color: var(--faint); font-size: 9px }
+.answered-question-meta span { display: inline-flex; align-items: center; gap: 5px }
+.answered-question-meta .icon { color: var(--muted); font-size: 11px }
 .affinity-admin-empty { display: grid; justify-items: center; gap: 7px; padding: 55px 20px }
 .affinity-admin-empty > span { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 18px; background: var(--pink-soft); color: var(--pink-dark); font-size: 23px }
 .affinity-admin-empty strong { color: var(--ink); font: 400 18px var(--serif) }
@@ -1723,6 +1740,11 @@ body.auth-page {
     .sealed-question-grid { grid-template-columns: 1fr }
     .affinity-toolbar { align-items: stretch; flex-direction: column }
     .affinity-toolbar > .btn { justify-content: center }
+    .affinity-readonly-tag { align-self: flex-start }
+    .answered-question-card { grid-template-columns: 38px minmax(0, 1fr); align-items: start; gap: 11px; min-height: 0; padding: 15px 14px }
+    .answered-question-mark { width: 38px; height: 38px; border-radius: 12px; font-size: 16px }
+    .answered-question-title { font-size: 15px }
+    .answered-question-meta { gap: 7px 10px }
     .sealed-question-summary { grid-template-columns: repeat(2, 1fr) }
     body.admin {
         display: flex;

@@ -59,6 +59,18 @@ public interface IAffinityService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步获取一页双方均已完成的只读作答记录
+    /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>共同作答记录分页列表</returns>
+    Task<PagedList<AffinityAnsweredQuestionCard>> GetAnsweredQuestionsAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步创建并封存题目
     /// </summary>
     /// <param name="model">题目创建模型</param>

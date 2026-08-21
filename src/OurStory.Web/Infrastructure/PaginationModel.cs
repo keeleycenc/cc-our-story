@@ -27,8 +27,15 @@ public enum PageGap {
 /// <summary>翻页条的参数</summary>
 /// <param name="Page">当前页码，从 1 开始</param>
 /// <param name="TotalPages">总页数</param>
-/// <param name="BasePath">页码拼在这个地址后面，第一页不带 ?page=</param>
-public record PaginationModel(int Page, int TotalPages, string BasePath) {
+/// <param name="BasePath">页码拼在这个地址后面</param>
+/// <param name="PageKey">查询串中的页码参数名</param>
+/// <param name="Fragment">跳转后要定位的页面片段</param>
+public record PaginationModel(
+    int Page,
+    int TotalPages,
+    string BasePath,
+    string PageKey = PageNumbers.Key,
+    string? Fragment = null) {
     /// <summary>
     /// 宽屏时当前页两侧各留几个页码
     /// </summary>
@@ -64,7 +71,12 @@ public record PaginationModel(int Page, int TotalPages, string BasePath) {
     /// </summary>
     /// <param name="page">页码</param>
     /// <returns>该页的地址</returns>
-    public string UrlFor(int page) => page <= 1 ? BasePath : $"{BasePath}{(BasePath.Contains('?', StringComparison.Ordinal) ? '&' : '?')}page={page}";
+    public string UrlFor(int page) {
+        var url = page <= 1
+            ? BasePath
+            : $"{BasePath}{(BasePath.Contains('?', StringComparison.Ordinal) ? '&' : '?')}{PageKey}={page}";
+        return string.IsNullOrWhiteSpace(Fragment) ? url : $"{url}#{Fragment}";
+    }
 
     /// <summary>
     /// 获取当前页周围那一段页码，不含首尾两页

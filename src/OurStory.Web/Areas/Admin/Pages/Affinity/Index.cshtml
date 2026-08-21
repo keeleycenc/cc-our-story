@@ -2,16 +2,33 @@
 @model OurStory.Web.Areas.Admin.Pages.Affinity.IndexModel
 @{
     ViewData["ActiveMenu"] = "affinity";
-    ViewData["Eyebrow"] = "SEALED QUESTIONS";
+    ViewData["Eyebrow"] = "AFFINITY ARCHIVE";
     ViewData["Title"] = "心有灵犀题目";
-    var pager = new PaginationModel(Model.Questions.Page, Model.Questions.TotalPages, "/admin/affinity");
+    var waitingBase = Model.AnsweredQuestions.Page > 1
+        ? $"/admin/affinity?answeredPage={Model.AnsweredQuestions.Page}"
+        : "/admin/affinity";
+    var answeredBase = Model.Questions.Page > 1
+        ? $"/admin/affinity?page={Model.Questions.Page}"
+        : "/admin/affinity";
+    var waitingPager = new PaginationModel(
+        Model.Questions.Page,
+        Model.Questions.TotalPages,
+        waitingBase,
+        PageNumbers.Key,
+        "waiting-questions");
+    var answeredPager = new PaginationModel(
+        Model.AnsweredQuestions.Page,
+        Model.AnsweredQuestions.TotalPages,
+        answeredBase,
+        "answeredPage",
+        "answered-records");
 }
 
-<div class="admin-panel">
+<div class="admin-panel" id="waiting-questions">
     <div class="admin-toolbar affinity-toolbar">
         <div>
-            <strong>封存记录</strong>
-            <p class="admin-panel-hint">共 @Model.Questions.TotalCount 份。创建后不会再显示内容，也不能编辑或删除。</p>
+            <strong>待启封题库</strong>
+            <p class="admin-panel-hint">共 @Model.Questions.TotalCount 道尚未使用的题目。启封前不会公开，也不能编辑或删除。</p>
         </div>
         <a class="btn" href="/admin/affinity/create">@Icon("plus")创建题目</a>
     </div>
@@ -20,8 +37,8 @@
     {
         <div class="admin-empty affinity-admin-empty">
             <span>@Icon("sparkles")</span>
-            <strong>暂无封存题目</strong>
-            <p>创建题目后会按顺序等待使用，并始终保持内容安全。</p>
+            <strong>暂无待启封题目</strong>
+            <p>可以继续创建题目，为下一次心有灵犀做好准备。</p>
         </div>
     }
     else
@@ -34,9 +51,9 @@
                         <span class="sealed-question-mark">@Icon("lock")</span>
                         <div>
                             <span>SEALED QUESTION</span>
-                            <strong>封存题目 #@question.Id.ToString("D3")</strong>
+                            <strong>待启封题目 #@question.Id.ToString("D3")</strong>
                         </div>
-                        <span class="tag affinity-sealed-tag">已封存</span>
+                        <span class="tag affinity-sealed-tag">待使用</span>
                     </header>
 
                     <div class="sealed-question-summary">
@@ -48,13 +65,66 @@
 
                     <footer>
                         <span>@Icon("calendar-days")创建于 @question.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
-                        <span>@Icon(question.UsedCount > 0 ? "circle-check" : "hourglass")@(question.UsedCount > 0 ? "已使用" : "等待使用")</span>
+                        <span>@Icon("hourglass")等待使用</span>
                         <span>@Icon("sparkles")@(question.Type switch { AffinityQuestionType.SingleChoice => "单选题", AffinityQuestionType.MultipleChoice => "多选题", AffinityQuestionType.OpenEnded => "开放题", _ => question.Type.ToString() })</span>
                     </footer>
                 </article>
             }
         </div>
 
-        <partial name="_Pagination" model="pager" />
+        <partial name="_Pagination" model="waitingPager" />
+    }
+</div>
+
+<div class="admin-panel affinity-answered-panel" id="answered-records">
+    <div class="admin-toolbar affinity-toolbar">
+        <div>
+            <strong>共同作答记录</strong>
+            <p class="admin-panel-hint">共 @Model.AnsweredQuestions.TotalCount 份双方都已完成的答案。记录仅供查看</p>
+        </div>
+        <span class="affinity-readonly-tag">@Icon("lock")只读记录</span>
+    </div>
+
+    @if (Model.AnsweredQuestions.TotalCount == 0)
+    {
+        <div class="admin-empty affinity-admin-empty">
+            <span>@Icon("message-circle-heart")</span>
+            <strong>还没有共同答案</strong>
+            <p>两个人都完成同一道题后，会在这里留下只读记录。</p>
+        </div>
+    }
+    else
+    {
+        <div class="answered-question-list">
+            @for (var index = 0; index < Model.AnsweredQuestions.Items.Count; index++)
+            {
+                var question = Model.AnsweredQuestions.Items[index];
+                <a class="answered-question-card"
+                   href="@Model.HistoryUrl(index, question.DailyQuestionId)"
+                   aria-label="查看共同作答：@question.Question">
+                    <span class="answered-question-mark">@Icon("message-circle-heart")</span>
+                    <div class="answered-question-content">
+                        <span class="answered-question-title">
+                            @question.Question
+                            @Icon("arrow-right")
+                        </span>
+                        <div class="answered-question-meta">
+                            <span>@Icon("calendar-days")@question.Day.Replace("-", ".")</span>
+                            @if (question.LoveDay > 0)
+                            {
+                                <span>@Icon("clock")第 @question.LoveDay 天</span>
+                            }
+                            <span>@Icon("tag")@question.Category</span>
+                            <span>@Icon("sparkles")@(question.Type switch { AffinityQuestionType.SingleChoice => "单选题", AffinityQuestionType.MultipleChoice => "多选题", AffinityQuestionType.OpenEnded => "开放题", _ => question.Type.ToString() })</span>
+                            <span>@Icon("user-round")@question.CreatorName 出题</span>
+                            <span>@Icon("circle-check")@question.RevealedAt.ToString("yyyy-MM-dd HH:mm") 揭晓</span>
+                            <span>@Icon("coins")每人 @question.RewardPoints 心意</span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+
+        <partial name="_Pagination" model="answeredPager" />
     }
 </div>

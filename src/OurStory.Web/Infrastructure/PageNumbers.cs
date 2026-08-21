@@ -19,12 +19,26 @@ public static class PageNumbers {
     public const int AdminPageSize = 20;
 
     /// <summary>
+    /// 心有灵犀前台每页展示的共同作答记录数
+    /// </summary>
+    public const int AffinityHistoryPageSize = 8;
+
+    /// <summary>
     /// 从查询串里取当前页码，取不到或不合法时当作第一页
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    public static int PageNumber(this HttpRequest request) {
+    public static int PageNumber(this HttpRequest request) => request.PageNumber(Key);
+
+    /// <summary>
+    /// 从查询串的指定参数中读取页码
+    /// </summary>
+    /// <param name="request">当前请求</param>
+    /// <param name="key">查询参数名</param>
+    /// <returns>有效页码，不合法时返回第一页</returns>
+    public static int PageNumber(this HttpRequest request, string key) {
         ArgumentNullException.ThrowIfNull(request);
-        return int.TryParse(request.Query[Key], out var page) && page > 1 ? page : 1;
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        return int.TryParse(request.Query[key], out var page) && page > 1 ? page : 1;
     }
 }

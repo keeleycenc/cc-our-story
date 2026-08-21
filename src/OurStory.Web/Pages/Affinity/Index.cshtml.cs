@@ -17,7 +17,7 @@ namespace OurStory.Web.Pages.Affinity;
 /// </summary>
 [Authorize]
 public class IndexModel(IAffinityService affinity, ISettingsService settings) : PageModel {
-    private const int PageSize = 8;
+    private const int PageSize = PageNumbers.AffinityHistoryPageSize;
 
     /// <summary>
     /// 获取心有灵犀仪表盘数据

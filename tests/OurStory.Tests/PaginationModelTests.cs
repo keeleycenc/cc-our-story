@@ -22,6 +22,20 @@ public class PaginationModelTests {
         Assert.Equal(expected, new PaginationModel(1, 99, "/moments").UrlFor(page));
 
     /// <summary>
+    /// 同页多列表可以使用独立页码参数并在翻页后定位到对应区域
+    /// </summary>
+    [Theory]
+    [InlineData(1, "/admin/affinity?page=3#answered-records")]
+    [InlineData(2, "/admin/affinity?page=3&answeredPage=2#answered-records")]
+    public void UrlFor_SupportsCustomKeyAndFragment(int page, string expected) =>
+        Assert.Equal(expected, new PaginationModel(
+            1,
+            3,
+            "/admin/affinity?page=3",
+            "answeredPage",
+            "answered-records").UrlFor(page));
+
+    /// <summary>
     /// 中间那段页码不含首尾两页，宽屏时当前页两侧各留两个
     /// </summary>
     [Fact]

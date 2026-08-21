@@ -60,6 +60,7 @@ public sealed record AffinityStats(
 /// 双方已经揭晓的一条历史记录
 /// </summary>
 public sealed record AffinityHistoryItem(
+    int DailyQuestionId,
     string Day,
     int LoveDay,
     UserRole? CreatorRole,
@@ -72,6 +73,20 @@ public sealed record AffinityHistoryItem(
     DateTime PartnerAnsweredAt,
     int RewardPoints,
     bool HasSameAnswer);
+
+/// <summary>
+/// 后台只读的共同作答记录。题目完成后才允许展示题干
+/// </summary>
+public sealed record AffinityAnsweredQuestionCard(
+    int DailyQuestionId,
+    string Day,
+    int LoveDay,
+    string Question,
+    string Category,
+    AffinityQuestionType Type,
+    int RewardPoints,
+    string CreatorName,
+    DateTime RevealedAt);
 
 /// <summary>
 /// 获取亲密度主页数据

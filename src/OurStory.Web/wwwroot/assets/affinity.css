@@ -76,7 +76,8 @@
 .affinity-history header h2 { margin: 6px 0 0; font: 400 27px var(--serif); color: var(--ink) }
 .affinity-history > header > span { color: var(--faint); font-size: 10px }
 .history-list { display: grid; gap: 12px }
-.history-card { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm) }
+.history-card { overflow: hidden; scroll-margin-top: 92px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-sm) }
+.history-card:target { border-color: var(--pink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 14%, transparent), var(--shadow-sm) }
 .history-meta { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 20px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 70%, transparent) }
 .history-origin, .history-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 8px }
 .history-origin time { color: var(--faint); font: 700 9px Arial; letter-spacing: .08em }

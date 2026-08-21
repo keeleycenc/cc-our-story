@@ -171,7 +171,7 @@
                         var itemCreatorName = item.CreatorRole is { } itemCreatorRole
                             ? Model.Site.RoleName(itemCreatorRole)
                             : "系统预置";
-                        <article class="history-card">
+                        <article class="history-card" id="affinity-history-@item.DailyQuestionId">
                             <div class="history-meta">
                                 <div class="history-origin">
                                     <time datetime="@item.Day">@item.Day.Replace("-", ".")</time>

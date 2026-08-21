@@ -113,6 +113,34 @@ public class AffinityServiceTests {
     }
 
     [Fact]
+    public async Task 已使用题目离开待启封题库且共同完成后进入作答记录() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness);
+        var used = await service.CreateQuestionAsync(Question(text: "我们第一次一起看的电影是什么？"), boyId);
+        var waiting = await service.CreateQuestionAsync(Question(text: "下一次约会最想去哪里？"), boyId);
+
+        var daily = (await service.GetDashboardAsync(boyId, UserRole.Boy)).Today!;
+        Assert.Equal(used.Id, await harness.Db.AffinityDailyQuestions
+            .Where(item => item.Id == daily.DailyQuestionId)
+            .Select(item => item.QuestionId)
+            .SingleAsync());
+
+        var sealedQuestions = await service.GetSealedQuestionsAsync(1, 20);
+        Assert.Equal(waiting.Id, Assert.Single(sealedQuestions.Items).Id);
+        Assert.Empty((await service.GetAnsweredQuestionsAsync(1, 20)).Items);
+
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(0), boyId, UserRole.Boy));
+        Assert.Empty((await service.GetAnsweredQuestionsAsync(1, 20)).Items);
+
+        Assert.Equal(AffinitySubmitResult.Accepted, await service.SubmitAsync(daily.DailyQuestionId, Selection(1), girlId, UserRole.Girl));
+        var answered = Assert.Single((await service.GetAnsweredQuestionsAsync(1, 20)).Items);
+        Assert.Equal(daily.DailyQuestionId, answered.DailyQuestionId);
+        Assert.Equal("我们第一次一起看的电影是什么？", answered.Question);
+        Assert.Equal("男主", answered.CreatorName);
+    }
+
+    [Fact]
     public async Task 统一答题奖励按每日题快照发放一次() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
