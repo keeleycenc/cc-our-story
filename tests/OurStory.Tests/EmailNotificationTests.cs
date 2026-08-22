@@ -201,7 +201,7 @@ public class EmailNotificationTests {
             new PushMessage("新的点点滴滴", "第一行\n第二行", "/moments/summer"),
             null);
 
-        Assert.Equal("【Our Story】新的点点滴滴", mail.Subject);
+        Assert.Equal("新的点点滴滴", mail.Subject);
         Assert.Contains("第一行", mail.TextBody, StringComparison.Ordinal);
         Assert.Contains("https://love.example.com/moments/summer", mail.TextBody, StringComparison.Ordinal);
         Assert.Contains("https://love.example.com/admin/notifications", mail.TextBody, StringComparison.Ordinal);

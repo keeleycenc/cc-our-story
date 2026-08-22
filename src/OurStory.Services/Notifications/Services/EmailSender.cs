@@ -94,7 +94,7 @@ internal sealed class EmailSender(
         var mail = new MimeMessage();
         mail.From.Add(new MailboxAddress(brand, options.SenderEmail.Trim()));
         mail.To.Add(MailboxAddress.Parse(recipient));
-        mail.Subject = Clamp($"【{brand}】{title}", SubjectLimit);
+        mail.Subject = Clamp(title, SubjectLimit);
 
         var encoder = HtmlEncoder.Default;
         var encodedBrand = encoder.Encode(brand);
