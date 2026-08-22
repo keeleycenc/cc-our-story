@@ -793,6 +793,43 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line) }
 
+.channel-status {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.channel-status[data-kind="ok"] {
+    border-color: var(--pink-soft);
+    background: var(--pink-softer);
+    color: var(--pink-dark);
+}
+
+.email-master {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+
+.email-test-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    margin-top: 4px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+.email-test-actions > span { margin-right: 2px; color: var(--muted); font-size: 12px }
+
 /* 9. 按钮 ---------------------------------------------------------------- */
 .btn {
     display: inline-flex;
@@ -989,6 +1026,15 @@ h2 > .push-spinner[hidden] { display: none }
 .device-note[data-kind="warn"] { color: var(--danger) }
 
 .notify-options { display: grid; gap: 2px }
+
+.notify-section-label {
+    margin: 15px 12px 5px;
+    color: var(--faint);
+    font-size: 11px;
+    letter-spacing: .12em;
+}
+
+.notify-options > .notify-section-label:first-child { margin-top: 4px }
 
 .notify-option {
     display: flex;

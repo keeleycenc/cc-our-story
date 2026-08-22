@@ -28,6 +28,7 @@
 		<EntityFrameworkVersion>10.0.10</EntityFrameworkVersion>
 		<SQLitePCLRawVersion>3.0.5</SQLitePCLRawVersion>
 		<MarkdigVersion>1.3.2</MarkdigVersion>
+		<MailKitVersion>4.17.0</MailKitVersion>
 		<XunitVersion>2.9.3</XunitVersion>
 
 		<!-- 固定 3.1.x：4.x 起直接引用 ImageSharp 需要在构建时提供 Six Labors License Key。 -->

@@ -47,6 +47,11 @@ public class NotificationsModel(
     public bool IsConfigured => notifications.IsConfigured;
 
     /// <summary>
+    /// 获取一个值，指示站点邮件通知是否已经可用
+    /// </summary>
+    public bool IsEmailConfigured => notifications.IsEmailConfigured;
+
+    /// <summary>
     /// 获取对方在站点上的称呼，「发一句话给对方」那一块要用
     /// </summary>
     public string PartnerName { get; private set; } = "对方";
@@ -68,8 +73,8 @@ public class NotificationsModel(
         ? "还没有绑定另一个账号哦"
         : !Partner.Enabled
             ? $"{PartnerName} 还没开启通知，将无法接收"
-            : Partner.Devices == 0
-                ? $"{PartnerName} 已经开启通知啦，但还没有设备绑定，先去授权一下吧"
+            : !Partner.CanReceive
+                ? $"{PartnerName} 已经开启通知，但所选渠道还没有可用的设备或邮箱"
                 : null;
 
     /// <summary>
@@ -85,6 +90,8 @@ public class NotificationsModel(
 
         Input = new InputModel {
             Enabled = preferences.Enabled,
+            WebPushEnabled = preferences.WebPushEnabled,
+            EmailEnabled = preferences.EmailEnabled,
             Moments = preferences.Moments,
             Anniversaries = preferences.Anniversaries,
             Shop = preferences.Shop,
@@ -116,6 +123,8 @@ public class NotificationsModel(
             userId,
             new NotificationPreferences {
                 Enabled = Input.Enabled,
+                WebPushEnabled = Input.WebPushEnabled,
+                EmailEnabled = Input.EmailEnabled,
                 Moments = Input.Moments,
                 Anniversaries = Input.Anniversaries,
                 Shop = Input.Shop,
@@ -179,6 +188,16 @@ public class NotificationsModel(
         /// 获取或设置通知服务的总开关
         /// </summary>
         public bool Enabled { get; set; }
+
+        /// <summary>
+        /// 获取或设置是否通过 Web Push 接收
+        /// </summary>
+        public bool WebPushEnabled { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置是否通过 Email 接收
+        /// </summary>
+        public bool EmailEnabled { get; set; }
 
         /// <summary>
         /// 获取或设置是否接收点点滴滴的通知

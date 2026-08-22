@@ -29,6 +29,11 @@ public class OurStoryConfiguration {
     public PushOptions Push { get; set; } = new();
 
     /// <summary>
+    /// 获取或设置 SMTP 邮件通知参数
+    /// </summary>
+    public EmailOptions Email { get; set; } = new();
+
+    /// <summary>
     /// 获取或设置 LLM 氛围组：一群按人设留言的虚拟朋友
     /// </summary>
     public LlmAtmosphereOptions LlmAtmosphere { get; set; } = new();

@@ -50,7 +50,7 @@ internal sealed class NotificationScheduler(
         var provider = scope.ServiceProvider;
 
         var notifications = provider.GetRequiredService<INotificationService>();
-        if (!notifications.IsConfigured) {
+        if (!notifications.HasConfiguredChannel) {
             return;
         }
 

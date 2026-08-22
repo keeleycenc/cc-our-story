@@ -93,6 +93,9 @@ public static class ServiceCollectionExtensions {
         _ = services.AddSingleton<INotificationQueue, NotificationQueue>();
         _ = services.AddSingleton<IMissYouNotifier, MissYouNotifier>();
         _ = services.AddScoped<IWebPushSender, WebPushSender>();
+        _ = services.AddScoped<IEmailSender, EmailSender>();
+        _ = services.AddScoped<INotificationChannel, WebPushNotificationChannel>();
+        _ = services.AddScoped<INotificationChannel, EmailNotificationChannel>();
         _ = services.AddScoped<INotificationService, NotificationService>();
 
         _ = services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();

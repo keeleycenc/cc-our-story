@@ -8,27 +8,27 @@ using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
+using OurStory.Core.Options;
 using OurStory.Core.Time;
 using OurStory.Data;
-using System.Text.Json;
 
 namespace OurStory.Services.Notifications;
 
 internal sealed class NotificationService(
     OurStoryDbContext db,
     IWebPushSender sender,
+    IEnumerable<INotificationChannel> channels,
     ActiveConfiguration configuration,
     SiteClock clock,
     ILogger<NotificationService> logger) : INotificationService {
-    private const int MaxFailures = 8;
-    private const int TitleLimit = 80;
-    private const int BodyLimit = 300;
-
-    private static readonly JsonSerializerOptions PayloadJson = new() {
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-    };
+    private readonly IReadOnlyList<INotificationChannel> _channels = [.. channels];
 
     public bool IsConfigured => sender.IsConfigured;
+
+    public bool IsEmailConfigured =>
+        _channels.Any(channel => channel.Kind == NotificationChannelKind.Email && channel.IsConfigured);
+
+    public bool HasConfiguredChannel => _channels.Any(channel => channel.IsConfigured);
 
     public string PublicKey => sender.PublicKey;
 
@@ -52,6 +52,8 @@ internal sealed class NotificationService(
         var setting = await GetSettingAsync(userId, cancellationToken);
 
         setting.Enabled = preferences.Enabled;
+        setting.WebPushEnabled = preferences.WebPushEnabled;
+        setting.EmailEnabled = preferences.EmailEnabled;
         setting.Moments = preferences.Moments;
         setting.Anniversaries = preferences.Anniversaries;
         setting.Shop = preferences.Shop;
@@ -162,15 +164,30 @@ internal sealed class NotificationService(
     }
 
     public async Task<PartnerReadiness> GetPartnerReadinessAsync(int userId, CancellationToken cancellationToken = default) {
-        if (await GetPartnerIdAsync(userId, cancellationToken) is not { } partnerId) {
+        var partner = await db.Users
+            .Where(user => user.Id != userId && user.IsActive && (user.Role == UserRole.Boy || user.Role == UserRole.Girl))
+            .Select(user => new { user.Id, user.Role })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (partner is null) {
             return PartnerReadiness.None;
         }
 
-        var enabled = await db.NotificationSettings
-            .AnyAsync(setting => setting.UserId == partnerId && setting.Enabled, cancellationToken);
+        var setting = await db.NotificationSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.UserId == partner.Id, cancellationToken);
 
-        var devices = await db.PushDevices.CountAsync(device => device.UserId == partnerId, cancellationToken);
-        return new PartnerReadiness(enabled, devices);
+        var devices = await db.PushDevices.CountAsync(device => device.UserId == partner.Id, cancellationToken);
+        var emailAddress = partner.Role == UserRole.Boy
+            ? configuration.Email.BoyEmail
+            : configuration.Email.GirlEmail;
+
+        return new PartnerReadiness(
+            setting?.Enabled ?? false,
+            devices,
+            setting?.WebPushEnabled ?? true,
+            setting?.EmailEnabled ?? false,
+            IsEmailConfigured && EmailOptions.IsValidAddress(emailAddress));
     }
 
     public async Task<int?> GetPartnerIdAsync(int userId, CancellationToken cancellationToken = default) {
@@ -182,137 +199,161 @@ internal sealed class NotificationService(
         return partner;
     }
 
-    public async Task<PushDeliveryResult> SendAsync(NotificationRequest request, CancellationToken cancellationToken = default) {
+    public async Task<NotificationDeliveryResult> SendAsync(NotificationRequest request, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(request);
-
-        if (!sender.IsConfigured) {
-            logger.LogWarning("VAPID 密钥还没准备好，这条通知没有发出去。");
-            return PushDeliveryResult.Empty;
-        }
 
         var recipients = await ResolveRecipientsAsync(request, cancellationToken);
         if (recipients.Count == 0) {
-            return PushDeliveryResult.Empty;
+            return NotificationDeliveryResult.Empty;
         }
 
-        var candidates = db.PushDevices.Where(device => recipients.Contains(device.UserId));
+        var requestedChannel = request.Channel
+            ?? (request.TargetDeviceId is not null ? NotificationChannelKind.WebPush : null);
+        var result = NotificationDeliveryResult.Empty;
 
-        if (request.TargetDeviceId is { } deviceId) {
-            candidates = candidates.Where(device => device.Id == deviceId);
-        }
+        foreach (var channel in _channels.Where(channel => requestedChannel is null || channel.Kind == requestedChannel)) {
+            if (!channel.IsConfigured) {
+                logger.LogWarning("通知渠道 {Channel} 尚未配置，本次已跳过。", channel.Kind);
+                continue;
+            }
 
-        var devices = await candidates.ToListAsync(cancellationToken);
+            var targets = recipients
+                .Where(recipient => AllowsChannel(recipient.Setting, request.Topic, channel.Kind))
+                .Select(recipient => new NotificationRecipient(recipient.UserId, recipient.Role))
+                .ToList();
 
-        if (devices.Count == 0) {
-            return PushDeliveryResult.Empty;
-        }
+            if (targets.Count == 0) {
+                continue;
+            }
 
-        var payload = JsonSerializer.Serialize(new {
-            title = Clamp(request.Message.Title, TitleLimit),
-            body = Clamp(request.Message.Body, BodyLimit),
-            url = request.Message.Url,
-            tag = request.Message.Tag
-        }, PayloadJson);
-
-        var sent = 0;
-        var failed = 0;
-        var dropped = new List<PushDevice>();
-        var reason = PushFailureReason.None;
-        var now = SiteClock.UtcNow;
-
-        foreach (var device in devices) {
-            var outcome = await sender.SendAsync(device, payload, cancellationToken);
-
-            switch (outcome) {
-                case PushSendOutcome.Delivered:
-                    device.LastPushedAt = now;
-                    device.FailureCount = 0;
-                    sent++;
-                    break;
-
-                case PushSendOutcome.Gone:
-                    dropped.Add(device);
-                    reason = Worse(reason, PushFailureReason.Expired);
-                    break;
-
-                case PushSendOutcome.NotConfigured:
-                    return PushDeliveryResult.Empty;
-
-                case PushSendOutcome.Unreachable:
-                    failed++;
-                    reason = Worse(reason, PushFailureReason.Unreachable);
-                    break;
-
-                case PushSendOutcome.Unauthorized:
-                    failed++;
-                    reason = Worse(reason, PushFailureReason.Unauthorized);
-                    break;
-
-                case PushSendOutcome.Failed:
-                default:
-                    device.FailureCount++;
-                    if (device.FailureCount >= MaxFailures) {
-                        dropped.Add(device);
-                    } else {
-                        failed++;
-                    }
-
-                    reason = Worse(reason, PushFailureReason.Rejected);
-                    break;
+            try {
+                var channelResult = await channel.SendAsync(request, targets, cancellationToken);
+                result = Merge(result, channelResult);
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception exception) {
+                logger.LogError(exception, "通知渠道 {Channel} 投递失败，继续尝试其它渠道。", channel.Kind);
+                result = Merge(result, Failure(channel.Kind, targets.Count));
             }
         }
 
-        if (dropped.Count > 0) {
-            db.PushDevices.RemoveRange(dropped);
+        return result;
+    }
+
+    public async Task<EmailDeliveryResult> SendTestEmailAsync(
+        UserRole role,
+        string? siteOrigin = null,
+        CancellationToken cancellationToken = default) {
+        if (role is not (UserRole.Boy or UserRole.Girl)) {
+            return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
-        return new PushDeliveryResult(sent, failed, dropped.Count, reason);
+        var address = role == UserRole.Boy ? configuration.Email.BoyEmail : configuration.Email.GirlEmail;
+        var emailChannel = _channels.FirstOrDefault(channel => channel.Kind == NotificationChannelKind.Email);
+        if (emailChannel is null || !emailChannel.IsConfigured || !EmailOptions.IsValidAddress(address)) {
+            return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
+        }
+
+        var userId = await db.Users
+            .Where(user => user.IsActive && user.Role == role)
+            .Select(user => (int?)user.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (userId is null) {
+            return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
+        }
+
+        var request = new NotificationRequest(
+            NotificationTopic.Test,
+            new PushMessage(
+                "Our Story 邮件测试",
+                "本封邮件用于确认 SMTP 邮件通知通道已正常工作。",
+                "/admin/settings",
+                "email-test"),
+            TargetUserId: userId,
+            Channel: NotificationChannelKind.Email,
+            SiteOrigin: siteOrigin);
+
+        var result = await emailChannel.SendAsync(
+            request,
+            [new NotificationRecipient(userId.Value, role)],
+            cancellationToken);
+
+        return result.Email;
     }
 
     #region 私有方法
 
-    private static PushFailureReason Worse(PushFailureReason current, PushFailureReason next) =>
-        (PushFailureReason)Math.Max((int)current, (int)next);
-
-    private static string Clamp(string? value, int limit) {
-        var text = (value ?? string.Empty).Trim();
-        if (text.Length <= limit) {
-            return text;
-        }
-
-        var cut = char.IsHighSurrogate(text[limit - 1]) ? limit - 1 : limit;
-        return text[..cut] + "…";
-    }
-
-    private async Task<List<int>> ResolveRecipientsAsync(NotificationRequest request, CancellationToken cancellationToken) {
+    private async Task<List<ResolvedRecipient>> ResolveRecipientsAsync(NotificationRequest request, CancellationToken cancellationToken) {
         var candidates = await db.Users
             .Where(user => user.IsActive && (user.Role == UserRole.Boy || user.Role == UserRole.Girl))
-            .Select(user => user.Id)
+            .Select(user => new { user.Id, user.Role })
             .ToListAsync(cancellationToken);
 
         if (request.TargetUserId is { } target) {
-            candidates = [.. candidates.Where(id => id == target)];
+            candidates = [.. candidates.Where(user => user.Id == target)];
         }
 
         if (request.ExceptUserId is { } except) {
-            candidates = [.. candidates.Where(id => id != except)];
+            candidates = [.. candidates.Where(user => user.Id != except)];
         }
 
         if (candidates.Count == 0) {
             return [];
         }
 
+        var candidateIds = candidates.Select(user => user.Id).ToList();
         var settings = await db.NotificationSettings
-            .Where(setting => candidates.Contains(setting.UserId))
+            .Where(setting => candidateIds.Contains(setting.UserId))
             .AsNoTracking()
             .ToDictionaryAsync(setting => setting.UserId, cancellationToken);
 
-        return [.. candidates.Where(id =>
-            settings.TryGetValue(id, out var setting)
-                ? setting.Allows(request.Topic)
-                : request.Topic == NotificationTopic.Test)];
+        return [.. candidates
+            .Select(user => new ResolvedRecipient(
+                user.Id,
+                user.Role,
+                settings.GetValueOrDefault(user.Id)))
+            .Where(recipient => recipient.Setting?.Allows(request.Topic) == true
+                || request.Topic == NotificationTopic.Test)];
     }
+
+    private static bool AllowsChannel(
+        NotificationSetting? setting,
+        NotificationTopic topic,
+        NotificationChannelKind channel) {
+        if (topic == NotificationTopic.Test) {
+            return true;
+        }
+
+        return channel switch {
+            NotificationChannelKind.WebPush => setting?.WebPushEnabled == true,
+            NotificationChannelKind.Email => setting?.EmailEnabled == true,
+            _ => false
+        };
+    }
+
+    private static NotificationDeliveryResult Merge(
+        NotificationDeliveryResult left,
+        NotificationDeliveryResult right) => new(
+            new PushDeliveryResult(
+                left.WebPush.Sent + right.WebPush.Sent,
+                left.WebPush.Failed + right.WebPush.Failed,
+                left.WebPush.Dropped + right.WebPush.Dropped,
+                (PushFailureReason)Math.Max((int)left.WebPush.Reason, (int)right.WebPush.Reason)),
+            new EmailDeliveryResult(
+                left.Email.Sent + right.Email.Sent,
+                left.Email.Failed + right.Email.Failed,
+                (EmailFailureReason)Math.Max((int)left.Email.Reason, (int)right.Email.Reason)));
+
+    private static NotificationDeliveryResult Failure(NotificationChannelKind channel, int count) => channel switch {
+        NotificationChannelKind.WebPush => new(
+            new PushDeliveryResult(0, count, 0, PushFailureReason.Rejected),
+            EmailDeliveryResult.Empty),
+        NotificationChannelKind.Email => new(
+            PushDeliveryResult.Empty,
+            new EmailDeliveryResult(0, count, EmailFailureReason.SendFailed)),
+        _ => NotificationDeliveryResult.Empty
+    };
 
     private void EnsureSubject(string? siteOrigin) {
         if (VapidSubject.IsUsable(configuration.Current.Push.Subject)) {
@@ -330,6 +371,11 @@ internal sealed class NotificationService(
 
         logger.LogWarning("没能把 VAPID 联系方式写进配置文件：{Error}", error);
     }
+
+    private sealed record ResolvedRecipient(
+        int UserId,
+        UserRole Role,
+        NotificationSetting? Setting);
 
     #endregion
 }

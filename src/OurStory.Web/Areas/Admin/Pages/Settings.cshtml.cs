@@ -8,6 +8,7 @@ using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Models;
 using OurStory.Core.Options;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 using OurStory.Web.Infrastructure;
 using System.ComponentModel.DataAnnotations;
@@ -21,7 +22,10 @@ namespace OurStory.Web.Areas.Admin.Pages;
 /// 页面上分两摊：内容类的存数据库（<see cref="ISettingsService"/>），
 /// 时区和附件存储这类运行参数存配置文件（<see cref="ActiveConfiguration"/>）
 /// </remarks>
-public class SettingsModel(ISettingsService settings, ActiveConfiguration configuration) : PageModel {
+public class SettingsModel(
+    ISettingsService settings,
+    ActiveConfiguration configuration,
+    INotificationService notifications) : PageModel {
     /// <summary>
     /// 执行 Input 操作
     /// </summary>
@@ -42,9 +46,10 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     public bool CanEditHeartRules => User.Role() == UserRole.Boy;
 
     /// <summary>
-    /// 获取当前实际生效的存储方式：OSS 参数没配全时它会和上面选的不一样</summary>
+    /// 获取当前实际生效的存储方式：OSS 参数没配全时它会和上面选的不一样
+    /// </summary>
     public string EffectiveDriverText =>
-        configuration.Storage.EffectiveDriver == Core.Options.StorageDriver.AliyunOss ? "阿里云 OSS" : "本地目录";
+        configuration.Storage.EffectiveDriver == StorageDriver.AliyunOss ? "阿里云 OSS" : "本地目录";
 
     /// <summary>
     /// 获取配置文件的位置
@@ -52,11 +57,17 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     public string ConfigFilePath => configuration.FilePath;
 
     /// <summary>
+    /// 获取一个值，指示邮件通知当前是否已经可用
+    /// </summary>
+    public bool EmailConfigured => notifications.IsEmailConfigured;
+
+    /// <summary>
     /// 处理 GET 请求
     /// </summary>
     public async Task OnGetAsync(CancellationToken cancellationToken) {
         var site = await settings.GetAsync(cancellationToken);
         var storage = configuration.Storage;
+        var email = configuration.Email;
 
         Input = new InputModel {
             TimeZone = configuration.Site.TimeZone,
@@ -67,6 +78,17 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
             OssAccessKeySecret = storage.Oss.AccessKeySecret,
             OssPublicBaseUrl = storage.Oss.PublicBaseUrl,
             OssApiEndpoint = storage.Oss.ApiEndpoint,
+            EmailEnabled = email.Enabled,
+            EmailHost = email.Host,
+            EmailPort = email.Port,
+            EmailSecurity = email.Security,
+            EmailUsername = email.Username,
+            EmailPassword = string.Empty,
+            EmailSenderEmail = email.SenderEmail,
+            EmailSenderName = email.SenderName,
+            BoyEmail = email.BoyEmail,
+            GirlEmail = email.GirlEmail,
+            EmailSiteBaseUrl = email.SiteBaseUrl,
             SiteTitle = site.SiteTitle,
             SiteDescription = site.SiteDescription,
             BoyName = site.BoyName,
@@ -102,6 +124,11 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken) {
         if (!ModelState.IsValid) {
             Error = string.Join("；", ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage));
+            return Page();
+        }
+
+        if (EmailConfigError() is { } emailProblem) {
+            Error = emailProblem;
             return Page();
         }
 
@@ -160,6 +187,31 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
     }
 
     /// <summary>
+    /// 保存当前表单里的 SMTP 配置并向指定角色发送测试邮件
+    /// </summary>
+    public async Task<IActionResult> OnPostTestEmailAsync(UserRole role, CancellationToken cancellationToken) {
+        if (!ModelState.IsValid) {
+            Error = string.Join("；", ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage));
+            return Page();
+        }
+
+        if (EmailConfigError() is { } problem) {
+            Error = problem;
+            return Page();
+        }
+
+        if (!configuration.Update(next => SaveEmailOptions(next.Email), out var error)) {
+            Error = $"SMTP 配置无法写入 {configuration.FilePath}：{error}";
+            return Page();
+        }
+
+        var origin = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+        var result = await notifications.SendTestEmailAsync(role, origin, cancellationToken);
+        TempData["Flash"] = ExplainEmailTest(role, result);
+        return RedirectToPage();
+    }
+
+    /// <summary>
     /// 心意规则的范围检查，都合规就返回 null
     /// </summary>
     private string? HeartRuleError() {
@@ -189,6 +241,49 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
 
     private static bool InRange(int value, int low, int high) => value >= low && value <= high;
 
+    private string? EmailConfigError() {
+        if (!string.IsNullOrWhiteSpace(Input.BoyEmail) && !EmailOptions.IsValidAddress(Input.BoyEmail)) {
+            return "男主邮箱地址不合法。";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.GirlEmail) && !EmailOptions.IsValidAddress(Input.GirlEmail)) {
+            return "女主邮箱地址不合法。";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.EmailSenderEmail) && !EmailOptions.IsValidAddress(Input.EmailSenderEmail)) {
+            return "通知发送邮箱地址不合法。";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.EmailSiteBaseUrl)
+            && !EmailOptions.IsValidSiteBaseUrl(Input.EmailSiteBaseUrl)) {
+            return "站点公开地址必须是完整的 http:// 或 https:// 地址。";
+        }
+
+        if (!Input.EmailEnabled) {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.EmailHost)) {
+            return "启用邮件通知前请填写 SMTP Host。";
+        }
+
+        if (!EmailOptions.IsValidAddress(Input.EmailSenderEmail)) {
+            return "启用邮件通知前请填写合法的通知发送邮箱。";
+        }
+
+        if (!EmailOptions.IsValidSiteBaseUrl(Input.EmailSiteBaseUrl)) {
+            return "启用邮件通知前请填写站点公开地址，确保邮件详情链接可以直接访问。";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Input.EmailUsername)
+            && string.IsNullOrWhiteSpace(Input.EmailPassword)
+            && string.IsNullOrWhiteSpace(configuration.Email.Password)) {
+            return "SMTP 用户名已填写，请同时填写密码或邮箱授权码。";
+        }
+
+        return null;
+    }
+
     private void SaveRuntimeOptions(OurStoryConfiguration next) {
         next.Site.TimeZone = string.IsNullOrWhiteSpace(Input.TimeZone) ? "Asia/Shanghai" : Input.TimeZone.Trim();
 
@@ -199,6 +294,37 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         next.Storage.Oss.AccessKeySecret = Trim(Input.OssAccessKeySecret);
         next.Storage.Oss.PublicBaseUrl = Trim(Input.OssPublicBaseUrl).TrimEnd('/');
         next.Storage.Oss.ApiEndpoint = Trim(Input.OssApiEndpoint).TrimEnd('/');
+
+        SaveEmailOptions(next.Email);
+    }
+
+    private void SaveEmailOptions(EmailOptions email) {
+        email.Enabled = Input.EmailEnabled;
+        email.Host = Trim(Input.EmailHost);
+        email.Port = Input.EmailPort;
+        email.Security = Input.EmailSecurity;
+        email.Username = Trim(Input.EmailUsername);
+        email.SetPasswordIfProvided(Input.EmailPassword);
+
+        email.SenderEmail = Trim(Input.EmailSenderEmail);
+        email.SenderName = string.IsNullOrWhiteSpace(Input.EmailSenderName) ? "Our Story" : Input.EmailSenderName.Trim();
+        email.BoyEmail = Trim(Input.BoyEmail);
+        email.GirlEmail = Trim(Input.GirlEmail);
+        email.SiteBaseUrl = Trim(Input.EmailSiteBaseUrl).TrimEnd('/');
+    }
+
+    private static string ExplainEmailTest(UserRole role, EmailDeliveryResult result) {
+        var target = role == UserRole.Boy ? "男主" : "女主";
+        if (result.Sent > 0) {
+            return $"测试邮件已发送到{target}邮箱。";
+        }
+
+        return result.Reason switch {
+            EmailFailureReason.NotConfigured => $"{target}邮箱或 SMTP 配置不完整，测试邮件未发送。",
+            EmailFailureReason.ConnectionFailed => "无法连接 SMTP 服务，请检查 Host、端口与加密方式。",
+            EmailFailureReason.AuthenticationFailed => "SMTP 认证失败，请检查用户名、密码或邮箱授权码。",
+            _ => "SMTP 已连接，但邮件发送失败；安全详情已写入站点日志。"
+        };
     }
 
     private static string Trim(string? value) => (value ?? string.Empty).Trim();
@@ -253,6 +379,70 @@ public class SettingsModel(ISettingsService settings, ActiveConfiguration config
         /// </summary>
         [StringLength(200)]
         public string? OssApiEndpoint { get; set; }
+
+        /// <summary>
+        /// 获取或设置站点是否提供邮件通知
+        /// </summary>
+        public bool EmailEnabled { get; set; }
+
+        /// <summary>
+        /// 获取或设置 SMTP Host
+        /// </summary>
+        [StringLength(200)]
+        public string? EmailHost { get; set; }
+
+        /// <summary>
+        /// 获取或设置 SMTP 端口
+        /// </summary>
+        [Range(1, 65535, ErrorMessage = "SMTP 端口要在 1 到 65535 之间")]
+        public int EmailPort { get; set; } = 587;
+
+        /// <summary>
+        /// 获取或设置 SMTP 加密方式
+        /// </summary>
+        public EmailSecurity EmailSecurity { get; set; } = EmailSecurity.StartTls;
+
+        /// <summary>
+        /// 获取或设置 SMTP 用户名
+        /// </summary>
+        [StringLength(320)]
+        public string? EmailUsername { get; set; }
+
+        /// <summary>
+        /// 获取或设置新 SMTP 密码；留空时保留已有值
+        /// </summary>
+        [StringLength(500)]
+        public string? EmailPassword { get; set; }
+
+        /// <summary>
+        /// 获取或设置通知发送邮箱
+        /// </summary>
+        [StringLength(320)]
+        public string? EmailSenderEmail { get; set; }
+
+        /// <summary>
+        /// 获取或设置发件人显示名称
+        /// </summary>
+        [StringLength(100)]
+        public string? EmailSenderName { get; set; } = "Our Story";
+
+        /// <summary>
+        /// 获取或设置男主邮箱
+        /// </summary>
+        [StringLength(320)]
+        public string? BoyEmail { get; set; }
+
+        /// <summary>
+        /// 获取或设置女主邮箱
+        /// </summary>
+        [StringLength(320)]
+        public string? GirlEmail { get; set; }
+
+        /// <summary>
+        /// 获取或设置邮件详情链接使用的站点公开地址
+        /// </summary>
+        [StringLength(500)]
+        public string? EmailSiteBaseUrl { get; set; }
 
         /// <summary>
         /// 获取或设置站点名称

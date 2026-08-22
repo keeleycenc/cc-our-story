@@ -32,6 +32,11 @@ public sealed class ActiveConfiguration(ConfigurationStore store, OurStoryConfig
     public StorageOptions Storage => Current.Storage;
 
     /// <summary>
+    /// 获取 SMTP 邮件通知参数
+    /// </summary>
+    public EmailOptions Email => Current.Email;
+
+    /// <summary>
     /// 获取 LLM 氛围组参数
     /// </summary>
     public LlmAtmosphereOptions LlmAtmosphere => Current.LlmAtmosphere;

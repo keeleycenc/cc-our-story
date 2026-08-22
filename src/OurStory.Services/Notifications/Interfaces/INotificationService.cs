@@ -18,6 +18,16 @@ public interface INotificationService {
     bool IsConfigured { get; }
 
     /// <summary>
+    /// 获取一个值，指示 SMTP 邮件通知是否已经启用并配置完整
+    /// </summary>
+    bool IsEmailConfigured { get; }
+
+    /// <summary>
+    /// 获取一个值，指示至少有一个通知渠道可用
+    /// </summary>
+    bool HasConfiguredChannel { get; }
+
+    /// <summary>
     /// 获取要交给浏览器的 VAPID 公钥
     /// </summary>
     string PublicKey { get; }
@@ -111,7 +121,15 @@ public interface INotificationService {
     /// <param name="request">投递请求</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>异步操作任务结果，这次投递的成绩</returns>
-    Task<PushDeliveryResult> SendAsync(NotificationRequest request, CancellationToken cancellationToken = default);
+    Task<NotificationDeliveryResult> SendAsync(NotificationRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 使用当前 SMTP 配置向指定角色发送测试邮件；不受个人通知偏好影响
+    /// </summary>
+    Task<EmailDeliveryResult> SendTestEmailAsync(
+        UserRole role,
+        string? siteOrigin = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 异步找出另一个人的用户编号；只有两行用户，所以「对方」是确定的

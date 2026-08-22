@@ -7,6 +7,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Markdig" Version="$(MarkdigVersion)" />
+		<PackageReference Include="MailKit" Version="$(MailKitVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="$(MicrosoftExtensionsVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="$(MicrosoftExtensionsVersion)" />

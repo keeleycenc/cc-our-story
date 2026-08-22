@@ -472,6 +472,11 @@ namespace OurStory.Data.Migrations
                     b.Property<bool>("Enabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("EmailEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LastAnniversaryOn")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -491,6 +496,11 @@ namespace OurStory.Data.Migrations
 
                     b.Property<long>("UpdatedAt")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("WebPushEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.HasKey("UserId");
 

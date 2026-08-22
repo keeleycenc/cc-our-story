@@ -18,6 +18,13 @@
         new SelectListItem("本地目录", "Local"),
         new SelectListItem("阿里云 OSS", "AliyunOss")
     };
+
+    var emailSecurityOptions = new[]
+    {
+        new SelectListItem("STARTTLS（常用端口 587）", "StartTls"),
+        new SelectListItem("SSL/TLS（常用端口 465）", "SslTls"),
+        new SelectListItem("不加密", "None")
+    };
 }
 <form method="post">
     @if (!string.IsNullOrEmpty(Model.Error))
@@ -153,6 +160,76 @@
                 <span>自定义 API 端点</span>
                 <input asp-for="Input.OssApiEndpoint" type="text" maxlength="200" placeholder="留空按 Region 拼">
             </label>
+        </div>
+    </div>
+
+    <div class="admin-panel email-settings">
+        <div class="panel-head">
+            <h2>@Icon("mail")邮件通知</h2>
+            <span class="channel-status" data-kind="@(Model.EmailConfigured ? "ok" : "muted")">
+                @(Model.EmailConfigured ? "已就绪" : "未启用或配置不完整")
+            </span>
+        </div>
+        <p class="admin-panel-hint">
+            邮件与 Web Push 可以同时工作；单个渠道失败不会阻止另一个渠道继续投递
+        </p>
+
+        <label class="field-check email-master">
+            <input asp-for="Input.EmailEnabled" type="checkbox">
+            <span>启用站点邮件通知服务</span>
+        </label>
+
+        <div class="field-grid">
+            <label class="field">
+                <span>SMTP Host</span>
+                <input asp-for="Input.EmailHost" type="text" maxlength="200" placeholder="smtp.example.com" autocomplete="off">
+            </label>
+            <label class="field">
+                <span>SMTP Port</span>
+                <input asp-for="Input.EmailPort" type="number" min="1" max="65535">
+            </label>
+            <label class="field">
+                <span>连接加密</span>
+                <select asp-for="Input.EmailSecurity" asp-items="emailSecurityOptions"></select>
+            </label>
+            <label class="field">
+                <span>SMTP 用户名</span>
+                <input asp-for="Input.EmailUsername" type="text" maxlength="320" autocomplete="off" placeholder="notify@example.com">
+            </label>
+            <label class="field">
+                <span>SMTP 密码 / 邮箱授权码</span>
+                <input asp-for="Input.EmailPassword" type="password" maxlength="500" autocomplete="new-password" placeholder="留空保持现有密码">
+            </label>
+            <label class="field">
+                <span>通知发送邮箱（From）</span>
+                <input asp-for="Input.EmailSenderEmail" type="email" maxlength="320" placeholder="notify@example.com">
+            </label>
+            <label class="field">
+                <span>发件人显示名称</span>
+                <input asp-for="Input.EmailSenderName" type="text" maxlength="100" placeholder="Our Story">
+            </label>
+            <label class="field">
+                <span>站点公开地址</span>
+                <input asp-for="Input.EmailSiteBaseUrl" type="url" maxlength="500" placeholder="https://love.example.com">
+            </label>
+            <label class="field">
+                <span>男主邮箱</span>
+                <input asp-for="Input.BoyEmail" type="email" maxlength="320" placeholder="boy@example.com">
+            </label>
+            <label class="field">
+                <span>女主邮箱</span>
+                <input asp-for="Input.GirlEmail" type="email" maxlength="320" placeholder="girl@example.com">
+            </label>
+        </div>
+
+        <div class="email-test-actions">
+            <span>测试会先保存上面的邮件配置：</span>
+            <button class="btn btn-ghost btn-small" type="submit" asp-page-handler="TestEmail" name="role" value="Boy">
+                @Icon("send")发送给男主
+            </button>
+            <button class="btn btn-ghost btn-small" type="submit" asp-page-handler="TestEmail" name="role" value="Girl">
+                @Icon("send")发送给女主
+            </button>
         </div>
     </div>
 

@@ -11,7 +11,7 @@
    data-push 是脚本认这块内容的记号 *@
 <div class="admin-panel" data-push>
     <div class="panel-head">
-        <h2>@Icon("bell-ring")当前设备<span class="push-spinner" data-push-busy hidden aria-hidden="true"></span></h2>
+        <h2>@Icon("bell-ring")当前设备 Web Push<span class="push-spinner" data-push-busy hidden aria-hidden="true"></span></h2>
 
         <button class="push-switch" type="button" role="switch" aria-checked="false"
                 data-push-toggle data-state="busy" disabled>
@@ -93,6 +93,26 @@
     </div>
 
     <div class="notify-options" data-notify-group>
+        <p class="notify-section-label">接收渠道</p>
+
+        <label class="notify-option">
+            <input asp-for="Input.WebPushEnabled" type="checkbox">
+            <span>
+                <strong>@Icon("smartphone")Web Push</strong>
+                <small>发送到本账号已授权的浏览器设备</small>
+            </span>
+        </label>
+
+        <label class="notify-option">
+            <input asp-for="Input.EmailEnabled" type="checkbox">
+            <span>
+                <strong>@Icon("mail")Email</strong>
+                <small>@(Model.IsEmailConfigured ? "发送到站点设置中为本角色配置的邮箱" : "站点邮件服务尚未启用或配置完整")</small>
+            </span>
+        </label>
+
+        <p class="notify-section-label">通知内容</p>
+
         <label class="notify-option">
             <input asp-for="Input.Moments" type="checkbox">
             <span>
@@ -161,7 +181,7 @@
 <div class="admin-panel">
     <h2>@Icon("send")给@(Model.PartnerName)送去一句话</h2>
     <p class="admin-panel-hint">
-        会直接送达@(Model.PartnerName)所有已开启通知的设备，不受分类偏好影响。
+        会通过@(Model.PartnerName)已选择且可用的渠道直接送达，不受分类偏好影响。
     </p>
 
     @if (Model.PartnerBlockedReason is { } blocked)
@@ -170,7 +190,17 @@
     }
     else
     {
-        <p class="push-status" data-kind="ok">@Icon("bell-ring")@(Model.PartnerName)已开启通知，共 @Model.Partner.Devices 台设备可以收到。</p>
+        <p class="push-status" data-kind="ok">
+            @Icon("bell-ring")@(Model.PartnerName)已开启通知。
+            @if (Model.Partner.WebPushEnabled && Model.Partner.Devices > 0)
+            {
+                <text>Web Push：@Model.Partner.Devices 台设备；</text>
+            }
+            @if (Model.Partner.EmailEnabled && Model.Partner.EmailAddressConfigured)
+            {
+                <text>Email：已就绪。</text>
+            }
+        </p>
     }
 
     <form data-push-send>

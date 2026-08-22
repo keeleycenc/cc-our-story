@@ -353,7 +353,7 @@ public class NotificationServiceTests {
         await notifications.SaveSettingAsync(girlId, new NotificationPreferences { Enabled = true });
         sender.Outcome = outcome;
 
-        PushDeliveryResult result = PushDeliveryResult.Empty;
+        NotificationDeliveryResult result = NotificationDeliveryResult.Empty;
         for (var attempt = 0; attempt < 20; attempt++) {
             result = await notifications.SendAsync(
                 NotificationRequest.ToUser(NotificationTopic.Direct, girlId, Message()));
@@ -585,6 +585,7 @@ public class NotificationServiceTests {
         return new NotificationService(
             harness.Db,
             sender,
+            [new WebPushNotificationChannel(harness.Db, sender)],
             configuration ?? new ActiveConfiguration(new ConfigurationStore("."), new OurStoryConfiguration()),
             TestDoubles.Clock(),
             NullLogger<NotificationService>.Instance);
@@ -605,6 +606,9 @@ internal sealed class SenderSpy : IWebPushSender {
     /// <summary>接下来每次投递都返回这个结果。</summary>
     public PushSendOutcome Outcome { get; set; } = PushSendOutcome.Delivered;
 
+    /// <summary>设置后每次投递都抛出此异常，用来验证渠道隔离。</summary>
+    public Exception? Exception { get; set; }
+
     /// <summary>收到过的每一条投递。</summary>
     public List<(string Endpoint, string Payload)> Sent { get; } = [];
 
@@ -613,6 +617,10 @@ internal sealed class SenderSpy : IWebPushSender {
     public string PublicKey => "test-key";
 
     public Task<PushSendOutcome> SendAsync(PushDevice device, string payload, CancellationToken cancellationToken = default) {
+        if (Exception is not null) {
+            return Task.FromException<PushSendOutcome>(Exception);
+        }
+
         Sent.Add((device.Endpoint, payload));
         return Task.FromResult(Outcome);
     }

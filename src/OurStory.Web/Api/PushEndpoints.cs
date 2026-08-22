@@ -99,7 +99,8 @@ public static class PushEndpoints {
                             "/admin/notifications",
                             "push-test"),
                         TargetUserId: userId,
-                        TargetDeviceId: input.DeviceId),
+                        TargetDeviceId: input.DeviceId,
+                        Channel: NotificationChannelKind.WebPush),
                     cancellationToken);
 
                 return Results.Json(new {
@@ -137,7 +138,7 @@ public static class PushEndpoints {
                     return Results.Json(new {
                         ok = false,
                         message = readiness.Enabled
-                            ? "对方暂无可用设备接收通知"
+                            ? "对方暂无可用的通知渠道"
                             : "对方已关闭通知，当前发送将无法送达"
                     });
                 }
@@ -156,16 +157,26 @@ public static class PushEndpoints {
                             $"direct-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}")),
                     cancellationToken);
 
+                var delivered = result.WebPush.Sent + result.Email.Sent;
+                var details = new List<string>();
+                if (result.WebPush.Sent > 0) {
+                    details.Add($"Web Push {result.WebPush.Sent} 台设备");
+                }
+
+                if (result.Email.Sent > 0) {
+                    details.Add($"Email {result.Email.Sent} 封");
+                }
+
                 return Results.Json(new {
-                    ok = result.Sent > 0,
-                    message = result.Sent > 0
-                        ? $"已送达对方 {result.Sent} 台设备"
-                        : "对方未开启通知或无可用设备"
+                    ok = delivered > 0,
+                    message = delivered > 0
+                        ? $"已送达：{string.Join("、", details)}"
+                        : "对方未开启通知或没有可用渠道"
                 });
             });
     }
 
-    private static string Explain(PushDeliveryResult result, bool configured) {
+    private static string Explain(NotificationDeliveryResult result, bool configured) {
         if (!configured) {
             return "站点还没配好通知密钥，去看看启动日志吧";
         }

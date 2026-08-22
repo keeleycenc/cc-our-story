@@ -107,7 +107,7 @@ public class AffinityServiceTests {
         Assert.Equal(3, first.TotalCount);
         Assert.Equal(2, first.TotalPages);
         Assert.Equal(2, first.Items.Count);
-        Assert.Single(second.Items);
+        _ = Assert.Single(second.Items);
         Assert.True(first.Items[0].Id > first.Items[1].Id);
         Assert.True(first.Items[1].Id > second.Items[0].Id);
     }

@@ -26,11 +26,13 @@ internal sealed class NotificationWorker(
                 var result = await notifications.SendAsync(request, stoppingToken);
                 if (result.Total > 0) {
                     logger.LogInformation(
-                        "通知「{Title}」：送达 {Sent} 台，失败 {Failed} 台，清理 {Dropped} 台。",
+                        "通知「{Title}」：Web Push 送达 {PushSent} 台、失败 {PushFailed} 台、清理 {Dropped} 台；Email 送达 {EmailSent} 封、失败 {EmailFailed} 封。",
                         request.Message.Title,
-                        result.Sent,
-                        result.Failed,
-                        result.Dropped);
+                        result.WebPush.Sent,
+                        result.WebPush.Failed,
+                        result.WebPush.Dropped,
+                        result.Email.Sent,
+                        result.Email.Failed);
                 }
             } catch (Exception exception) when (exception is not OperationCanceledException) {
                 logger.LogError(exception, "发送通知「{Title}」时出错。", request.Message.Title);

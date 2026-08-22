@@ -18,11 +18,12 @@ public class NotificationSettingConfiguration : IEntityTypeConfiguration<Notific
     public void Configure(EntityTypeBuilder<NotificationSetting> builder) {
         _ = builder.ToTable("notification_settings");
 
-        // 一个人一行，用户编号直接当主键，不再另起一个自增列
         _ = builder.HasKey(setting => setting.UserId);
         _ = builder.Property(setting => setting.UserId).ValueGeneratedNever();
 
         _ = builder.Property(setting => setting.LastAnniversaryOn).HasMaxLength(10).IsRequired();
+        _ = builder.Property(setting => setting.WebPushEnabled).HasDefaultValue(true);
+        _ = builder.Property(setting => setting.EmailEnabled).HasDefaultValue(false);
 
         _ = builder.HasOne(setting => setting.User)
             .WithMany()
