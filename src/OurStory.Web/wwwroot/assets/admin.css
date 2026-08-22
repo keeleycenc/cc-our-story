@@ -818,18 +818,6 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     background: var(--surface-soft);
 }
 
-.email-test-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 9px;
-    margin-top: 4px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
-}
-
-.email-test-actions > span { margin-right: 2px; color: var(--muted); font-size: 12px }
-
 /* 9. 按钮 ---------------------------------------------------------------- */
 .btn {
     display: inline-flex;
@@ -1060,6 +1048,56 @@ h2 > .push-spinner[hidden] { display: none }
 .notify-option strong .icon { color: var(--pink-dark) }
 .notify-option small { display: block; margin-top: 5px; color: var(--faint); font-size: 12px; line-height: 1.7 }
 
+.notify-email-option {
+    margin: 2px 0 5px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-soft);
+}
+
+.notify-email-option .notify-option:hover { background: transparent }
+
+.email-personal-controls {
+    margin: 0;
+    padding: 0 12px 13px 39px;
+}
+
+.email-personal-controls > label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.email-personal-input-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.email-personal-input-row .btn { min-height: 43px; justify-content: center }
+
+.notify-email-option.is-unavailable {
+    background: var(--surface-muted);
+    color: var(--faint);
+    opacity: .58;
+}
+
+.notify-email-option.is-unavailable .notify-option,
+.notify-email-option.is-unavailable .field,
+.notify-email-option.is-unavailable .btn { cursor: not-allowed }
+
+.notify-email-option.is-unavailable .notify-option strong .icon { color: var(--faint) }
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+    background: var(--surface-muted);
+    color: var(--faint);
+    cursor: not-allowed;
+}
+
 .notify-options.is-off { opacity: .45 }
 .notify-options.is-off .notify-option { cursor: default; pointer-events: none }
 
@@ -1094,6 +1132,9 @@ h2 > .push-spinner[hidden] { display: none }
     .push-actions > .btn { flex: 1 1 0; min-width: 0; justify-content: center }
     .notify-time > span { padding-left: 0 }
     .notify-time-field { margin-left: 12px; max-width: none }
+    .email-personal-controls { padding-left: 12px }
+    .email-personal-input-row { grid-template-columns: 1fr }
+    .email-personal-controls .btn { width: 100% }
 }
 
 .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px }

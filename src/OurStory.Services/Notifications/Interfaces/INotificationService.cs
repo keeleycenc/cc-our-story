@@ -124,10 +124,11 @@ public interface INotificationService {
     Task<NotificationDeliveryResult> SendAsync(NotificationRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 使用当前 SMTP 配置向指定角色发送测试邮件；不受个人通知偏好影响
+    /// 使用当前 SMTP 配置向当前账号填写的地址发送测试邮件；不受个人渠道开关影响
     /// </summary>
     Task<EmailDeliveryResult> SendTestEmailAsync(
-        UserRole role,
+        int userId,
+        string emailAddress,
         string? siteOrigin = null,
         CancellationToken cancellationToken = default);
 

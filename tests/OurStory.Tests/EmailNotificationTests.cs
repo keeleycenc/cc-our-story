@@ -36,7 +36,8 @@ public class EmailNotificationTests {
         await notifications.SaveSettingAsync(girlId, new NotificationPreferences {
             Enabled = true,
             WebPushEnabled = webPushEnabled,
-            EmailEnabled = emailEnabled
+            EmailEnabled = emailEnabled,
+            EmailAddress = "girl@example.com"
         });
 
         var result = await notifications.SendAsync(
@@ -60,6 +61,7 @@ public class EmailNotificationTests {
             Enabled = true,
             WebPushEnabled = true,
             EmailEnabled = true,
+            EmailAddress = "girl@example.com",
             Moments = false
         });
 
@@ -69,6 +71,34 @@ public class EmailNotificationTests {
         Assert.Equal(0, result.Total);
         Assert.Empty(push.Sent);
         Assert.Empty(email.Sent);
+    }
+
+    [Fact]
+    public async Task 男女主各自使用自己的个人邮箱() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var email = new EmailSenderSpy();
+        var notifications = Service(harness, email, out _);
+
+        await notifications.SaveSettingAsync(boyId, new NotificationPreferences {
+            Enabled = true,
+            WebPushEnabled = false,
+            EmailEnabled = true,
+            EmailAddress = "boy-personal@example.com"
+        });
+        await notifications.SaveSettingAsync(girlId, new NotificationPreferences {
+            Enabled = true,
+            WebPushEnabled = false,
+            EmailEnabled = true,
+            EmailAddress = "girl-personal@example.com"
+        });
+
+        var result = await notifications.SendAsync(new NotificationRequest(NotificationTopic.Direct, Message()));
+
+        Assert.Equal(2, result.Email.Sent);
+        Assert.Equal(
+            ["boy-personal@example.com", "girl-personal@example.com"],
+            [.. email.Sent.Select(item => item.Address).Order(StringComparer.Ordinal)]);
     }
 
     [Fact]
@@ -83,7 +113,8 @@ public class EmailNotificationTests {
         await notifications.SaveSettingAsync(girlId, new NotificationPreferences {
             Enabled = true,
             WebPushEnabled = true,
-            EmailEnabled = true
+            EmailEnabled = true,
+            EmailAddress = "girl@example.com"
         });
 
         var result = await notifications.SendAsync(
@@ -107,7 +138,8 @@ public class EmailNotificationTests {
         await notifications.SaveSettingAsync(girlId, new NotificationPreferences {
             Enabled = true,
             WebPushEnabled = true,
-            EmailEnabled = true
+            EmailEnabled = true,
+            EmailAddress = "girl@example.com"
         });
 
         var result = await notifications.SendAsync(
@@ -119,12 +151,11 @@ public class EmailNotificationTests {
     }
 
     [Fact]
-    public async Task 没配置角色邮箱时只跳过Email() {
+    public async Task 没填写个人邮箱时只跳过Email() {
         await using var harness = SqliteHarness.Create();
         var (_, girlId) = await harness.SeedCoupleAsync();
         var email = new EmailSenderSpy();
-        var configuration = Configuration(girlEmail: string.Empty);
-        var notifications = Service(harness, email, out _, configuration);
+        var notifications = Service(harness, email, out _);
 
         AddDevice(harness, girlId);
         await notifications.SaveSettingAsync(girlId, new NotificationPreferences {
@@ -142,17 +173,20 @@ public class EmailNotificationTests {
     }
 
     [Fact]
-    public async Task 后台测试邮件不受个人开关影响且按角色选地址() {
+    public async Task 后台测试邮件不受个人开关影响且使用当前填写的地址() {
         await using var harness = SqliteHarness.Create();
-        _ = await harness.SeedCoupleAsync();
+        var (boyId, _) = await harness.SeedCoupleAsync();
         var email = new EmailSenderSpy();
         var notifications = Service(harness, email, out _);
 
-        var result = await notifications.SendTestEmailAsync(UserRole.Boy, "https://request.example.com");
+        var result = await notifications.SendTestEmailAsync(
+            boyId,
+            "personal@example.com",
+            "https://request.example.com");
 
         Assert.Equal(1, result.Sent);
         var sent = Assert.Single(email.Sent);
-        Assert.Equal("boy@example.com", sent.Address);
+        Assert.Equal("personal@example.com", sent.Address);
         Assert.Equal("https://request.example.com", sent.Origin);
     }
 
@@ -207,8 +241,6 @@ public class EmailNotificationTests {
         Assert.Equal("smtp.example.com", loaded.Host);
         Assert.Equal(EmailSecurity.StartTls, loaded.Security);
         Assert.Equal("secret", loaded.Password);
-        Assert.Equal("boy@example.com", loaded.BoyEmail);
-        Assert.Equal("girl@example.com", loaded.GirlEmail);
         Assert.Equal("https://love.example.com", loaded.SiteBaseUrl);
     }
 
@@ -225,14 +257,14 @@ public class EmailNotificationTests {
             push,
             [
                 new WebPushNotificationChannel(harness.Db, push),
-                new EmailNotificationChannel(email, active)
+                new EmailNotificationChannel(email)
             ],
             active,
             TestDoubles.Clock(),
             NullLogger<NotificationService>.Instance);
     }
 
-    private static ActiveConfiguration Configuration(string girlEmail = "girl@example.com") =>
+    private static ActiveConfiguration Configuration() =>
         new(new ConfigurationStore("."), new OurStoryConfiguration {
             Email = new EmailOptions {
                 Enabled = true,
@@ -243,8 +275,6 @@ public class EmailNotificationTests {
                 Password = "secret",
                 SenderEmail = "notify@example.com",
                 SenderName = "Our Story",
-                BoyEmail = "boy@example.com",
-                GirlEmail = girlEmail,
                 SiteBaseUrl = "https://love.example.com"
             }
         });

@@ -2,19 +2,14 @@
 // Licensed under the MIT License.
 // See LICENSE file in the project root for full license information.
 
-using OurStory.Core;
-using OurStory.Core.Configuration;
 using OurStory.Core.Models;
-using OurStory.Core.Options;
 
 namespace OurStory.Services.Notifications;
 
 /// <summary>
-/// 按用户角色映射收件地址的 Email 通知渠道
+/// 按个人通知设置中的邮箱地址投递的 Email 通知渠道
 /// </summary>
-internal sealed class EmailNotificationChannel(
-    IEmailSender sender,
-    ActiveConfiguration configuration) : INotificationChannel {
+internal sealed class EmailNotificationChannel(IEmailSender sender) : INotificationChannel {
     public NotificationChannelKind Kind => NotificationChannelKind.Email;
 
     public bool IsConfigured => sender.IsConfigured;
@@ -32,12 +27,11 @@ internal sealed class EmailNotificationChannel(
         var reason = EmailFailureReason.None;
 
         foreach (var recipient in recipients) {
-            var address = AddressOf(configuration.Email, recipient.Role);
-            if (string.IsNullOrWhiteSpace(address)) {
+            if (string.IsNullOrWhiteSpace(recipient.EmailAddress)) {
                 continue;
             }
 
-            var result = await sender.SendAsync(address, request.Message, request.SiteOrigin, cancellationToken);
+            var result = await sender.SendAsync(recipient.EmailAddress, request.Message, request.SiteOrigin, cancellationToken);
             sent += result.Sent;
             failed += result.Failed;
             reason = Worse(reason, result.Reason);
@@ -47,12 +41,6 @@ internal sealed class EmailNotificationChannel(
             PushDeliveryResult.Empty,
             new EmailDeliveryResult(sent, failed, reason));
     }
-
-    private static string AddressOf(EmailOptions options, UserRole role) => role switch {
-        UserRole.Boy => options.BoyEmail,
-        UserRole.Girl => options.GirlEmail,
-        _ => string.Empty
-    };
 
     private static EmailFailureReason Worse(EmailFailureReason current, EmailFailureReason next) =>
         (EmailFailureReason)Math.Max((int)current, (int)next);

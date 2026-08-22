@@ -103,13 +103,29 @@
             </span>
         </label>
 
-        <label class="notify-option">
-            <input asp-for="Input.EmailEnabled" type="checkbox">
-            <span>
-                <strong>@Icon("mail")Email</strong>
-                <small>@(Model.IsEmailConfigured ? "发送到站点设置中为本角色配置的邮箱" : "站点邮件服务尚未启用或配置完整")</small>
-            </span>
-        </label>
+        <div class="notify-email-option @(!Model.IsEmailConfigured ? "is-unavailable" : null)">
+            <label class="notify-option">
+                <input asp-for="Input.EmailEnabled" type="checkbox"
+                       disabled="@(Model.IsEmailConfigured ? null : "disabled")">
+                <span>
+                    <strong>@Icon("mail")Email</strong>
+                    <small>@(Model.IsEmailConfigured ? "发送到你的个人邮箱" : "站点邮件服务尚未启用或配置完整，当前不可用")</small>
+                </span>
+            </label>
+
+            <div class="email-personal-controls field">
+                <div class="email-personal-input-row">
+                    <input asp-for="Input.EmailAddress" type="email" maxlength="320"
+                           placeholder="me@example.com"
+                           disabled="@(Model.IsEmailConfigured ? null : "disabled")">
+                    <button class="btn btn-ghost btn-small" type="submit" asp-page-handler="TestEmail"
+                            disabled="@(Model.IsEmailConfigured ? null : "disabled")">
+                        @Icon("send")发送测试邮件
+                    </button>
+                </div>
+                <small>@(Model.IsEmailConfigured ? "只属于当前账号，双方独立" : "启用邮件服务后才能编辑")</small>
+            </div>
+        </div>
 
         <p class="notify-section-label">通知内容</p>
 

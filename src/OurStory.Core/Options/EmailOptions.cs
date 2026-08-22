@@ -27,7 +27,7 @@ public enum EmailSecurity {
 }
 
 /// <summary>
-/// 配置文件里的 <c>Email</c> 节点：SMTP 服务和两位成员的收件地址
+/// 配置文件里的 <c>Email</c> 节点：SMTP 服务与发件人配置
 /// </summary>
 public class EmailOptions {
     /// <summary>
@@ -69,16 +69,6 @@ public class EmailOptions {
     /// 获取或设置发件人显示名称
     /// </summary>
     public string SenderName { get; set; } = "Our Story";
-
-    /// <summary>
-    /// 获取或设置男主收件地址
-    /// </summary>
-    public string BoyEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 获取或设置女主收件地址
-    /// </summary>
-    public string GirlEmail { get; set; } = string.Empty;
 
     /// <summary>
     /// 获取或设置站点公开地址，用来把邮件中的站内相对链接转换成绝对地址

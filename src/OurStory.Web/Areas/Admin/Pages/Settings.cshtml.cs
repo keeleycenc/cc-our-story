@@ -8,7 +8,6 @@ using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Models;
 using OurStory.Core.Options;
-using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 using OurStory.Web.Infrastructure;
 using System.ComponentModel.DataAnnotations;
@@ -24,8 +23,7 @@ namespace OurStory.Web.Areas.Admin.Pages;
 /// </remarks>
 public class SettingsModel(
     ISettingsService settings,
-    ActiveConfiguration configuration,
-    INotificationService notifications) : PageModel {
+    ActiveConfiguration configuration) : PageModel {
     /// <summary>
     /// 执行 Input 操作
     /// </summary>
@@ -59,7 +57,7 @@ public class SettingsModel(
     /// <summary>
     /// 获取一个值，指示邮件通知当前是否已经可用
     /// </summary>
-    public bool EmailConfigured => notifications.IsEmailConfigured;
+    public bool EmailConfigured => configuration.Email.Enabled && configuration.Email.IsConfigured;
 
     /// <summary>
     /// 处理 GET 请求
@@ -86,8 +84,6 @@ public class SettingsModel(
             EmailPassword = string.Empty,
             EmailSenderEmail = email.SenderEmail,
             EmailSenderName = email.SenderName,
-            BoyEmail = email.BoyEmail,
-            GirlEmail = email.GirlEmail,
             EmailSiteBaseUrl = email.SiteBaseUrl,
             SiteTitle = site.SiteTitle,
             SiteDescription = site.SiteDescription,
@@ -187,31 +183,6 @@ public class SettingsModel(
     }
 
     /// <summary>
-    /// 保存当前表单里的 SMTP 配置并向指定角色发送测试邮件
-    /// </summary>
-    public async Task<IActionResult> OnPostTestEmailAsync(UserRole role, CancellationToken cancellationToken) {
-        if (!ModelState.IsValid) {
-            Error = string.Join("；", ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage));
-            return Page();
-        }
-
-        if (EmailConfigError() is { } problem) {
-            Error = problem;
-            return Page();
-        }
-
-        if (!configuration.Update(next => SaveEmailOptions(next.Email), out var error)) {
-            Error = $"SMTP 配置无法写入 {configuration.FilePath}：{error}";
-            return Page();
-        }
-
-        var origin = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
-        var result = await notifications.SendTestEmailAsync(role, origin, cancellationToken);
-        TempData["Flash"] = ExplainEmailTest(role, result);
-        return RedirectToPage();
-    }
-
-    /// <summary>
     /// 心意规则的范围检查，都合规就返回 null
     /// </summary>
     private string? HeartRuleError() {
@@ -242,14 +213,6 @@ public class SettingsModel(
     private static bool InRange(int value, int low, int high) => value >= low && value <= high;
 
     private string? EmailConfigError() {
-        if (!string.IsNullOrWhiteSpace(Input.BoyEmail) && !EmailOptions.IsValidAddress(Input.BoyEmail)) {
-            return "男主邮箱地址不合法。";
-        }
-
-        if (!string.IsNullOrWhiteSpace(Input.GirlEmail) && !EmailOptions.IsValidAddress(Input.GirlEmail)) {
-            return "女主邮箱地址不合法。";
-        }
-
         if (!string.IsNullOrWhiteSpace(Input.EmailSenderEmail) && !EmailOptions.IsValidAddress(Input.EmailSenderEmail)) {
             return "通知发送邮箱地址不合法。";
         }
@@ -308,23 +271,7 @@ public class SettingsModel(
 
         email.SenderEmail = Trim(Input.EmailSenderEmail);
         email.SenderName = string.IsNullOrWhiteSpace(Input.EmailSenderName) ? "Our Story" : Input.EmailSenderName.Trim();
-        email.BoyEmail = Trim(Input.BoyEmail);
-        email.GirlEmail = Trim(Input.GirlEmail);
         email.SiteBaseUrl = Trim(Input.EmailSiteBaseUrl).TrimEnd('/');
-    }
-
-    private static string ExplainEmailTest(UserRole role, EmailDeliveryResult result) {
-        var target = role == UserRole.Boy ? "男主" : "女主";
-        if (result.Sent > 0) {
-            return $"测试邮件已发送到{target}邮箱。";
-        }
-
-        return result.Reason switch {
-            EmailFailureReason.NotConfigured => $"{target}邮箱或 SMTP 配置不完整，测试邮件未发送。",
-            EmailFailureReason.ConnectionFailed => "无法连接 SMTP 服务，请检查 Host、端口与加密方式。",
-            EmailFailureReason.AuthenticationFailed => "SMTP 认证失败，请检查用户名、密码或邮箱授权码。",
-            _ => "SMTP 已连接，但邮件发送失败；安全详情已写入站点日志。"
-        };
     }
 
     private static string Trim(string? value) => (value ?? string.Empty).Trim();
@@ -425,18 +372,6 @@ public class SettingsModel(
         /// </summary>
         [StringLength(100)]
         public string? EmailSenderName { get; set; } = "Our Story";
-
-        /// <summary>
-        /// 获取或设置男主邮箱
-        /// </summary>
-        [StringLength(320)]
-        public string? BoyEmail { get; set; }
-
-        /// <summary>
-        /// 获取或设置女主邮箱
-        /// </summary>
-        [StringLength(320)]
-        public string? GirlEmail { get; set; }
 
         /// <summary>
         /// 获取或设置邮件详情链接使用的站点公开地址

@@ -42,6 +42,11 @@ public class NotificationSetting {
     public bool EmailEnabled { get; set; }
 
     /// <summary>
+    /// 获取或设置这个账号接收通知的邮箱地址
+    /// </summary>
+    public string EmailAddress { get; set; } = string.Empty;
+
+    /// <summary>
     /// 获取或设置是否接收点点滴滴的通知
     /// </summary>
     public bool Moments { get; set; } = true;

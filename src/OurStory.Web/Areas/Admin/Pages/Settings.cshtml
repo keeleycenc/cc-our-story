@@ -212,24 +212,6 @@
                 <span>站点公开地址</span>
                 <input asp-for="Input.EmailSiteBaseUrl" type="url" maxlength="500" placeholder="https://love.example.com">
             </label>
-            <label class="field">
-                <span>男主邮箱</span>
-                <input asp-for="Input.BoyEmail" type="email" maxlength="320" placeholder="boy@example.com">
-            </label>
-            <label class="field">
-                <span>女主邮箱</span>
-                <input asp-for="Input.GirlEmail" type="email" maxlength="320" placeholder="girl@example.com">
-            </label>
-        </div>
-
-        <div class="email-test-actions">
-            <span>测试会先保存上面的邮件配置：</span>
-            <button class="btn btn-ghost btn-small" type="submit" asp-page-handler="TestEmail" name="role" value="Boy">
-                @Icon("send")发送给男主
-            </button>
-            <button class="btn btn-ghost btn-small" type="submit" asp-page-handler="TestEmail" name="role" value="Girl">
-                @Icon("send")发送给女主
-            </button>
         </div>
     </div>
 

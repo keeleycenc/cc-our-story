@@ -24,6 +24,7 @@ public class NotificationSettingConfiguration : IEntityTypeConfiguration<Notific
         _ = builder.Property(setting => setting.LastAnniversaryOn).HasMaxLength(10).IsRequired();
         _ = builder.Property(setting => setting.WebPushEnabled).HasDefaultValue(true);
         _ = builder.Property(setting => setting.EmailEnabled).HasDefaultValue(false);
+        _ = builder.Property(setting => setting.EmailAddress).HasMaxLength(320).IsRequired();
 
         _ = builder.HasOne(setting => setting.User)
             .WithMany()

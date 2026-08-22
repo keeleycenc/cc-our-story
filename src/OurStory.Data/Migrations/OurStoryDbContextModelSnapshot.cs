@@ -477,6 +477,11 @@ namespace OurStory.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("EmailAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("LastAnniversaryOn")
                         .IsRequired()
                         .HasMaxLength(10)

@@ -10,7 +10,7 @@ namespace OurStory.Services.Notifications;
 /// <summary>
 /// 已完成 Topic 与用户偏好过滤的通知收件人
 /// </summary>
-internal sealed record NotificationRecipient(int UserId, UserRole Role);
+internal sealed record NotificationRecipient(int UserId, UserRole Role, string EmailAddress);
 
 /// <summary>
 /// 一个独立的通知投递渠道

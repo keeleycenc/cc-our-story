@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OurStory.Core;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
+using OurStory.Core.Options;
 using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 using OurStory.Web.Infrastructure;
@@ -92,6 +93,7 @@ public class NotificationsModel(
             Enabled = preferences.Enabled,
             WebPushEnabled = preferences.WebPushEnabled,
             EmailEnabled = preferences.EmailEnabled,
+            EmailAddress = preferences.EmailAddress,
             Moments = preferences.Moments,
             Anniversaries = preferences.Anniversaries,
             Shop = preferences.Shop,
@@ -119,23 +121,51 @@ public class NotificationsModel(
             return Page();
         }
 
-        await notifications.SaveSettingAsync(
-            userId,
-            new NotificationPreferences {
-                Enabled = Input.Enabled,
-                WebPushEnabled = Input.WebPushEnabled,
-                EmailEnabled = Input.EmailEnabled,
-                Moments = Input.Moments,
-                Anniversaries = Input.Anniversaries,
-                Shop = Input.Shop,
-                MissYou = Input.MissYou,
-                Comments = Input.Comments,
-                Affinity = Input.Affinity,
-                RemindMinutes = ToMinutes(Input.RemindAt)
-            },
-            cancellationToken);
+        if (EmailProblem(required: Input.EmailEnabled) is { } problem) {
+            Error = problem;
+            await LoadAsync(userId, cancellationToken);
+            return Page();
+        }
+
+        await SavePreferencesAsync(userId, cancellationToken);
 
         TempData["Flash"] = "通知设置已经保存。";
+        return RedirectToPage();
+    }
+
+    /// <summary>
+    /// 保存当前账号填写的邮箱并发送一封测试邮件
+    /// </summary>
+    public async Task<IActionResult> OnPostTestEmailAsync(CancellationToken cancellationToken) {
+        if (User.UserId() is not { } userId) {
+            return Forbid();
+        }
+
+        if (!IsEmailConfigured) {
+            TempData["Flash"] = "站点邮件服务尚未启用或配置完整。";
+            return RedirectToPage();
+        }
+
+        if (!ModelState.IsValid) {
+            Error = string.Join("；", ModelState.Values.SelectMany(state => state.Errors).Select(error => error.ErrorMessage));
+            await LoadAsync(userId, cancellationToken);
+            return Page();
+        }
+
+        if (EmailProblem(required: true) is { } problem) {
+            Error = problem;
+            await LoadAsync(userId, cancellationToken);
+            return Page();
+        }
+
+        await SavePreferencesAsync(userId, cancellationToken);
+        var origin = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+        var result = await notifications.SendTestEmailAsync(
+            userId,
+            (Input.EmailAddress ?? string.Empty).Trim(),
+            origin,
+            cancellationToken);
+        TempData["Flash"] = ExplainEmailTest(result);
         return RedirectToPage();
     }
 
@@ -170,6 +200,57 @@ public class NotificationsModel(
         Partner = await notifications.GetPartnerReadinessAsync(userId, cancellationToken);
     }
 
+    private async Task SavePreferencesAsync(int userId, CancellationToken cancellationToken) {
+        var current = await notifications.GetSettingAsync(userId, cancellationToken);
+        var emailEnabled = IsEmailConfigured ? Input.EmailEnabled : current.EmailEnabled;
+        var emailAddress = IsEmailConfigured ? (Input.EmailAddress ?? string.Empty).Trim() : current.EmailAddress;
+
+        await notifications.SaveSettingAsync(
+            userId,
+            new NotificationPreferences {
+                Enabled = Input.Enabled,
+                WebPushEnabled = Input.WebPushEnabled,
+                EmailEnabled = emailEnabled,
+                EmailAddress = emailAddress,
+                Moments = Input.Moments,
+                Anniversaries = Input.Anniversaries,
+                Shop = Input.Shop,
+                MissYou = Input.MissYou,
+                Comments = Input.Comments,
+                Affinity = Input.Affinity,
+                RemindMinutes = ToMinutes(Input.RemindAt)
+            },
+            cancellationToken);
+    }
+
+    private string? EmailProblem(bool required) {
+        if (!IsEmailConfigured) {
+            return null;
+        }
+
+        var address = (Input.EmailAddress ?? string.Empty).Trim();
+        if (address.Length == 0) {
+            return required ? "请填写当前账号接收通知的邮箱地址。" : null;
+        }
+
+        return EmailOptions.IsValidAddress(address)
+            ? null
+            : "当前账号的邮箱地址不合法。";
+    }
+
+    private static string ExplainEmailTest(EmailDeliveryResult result) {
+        if (result.Sent > 0) {
+            return "测试邮件已发送到当前账号填写的邮箱。";
+        }
+
+        return result.Reason switch {
+            EmailFailureReason.NotConfigured => "邮箱地址或站点邮件配置不完整，测试邮件未发送。",
+            EmailFailureReason.ConnectionFailed => "无法连接 SMTP 服务，请让站点管理员检查 Host、端口与加密方式。",
+            EmailFailureReason.AuthenticationFailed => "SMTP 认证失败，请让站点管理员检查用户名、密码或邮箱授权码。",
+            _ => "SMTP 已连接，但邮件发送失败；安全详情已写入站点日志。"
+        };
+    }
+
     private static string ToText(int minutes) =>
         TimeSpan.FromMinutes(Math.Clamp(minutes, 0, 1439)).ToString(@"hh\:mm", CultureInfo.InvariantCulture);
 
@@ -198,6 +279,12 @@ public class NotificationsModel(
         /// 获取或设置是否通过 Email 接收
         /// </summary>
         public bool EmailEnabled { get; set; }
+
+        /// <summary>
+        /// 获取或设置当前账号接收通知的邮箱地址
+        /// </summary>
+        [StringLength(320, ErrorMessage = "邮箱地址不能超过 320 个字符")]
+        public string? EmailAddress { get; set; }
 
         /// <summary>
         /// 获取或设置是否接收点点滴滴的通知

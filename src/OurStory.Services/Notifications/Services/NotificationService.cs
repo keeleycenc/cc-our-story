@@ -54,6 +54,7 @@ internal sealed class NotificationService(
         setting.Enabled = preferences.Enabled;
         setting.WebPushEnabled = preferences.WebPushEnabled;
         setting.EmailEnabled = preferences.EmailEnabled;
+        setting.EmailAddress = (preferences.EmailAddress ?? string.Empty).Trim();
         setting.Moments = preferences.Moments;
         setting.Anniversaries = preferences.Anniversaries;
         setting.Shop = preferences.Shop;
@@ -178,16 +179,13 @@ internal sealed class NotificationService(
             .FirstOrDefaultAsync(item => item.UserId == partner.Id, cancellationToken);
 
         var devices = await db.PushDevices.CountAsync(device => device.UserId == partner.Id, cancellationToken);
-        var emailAddress = partner.Role == UserRole.Boy
-            ? configuration.Email.BoyEmail
-            : configuration.Email.GirlEmail;
 
         return new PartnerReadiness(
             setting?.Enabled ?? false,
             devices,
             setting?.WebPushEnabled ?? true,
             setting?.EmailEnabled ?? false,
-            IsEmailConfigured && EmailOptions.IsValidAddress(emailAddress));
+            IsEmailConfigured && EmailOptions.IsValidAddress(setting?.EmailAddress));
     }
 
     public async Task<int?> GetPartnerIdAsync(int userId, CancellationToken cancellationToken = default) {
@@ -219,7 +217,10 @@ internal sealed class NotificationService(
 
             var targets = recipients
                 .Where(recipient => AllowsChannel(recipient.Setting, request.Topic, channel.Kind))
-                .Select(recipient => new NotificationRecipient(recipient.UserId, recipient.Role))
+                .Select(recipient => new NotificationRecipient(
+                    recipient.UserId,
+                    recipient.Role,
+                    recipient.Setting?.EmailAddress ?? string.Empty))
                 .ToList();
 
             if (targets.Count == 0) {
@@ -241,25 +242,25 @@ internal sealed class NotificationService(
     }
 
     public async Task<EmailDeliveryResult> SendTestEmailAsync(
-        UserRole role,
+        int userId,
+        string emailAddress,
         string? siteOrigin = null,
         CancellationToken cancellationToken = default) {
-        if (role is not (UserRole.Boy or UserRole.Girl)) {
+        if (!EmailOptions.IsValidAddress(emailAddress)) {
             return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
         }
 
-        var address = role == UserRole.Boy ? configuration.Email.BoyEmail : configuration.Email.GirlEmail;
         var emailChannel = _channels.FirstOrDefault(channel => channel.Kind == NotificationChannelKind.Email);
-        if (emailChannel is null || !emailChannel.IsConfigured || !EmailOptions.IsValidAddress(address)) {
+        if (emailChannel is null || !emailChannel.IsConfigured) {
             return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
         }
 
-        var userId = await db.Users
-            .Where(user => user.IsActive && user.Role == role)
-            .Select(user => (int?)user.Id)
+        var user = await db.Users
+            .Where(user => user.Id == userId && user.IsActive && (user.Role == UserRole.Boy || user.Role == UserRole.Girl))
+            .Select(user => new { user.Id, user.Role })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (userId is null) {
+        if (user is null) {
             return new EmailDeliveryResult(0, 1, EmailFailureReason.NotConfigured);
         }
 
@@ -268,15 +269,15 @@ internal sealed class NotificationService(
             new PushMessage(
                 "Our Story 邮件测试",
                 "本封邮件用于确认 SMTP 邮件通知通道已正常工作。",
-                "/admin/settings",
+                "/admin/notifications",
                 "email-test"),
-            TargetUserId: userId,
+            TargetUserId: user.Id,
             Channel: NotificationChannelKind.Email,
             SiteOrigin: siteOrigin);
 
         var result = await emailChannel.SendAsync(
             request,
-            [new NotificationRecipient(userId.Value, role)],
+            [new NotificationRecipient(user.Id, user.Role, emailAddress.Trim())],
             cancellationToken);
 
         return result.Email;
