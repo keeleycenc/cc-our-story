@@ -85,31 +85,97 @@ internal sealed class EmailSender(
         string recipient,
         PushMessage message,
         string? siteOrigin) {
-        var title = Clamp(message.Title, SubjectLimit);
-        var body = (message.Body ?? string.Empty).Trim();
+        var brand = string.IsNullOrWhiteSpace(options.SenderName) ? "Our Story" : options.SenderName.Trim();
+        var title = string.IsNullOrWhiteSpace(message.Title) ? "你有一条新通知" : message.Title.Trim();
+        var body = string.IsNullOrWhiteSpace(message.Body) ? "打开站点查看这条通知的详细内容。" : message.Body.Trim();
         var url = EmailLinks.Resolve(message.Url, siteOrigin, configuration);
+        var settingsUrl = EmailLinks.Resolve("/admin/notifications", siteOrigin, configuration);
 
         var mail = new MimeMessage();
-        mail.From.Add(new MailboxAddress(options.SenderName.Trim(), options.SenderEmail.Trim()));
+        mail.From.Add(new MailboxAddress(brand, options.SenderEmail.Trim()));
         mail.To.Add(MailboxAddress.Parse(recipient));
-        mail.Subject = title;
+        mail.Subject = Clamp($"【{brand}】{title}", SubjectLimit);
 
         var encoder = HtmlEncoder.Default;
+        var encodedBrand = encoder.Encode(brand);
+        var encodedTitle = encoder.Encode(title);
         var htmlBody = string.Join(
             "<br>",
             body.Replace("\r\n", "\n", StringComparison.Ordinal)
                 .Split('\n')
                 .Select(encoder.Encode));
-        var html = $"<p>{htmlBody}</p>";
-        var text = body;
+        var preheader = encoder.Encode(Clamp(body, 100));
 
+        var action = string.Empty;
         if (url is not null) {
             var encodedUrl = encoder.Encode(url);
-            html += $"<p><a href=\"{encodedUrl}\">查看详情</a></p>";
-            text += $"{Environment.NewLine}{Environment.NewLine}查看详情：{url}";
+            action = $"""
+                <tr>
+                  <td style="padding:0 32px 32px;">
+                    <a href="{encodedUrl}" style="display:inline-block;padding:12px 22px;border-radius:10px;background:#c65f7c;color:#ffffff;font-size:14px;font-weight:600;line-height:20px;text-decoration:none;">查看详情</a>
+                  </td>
+                </tr>
+                """;
         }
 
-        mail.Body = new BodyBuilder { TextBody = text, HtmlBody = html }.ToMessageBody();
+        var settings = settingsUrl is null
+            ? "你可以登录站点修改邮件通知设置。"
+            : $"你可以在 <a href=\"{encoder.Encode(settingsUrl)}\" style=\"color:#9d5369;text-decoration:underline;\">通知设置</a> 中修改接收偏好。";
+
+        var html = $"""
+            <!doctype html>
+            <html lang="zh-CN">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>{encodedTitle}</title>
+            </head>
+            <body style="margin:0;padding:0;background:#f6f2f3;color:#332b2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',Arial,sans-serif;">
+              <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{preheader}</div>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f6f2f3;">
+                <tr>
+                  <td align="center" style="padding:32px 16px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border:1px solid #eadde1;border-radius:16px;background:#ffffff;overflow:hidden;">
+                      <tr>
+                        <td style="padding:24px 32px 12px;color:#b15873;font-size:13px;font-weight:600;letter-spacing:.08em;">{encodedBrand}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:0 32px 14px;color:#332b2e;font-size:22px;font-weight:700;line-height:1.45;">{encodedTitle}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:0 32px 26px;color:#665b5f;font-size:15px;line-height:1.8;">{htmlBody}</td>
+                      </tr>
+                      {action}
+                      <tr>
+                        <td style="border-top:1px solid #f0e6e9;padding:18px 32px 22px;color:#95878c;font-size:12px;line-height:1.7;">
+                          这是一封来自 {encodedBrand} 的自动通知。{settings}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+            """;
+
+        var textParts = new List<string> { title, string.Empty, body };
+
+        if (url is not null) {
+            textParts.Add(string.Empty);
+            textParts.Add($"查看详情：{url}");
+        }
+
+        textParts.Add(string.Empty);
+        textParts.Add($"这是一封来自 {brand} 的自动通知。");
+        if (settingsUrl is not null) {
+            textParts.Add($"通知设置：{settingsUrl}");
+        }
+
+        mail.Body = new BodyBuilder {
+            TextBody = string.Join(Environment.NewLine, textParts),
+            HtmlBody = html
+        }.ToMessageBody();
         return mail;
     }
 

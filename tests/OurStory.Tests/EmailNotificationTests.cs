@@ -191,7 +191,7 @@ public class EmailNotificationTests {
     }
 
     [Fact]
-    public void 邮件同时包含纯文本Html和绝对详情链接() {
+    public void 邮件使用统一品牌模板并包含纯文本与绝对链接() {
         var configuration = Configuration();
         var sender = new EmailSender(configuration, NullLogger<EmailSender>.Instance);
 
@@ -201,11 +201,31 @@ public class EmailNotificationTests {
             new PushMessage("新的点点滴滴", "第一行\n第二行", "/moments/summer"),
             null);
 
-        Assert.Equal("新的点点滴滴", mail.Subject);
+        Assert.Equal("【Our Story】新的点点滴滴", mail.Subject);
         Assert.Contains("第一行", mail.TextBody, StringComparison.Ordinal);
         Assert.Contains("https://love.example.com/moments/summer", mail.TextBody, StringComparison.Ordinal);
+        Assert.Contains("https://love.example.com/admin/notifications", mail.TextBody, StringComparison.Ordinal);
+        Assert.Contains("<!doctype html>", mail.HtmlBody, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("<br>", mail.HtmlBody, StringComparison.Ordinal);
         Assert.Contains("href=\"https://love.example.com/moments/summer\"", mail.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://love.example.com/admin/notifications\"", mail.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("这是一封来自 Our Story 的自动通知", mail.HtmlBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void 邮件模板会编码用户可控内容() {
+        var configuration = Configuration();
+        var sender = new EmailSender(configuration, NullLogger<EmailSender>.Instance);
+
+        var mail = sender.BuildMessage(
+            configuration.Email,
+            "girl@example.com",
+            new PushMessage("<script>标题</script>", "你好 <img src=x onerror=alert(1)>", "/"),
+            null);
+
+        Assert.DoesNotContain("<script>", mail.HtmlBody, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<img src=x", mail.HtmlBody, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("&lt;script&gt;", mail.HtmlBody, StringComparison.Ordinal);
     }
 
     [Fact]
