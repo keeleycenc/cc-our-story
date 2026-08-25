@@ -87,6 +87,7 @@ builder.Services.AddScoped<MomentUnlockStore>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<NotificationWorker>();
 builder.Services.AddHostedService<NotificationScheduler>();
+builder.Services.AddHostedService<AnniversaryRewardScheduler>();
 builder.Services.AddHostedService<LlmAtmosphereWorker>();
 builder.Services.AddHostedService<LlmAtmosphereSweeper>();
 

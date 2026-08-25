@@ -69,6 +69,7 @@ public static class ShopDisplay {
         HeartPointReason.AnniversaryPublished => "纪念日",
         HeartPointReason.Purchase => "兑换心愿",
         HeartPointReason.AffinityAnswer => "心有灵犀答题",
+        HeartPointReason.AnniversaryDay => "为今天留下一点心意",
         _ => "藏在心里的爱"
     };
 
@@ -83,6 +84,7 @@ public static class ShopDisplay {
         HeartPointReason.AnniversaryPublished => "calendar-heart",
         HeartPointReason.Purchase => "hand-heart",
         HeartPointReason.AffinityAnswer => "sparkles",
+        HeartPointReason.AnniversaryDay => "calendar-heart",
         _ => "coins"
     };
 

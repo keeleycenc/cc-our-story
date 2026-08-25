@@ -21,4 +21,22 @@ public static class HeartPointRules {
     /// 单次奖励上限
     /// </summary>
     public const int MaxReward = 20;
+
+    /// <summary>
+    /// 某一类纪念日当天，两个人各能拿到的心意
+    /// </summary>
+    /// <param name="kind">纪念日分类</param>
+    /// <returns>该分类当天的基础奖励</returns>
+    public static int AnniversaryReward(AnniversaryKind kind) => kind switch {
+        AnniversaryKind.Love => 10,
+        AnniversaryKind.Wedding => 10,
+        AnniversaryKind.Birthday => 8,
+        AnniversaryKind.FirstMeeting => 8,
+        AnniversaryKind.Milestone => 8,
+        AnniversaryKind.Travel => 5,
+        AnniversaryKind.Festival => 5,
+        AnniversaryKind.Promise => 5,
+        AnniversaryKind.Family => 5,
+        _ => 3
+    };
 }

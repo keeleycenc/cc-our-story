@@ -66,3 +66,12 @@ public sealed record AnniversaryOccurrence(
         }
     }
 }
+
+/// <summary>
+/// 某一天的纪念日奖励发放结果
+/// </summary>
+/// <param name="Day">发放算在站点时区的哪一天，形如 2026-08-25</param>
+/// <param name="Anniversaries">当天命中的纪念日条数</param>
+/// <param name="Entries">真正记下的心意流水条数，重复发放的不算</param>
+/// <param name="Total">这一趟发出去的心意合计</param>
+public sealed record AnniversaryRewardResult(string Day, int Anniversaries, int Entries, int Total);

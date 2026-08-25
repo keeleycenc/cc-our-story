@@ -143,7 +143,12 @@ public enum HeartPointReason {
     /// <summary>
     /// 完成一道心有灵犀每日题目
     /// </summary>
-    AffinityAnswer = 6
+    AffinityAnswer = 6,
+
+    /// <summary>
+    /// 今天正好是某个纪念日，两个人各得一份
+    /// </summary>
+    AnniversaryDay = 7
 }
 
 /// <summary>

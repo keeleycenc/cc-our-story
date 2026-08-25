@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IUserService, UserService>();
         _ = services.AddScoped<IAffinityService, AffinityService>();
         _ = services.AddScoped<IAnniversaryService, AnniversaryService>();
+        _ = services.AddScoped<IAnniversaryRewardService, AnniversaryRewardService>();
         _ = services.AddScoped<IMomentService, MomentService>();
         _ = services.AddScoped<ICommentService, CommentService>();
         _ = services.AddScoped<IHeartbeatService, HeartbeatService>();
