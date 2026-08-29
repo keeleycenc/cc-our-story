@@ -9,7 +9,7 @@
     var site = Model.Site;
     var heart = Model.Heartbeat;
     var isGuest = Model.IsGuest;
-    var heartHint = isGuest ? "送上一句祝福" : "点一下，告诉对方你在想他";
+    var heartHint = isGuest ? "送上一句祝福" : "送出一颗心，让对方知道你在想他";
     var loveStart = site.LoveStartedAt.ToString("yyyy-MM-dd HH:mm:ss");
 
     var momentsHint = Model.MomentsCount > 0 ? $"已经收藏 {Model.MomentsCount} 个瞬间" : "写下第一个瞬间";
@@ -18,7 +18,7 @@
     {
         ("camera", "点点滴滴", "收藏照片、文字与每个值得记住的小瞬间", "peach", momentsHint, "/moments"),
         ("sparkles", "心有灵犀", "每天一个小问题，彼此靠近多一点", "mint", Model.AffinityStatus, "/affinity"),
-        ("history", "时光机", "随机回到过去的某一天，重温当时的心情", "blue", "开启一段回忆", ""),
+        ("calendar-days", "花信如期", "花信有时，关心有迹，记录每一次如期而至", "blue", Model.CycleStatus, "/cycles"),
         ("calendar-heart", "纪念日", "把重要日期放进时间轴，回看故事，也不错过下一次相逢", "rose", Model.AnniversariesCount > 0 ? $"已记录 {Model.AnniversariesCount} 个重要日子" : "记录第一个重要日子", "/anniversaries"),
         ("mail", "留言信箱", "写下此刻想对彼此说、又有点害羞的话", "lilac", "悄悄留一句话", ""),
         ("store", "心意商城", "把想为彼此做的事，变成可以兑换的小心愿", "gold", shopHint, "/shop")
@@ -144,7 +144,7 @@
                     @foreach (var moment in Model.LatestMoments)
                     {
                         <a class="recent-card" href="@moment.Url">
-                            @* 没有封面的那格摆的是图标，不用骨架，也就不挂 data-cover *@
+                            @* 无封面时直接显示图标，不启用封面加载骨架。 *@
                             <span class="recent-cover"@(moment.CoverUrl.Length > 0 ? Html.Raw(" data-cover") : null)>
                                 @if (moment.CoverUrl.Length > 0)
                                 {

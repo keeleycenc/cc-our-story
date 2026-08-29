@@ -9,6 +9,8 @@
     var styles = new[] {
         "assets/variables.css",
         "assets/core.css",
+        "assets/calendar.css",
+        "assets/datefield.css",
         "assets/lightbox.css",
         "assets/pagination.css",
         $"assets/{bundle}.css"
@@ -100,6 +102,7 @@
             <a href="/moments"@(activeNav == "moments" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("camera")<span>点点滴滴</span></a>
             <a href="/affinity"@(activeNav == "affinity" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("sparkles")<span>心有灵犀</span></a>
             <a href="/anniversaries"@(activeNav == "anniversaries" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("calendar-heart")<span>纪念日</span></a>
+            <a href="/cycles"@(activeNav == "cycles" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("calendar-days")<span>花信如期</span></a>
             <a href="/shop"@(activeNav == "shop" ? Html.Raw(" class=\"active\" aria-current=\"page\"") : null)>@Icon("store")<span>心意商城</span></a>
         </nav>
         <div class="nav-actions">
@@ -125,12 +128,13 @@
         <span class="modal-heart"><svg class="icon" id="modal-icon" aria-hidden="true"><use href="#i-heart"></use></svg></span>
         <p id="modal-eyebrow">UI PREVIEW</p>
         <h2 id="modal-title">功能预览</h2>
-        <span id="modal-message">这个入口会在后续功能中逐步开放</span>
-        <button class="modal-okay" type="button">知道啦</button>
+        <span id="modal-message">此入口将在后续版本中逐步开放</span>
+        <button class="modal-okay" type="button">知道了</button>
     </div>
 </div>
 
 <script src="@Assets.Url("assets/pwa.js")" defer></script>
+<script src="@Assets.Url("assets/datefield.js")" defer></script>
 <script src="@Assets.Url("assets/lightbox.js")" defer></script>
 @foreach (var script in scripts)
 {

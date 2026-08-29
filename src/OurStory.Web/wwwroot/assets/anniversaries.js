@@ -73,7 +73,7 @@
     meta.append(date);
     if (item.lunarDate) meta.append(text('span', 'anniversary-lunar-date', item.lunarDate));
     meta.append(text('span', '', '由 ' + item.authorName + ' 记录'));
-    const note = text('p', 'timeline-note', item.summary || '这段回忆还没有写下描述。');
+    const note = text('p', 'timeline-note', item.summary || '这段回忆还等着我们一起补上描述。');
     copy.append(titleRow, meta, note);
 
     article.append(rail);
@@ -182,7 +182,7 @@
   const agendaWeekday = calendar.querySelector('[data-calendar-agenda-weekday]');
   const agendaDate = calendar.querySelector('[data-calendar-agenda-date]');
   const agendaCount = calendar.querySelector('[data-calendar-agenda-count]');
-  const agendaPanel = calendar.querySelector('.memory-calendar-agenda');
+  const agendaPanel = calendar.querySelector('.calendar-agenda');
   const agenda = calendar.querySelector('[data-calendar-agenda]');
   const modeButtons = Array.from(calendar.querySelectorAll('[data-calendar-mode]'));
   const todayKey = calendar.dataset.today;
@@ -222,7 +222,7 @@
     if (!records.length) {
       const empty = document.createElement('p');
       empty.className = 'calendar-agenda-empty';
-      empty.append(icon('calendar-heart'), text('span', '', '这一天还没有纪念日，留给未来慢慢填写。'));
+      empty.append(icon('calendar-heart'), text('span', '', '这一天暂时没有纪念日，等我们一起写下新的故事。'));
       agenda.append(empty);
       return;
     }

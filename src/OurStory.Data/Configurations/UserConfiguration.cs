@@ -26,5 +26,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User> {
         // SQLite 的 NOCASE 只覆盖 ASCII，用户名本来就只允许字母数字，够用
         _ = builder.HasIndex(user => user.UserName).IsUnique();
         _ = builder.Property(user => user.UserName).UseCollation("NOCASE");
+
+        _ = builder.HasIndex(user => user.CoupleRelationshipId);
+        _ = builder.HasOne(user => user.CoupleRelationship)
+            .WithMany(relationship => relationship.Members)
+            .HasForeignKey(user => user.CoupleRelationshipId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

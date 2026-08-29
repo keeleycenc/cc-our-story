@@ -301,6 +301,149 @@ namespace OurStory.Data.Migrations
                     b.ToTable("comments", (string)null);
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.CoupleRelationship", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("couple_relationships", (string)null);
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.CycleDailyLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Flow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Mood")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Pain")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RelationshipId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Symptoms")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UpdatedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("RelationshipId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("cycle_daily_logs", (string)null);
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.CycleRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RelationshipId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RequestKey")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SummarySource")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SummaryStamp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("SummaryUpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UpdatedByUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("RelationshipId")
+                        .IsUnique()
+                        .HasFilter("\"EndDate\" IS NULL");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("RelationshipId", "RequestKey")
+                        .IsUnique();
+
+                    b.HasIndex("RelationshipId", "StartDate");
+
+                    b.ToTable("cycle_records", (string)null);
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.HeartPointEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -469,18 +612,18 @@ namespace OurStory.Data.Migrations
                     b.Property<bool>("Comments")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("Enabled")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("EmailAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
 
-                    b.Property<string>("EmailAddress")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("TEXT");
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("LastAnniversaryOn")
                         .IsRequired()
@@ -718,6 +861,9 @@ namespace OurStory.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CoupleRelationshipId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("CreatedAt")
                         .HasColumnType("INTEGER");
 
@@ -742,6 +888,8 @@ namespace OurStory.Data.Migrations
                         .UseCollation("NOCASE");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CoupleRelationshipId");
 
                     b.HasIndex("UserName")
                         .IsUnique();
@@ -834,6 +982,60 @@ namespace OurStory.Data.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.CycleDailyLog", b =>
+                {
+                    b.HasOne("OurStory.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OurStory.Core.Entities.CoupleRelationship", "Relationship")
+                        .WithMany("CycleDailyLogs")
+                        .HasForeignKey("RelationshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OurStory.Core.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Relationship");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.CycleRecord", b =>
+                {
+                    b.HasOne("OurStory.Core.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("OurStory.Core.Entities.CoupleRelationship", "Relationship")
+                        .WithMany("CycleRecords")
+                        .HasForeignKey("RelationshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OurStory.Core.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Relationship");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.HeartPointEntry", b =>
                 {
                     b.HasOne("OurStory.Core.Entities.User", "User")
@@ -913,6 +1115,16 @@ namespace OurStory.Data.Migrations
                     b.Navigation("Seller");
                 });
 
+            modelBuilder.Entity("OurStory.Core.Entities.User", b =>
+                {
+                    b.HasOne("OurStory.Core.Entities.CoupleRelationship", "CoupleRelationship")
+                        .WithMany("Members")
+                        .HasForeignKey("CoupleRelationshipId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CoupleRelationship");
+                });
+
             modelBuilder.Entity("OurStory.Core.Entities.AffinityDailyQuestion", b =>
                 {
                     b.Navigation("Answers");
@@ -928,6 +1140,15 @@ namespace OurStory.Data.Migrations
             modelBuilder.Entity("OurStory.Core.Entities.Comment", b =>
                 {
                     b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("OurStory.Core.Entities.CoupleRelationship", b =>
+                {
+                    b.Navigation("CycleDailyLogs");
+
+                    b.Navigation("CycleRecords");
+
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("OurStory.Core.Entities.Moment", b =>

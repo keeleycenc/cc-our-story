@@ -38,7 +38,7 @@
         }
     </header>
 
-    @* 今天没有纪念日的日子占绝大多数，这一块就整个不出现，免得常年挂着一个空盒子。 *@
+    @* 仅在当天存在纪念日时展示今日纪念区域。 *@
     @if (todayItems.Length > 0)
     {
         <section class="memory-today" aria-labelledby="today-title">
@@ -80,14 +80,14 @@
                                     }
                                     <span>由 @item.AuthorName 记录</span>
                                 </span>
-                                <span class="memory-today-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还没有写下描述。")</span>
+                                <span class="memory-today-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还等着我们一起补上描述。")</span>
                             </span>
                             <span class="memory-today-go">@Icon("arrow-right")</span>
                         </a>
                     }
                 </div>
             </div>
-            @* 分隔线跟着「今天」一起出现、一起消失，所以没有纪念日的日子下面的排版一点不受影响。 *@
+            @* 分隔线与今日纪念区域同步显示，避免影响常规页面布局。 *@
             <div class="memory-today-divider" aria-hidden="true"><i></i></div>
         </section>
     }
@@ -168,7 +168,7 @@
                                         }
                                         <span>由 @item.AuthorName 记录</span>
                                     </div>
-                                    <p class="timeline-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还没有写下描述。")</p>
+                                    <p class="timeline-note">@(item.Summary.Length > 0 ? item.Summary : "这段回忆还等着我们一起补上描述。")</p>
                                 </div>
                                 <strong class="timeline-day">第 @dayNumber 天</strong>
                             </article>
@@ -245,13 +245,13 @@
 
     @if (Model.Items.Count > 0)
     {
-        <section class="memory-calendar" data-anniversary-calendar data-today="@Model.Today.ToString("yyyy-MM-dd")" data-calendar-url="@Url.Page(null, "Calendar")" aria-labelledby="calendar-title">
+        <section class="memory-calendar calendar-shell" data-anniversary-calendar data-today="@Model.Today.ToString("yyyy-MM-dd")" data-calendar-url="@Url.Page(null, "Calendar")" aria-labelledby="calendar-title">
             <header class="memory-section-header memory-calendar-header">
                 <div>
                     <p>CALENDAR</p>
                     <h2 id="calendar-title">纪念日日历</h2>
                 </div>
-                <div class="memory-calendar-controls" aria-label="切换日历月份">
+                <div class="calendar-controls" aria-label="切换日历月份">
                     <div class="calendar-mode-switch" role="group" aria-label="日历历法">
                         <button type="button" class="is-active" data-calendar-mode="solar" aria-pressed="true">公历</button>
                         <button type="button" data-calendar-mode="lunar" aria-pressed="false">农历</button>
@@ -271,14 +271,14 @@
                     <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
                 </div>
             </header>
-            <div class="memory-calendar-body">
-                <div class="memory-calendar-month">
-                    <div class="memory-calendar-weekdays" aria-hidden="true">
+            <div class="calendar-body">
+                <div class="calendar-month">
+                    <div class="calendar-weekdays" aria-hidden="true">
                         <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
                     </div>
-                    <div class="memory-calendar-grid" data-calendar-grid role="grid" aria-label="纪念日月历"></div>
+                    <div class="calendar-grid" data-calendar-grid role="grid" aria-label="纪念日月历"></div>
                 </div>
-                <aside class="memory-calendar-agenda" aria-live="polite">
+                <aside class="calendar-agenda" aria-live="polite">
                     <header>
                         <span data-calendar-agenda-weekday></span>
                         <h3 data-calendar-agenda-date></h3>

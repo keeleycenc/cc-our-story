@@ -1,0 +1,489 @@
+@page "/cycles"
+@model OurStory.Web.Pages.Cycles.IndexModel
+@{
+    ViewData["Title"] = "花信如期";
+    ViewData["ActiveNav"] = "cycles";
+    ViewData["Bundle"] = "cycles";
+
+    var dashboard = Model.Dashboard;
+    var current = dashboard.Current;
+    var stats = dashboard.Statistics;
+    var predicted = stats.NextPrediction;
+    var today = Model.Today;
+
+    const double radius = 52;
+    var circumference = 2 * Math.PI * radius;
+    var dash = circumference * (1 - current.Progress);
+
+    string Stamp(DateOnly date) => date.ToString("yyyy-MM-dd");
+    string Short(DateOnly date) => date.ToString("M 月 d 日");
+}
+
+<main id="main" class="cycle-page">
+    <header class="page-heading cycle-heading">
+        <p>FLOWER LETTER</p>
+        <h1>花信如期</h1>
+        <span>花信有时，关心有迹，记录每一次如期而至。</span>
+
+        <div class="cycle-heading-tags">
+            <span class="cycle-phase phase-@current.Phase.ToString().ToLowerInvariant()">@current.Phase.Name()</span>
+            @if (current.ActiveDay > 0)
+            {
+                <span class="cycle-tag tone-active">经期第 @current.ActiveDay 天</span>
+            }
+            else if (current.DayOfCycle is { } dayOfCycle)
+            {
+                <span class="cycle-tag">周期第 @dayOfCycle 天</span>
+            }
+            @if (predicted is not null)
+            {
+                <span class="cycle-tag@(current.IsLate ? " tone-attention" : null)">
+                    @if (current.IsLate)
+                    {
+                        <text>已超过预计日期 @(-current.DaysUntilExpectedStart) 天</text>
+                    }
+                    else
+                    {
+                        <text>预计 @Short(predicted.ExpectedStart)</text>
+                    }
+                </span>
+                @if (predicted.Ovulation is { } ovulation && ovulation >= today)
+                {
+                    <span class="cycle-tag">排卵日 @Short(ovulation)</span>
+                }
+            }
+        </div>
+
+        @* 登记入口位于标题下方，主状态卡片仅展示当前周期状态。 *@
+        <div class="cycle-heading-actions">
+            @if (current.IsActive)
+            {
+                <button class="cycle-action" type="button" data-cycle-open="end-record">@Icon("circle-check")今天结束</button>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Start">
+                    <input type="hidden" name="requestKey" value="@Model.NewRequestKey">
+                    <button class="cycle-action is-primary" type="submit">@Icon("plus")今天开始</button>
+                </form>
+            }
+            <button class="cycle-action" type="button" data-cycle-open="create-record">@Icon("calendar-heart")补记一次</button>
+        </div>
+    </header>
+
+    <div class="cycle-shell">
+        @if (!string.IsNullOrWhiteSpace(Model.Flash))
+        {
+            <p class="cycle-notice is-ok" role="status">@Icon("circle-check")@Model.Flash</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Error))
+        {
+            <p class="cycle-notice is-error" role="alert">@Icon("circle-alert")@Model.Error</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Warning))
+        {
+            <section class="cycle-warning" role="alert" aria-labelledby="cycle-warning-title">
+                <span>@Icon("circle-alert")</span>
+                <div>
+                    <h2 id="cycle-warning-title">请确认这次登记</h2>
+                    <p>@Model.Warning 请双方核对日期；确认无误后仍可继续保存。</p>
+                    <div class="cycle-warning-actions">
+                        @if (Model.PendingAction == "start")
+                        {
+                            <form method="post" asp-page-handler="Start">
+                                <input type="hidden" name="requestKey" value="@Model.PendingRequestKey">
+                                <input type="hidden" name="confirmSuspicious" value="true">
+                                <button class="cycle-action is-primary" type="submit">确认今天开始</button>
+                            </form>
+                        }
+                        else if (Model.PendingAction == "create" && Model.PendingRecord is { } pending)
+                        {
+                            <form method="post" asp-page-handler="Create">
+                                <input type="hidden" name="startDate" value="@Stamp(pending.StartDate)">
+                                @if (pending.EndDate is { } pendingEnd)
+                                {
+                                    <input type="hidden" name="endDate" value="@Stamp(pendingEnd)">
+                                }
+                                <input type="hidden" name="note" value="@pending.Note">
+                                <input type="hidden" name="requestKey" value="@pending.RequestKey">
+                                <input type="hidden" name="confirmSuspicious" value="true">
+                                <button class="cycle-action is-primary" type="submit">确认并保存</button>
+                            </form>
+                        }
+                        <a class="cycle-action" href="/cycles">返回核对</a>
+                    </div>
+                </div>
+            </section>
+        }
+
+        <section class="cycle-status @(current.ActiveDay > 0 ? "is-active" : "is-resting")" aria-labelledby="current-status-title">
+            <div class="cycle-ring" role="img" aria-label="@current.Headline">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="cycle-ring-track" cx="60" cy="60" r="@radius"></circle>
+                    <circle class="cycle-ring-value" cx="60" cy="60" r="@radius"
+                            stroke-dasharray="@circumference.ToString("0.##")"
+                            stroke-dashoffset="@dash.ToString("0.##")"></circle>
+                </svg>
+                <div class="cycle-ring-copy">
+                    @if (current.ActiveDay > 0)
+                    {
+                        <b>@current.ActiveDay</b>
+                        <span>本次经期</span>
+                    }
+                    else if (current.DayOfCycle is { } dayOfCycle)
+                    {
+                        <b>@dayOfCycle</b>
+                        <span>本轮周期</span>
+                    }
+                    else
+                    {
+                        <b>—</b>
+                        <span>等待记录</span>
+                    }
+                </div>
+            </div>
+
+            <div class="cycle-status-copy">
+                <p>CURRENT STATUS</p>
+                <h2 id="current-status-title">@current.Headline</h2>
+                <span>@current.Detail</span>
+
+                @if (current.Summary is { } summary)
+                {
+                    <figure class="cycle-summary">
+                        <figcaption>
+                            @Icon("book-heart")本次小结
+                            <em>@(summary.FromModel ? "模型生成" : "系统生成")</em>
+                        </figcaption>
+                        <p>@summary.Text</p>
+                    </figure>
+                }
+            </div>
+        </section>
+
+        <section class="cycle-stats" aria-label="动态统计">
+            <article>
+                <span>@Icon("history")平均周期</span>
+                <strong>@(stats.AverageCycleDays?.ToString() ?? "—")<small> 天</small></strong>
+                <p>@(stats.AverageCycleDays is null
+                        ? "记录 2 次开始日期后可计算"
+                        : $"范围 {stats.ShortestCycleDays}–{stats.LongestCycleDays} 天，波动 ±{stats.CycleSwingDays ?? 0} 天")</p>
+            </article>
+            <article>
+                <span>@Icon("clock")平均时长</span>
+                <strong>@(stats.AveragePeriodDays?.ToString() ?? "—")<small> 天</small></strong>
+                <p>根据已结束的记录实时计算</p>
+            </article>
+            <article>
+                <span>@Icon("calendar-heart")下次参考</span>
+                <strong>@(predicted?.ExpectedStart.ToString("M月d日") ?? "—")</strong>
+                <p>@(predicted is null
+                        ? "继续共同记录后即可生成"
+                        : predicted.WindowDays <= 1
+                            ? $"规律稳定，参考窗口为 {predicted.WindowDays} 天"
+                            : $"窗口 {predicted.WindowDays} 天 · 可信度 {predicted.Confidence}%")</p>
+            </article>
+            <article>
+                <span>@Icon("sparkles")排卵日参考</span>
+                <strong>@(predicted?.Ovulation?.ToString("M月d日") ?? "—")</strong>
+                <p>@(predicted?.FertileStart is { } fertileStart && predicted.FertileEnd is { } fertileEnd
+                        ? $"易孕期 {Short(fertileStart)} – {Short(fertileEnd)}"
+                        : "积累更多共同记录后可推算")</p>
+            </article>
+        </section>
+
+        <section class="cycle-calendar calendar-shell"
+                 data-cycle-calendar
+                 data-today="@Stamp(today)"
+                 data-calendar-url="@Url.Page(null, "Calendar")"
+                 data-month="@dashboard.Calendar.Month"
+                 data-year="@dashboard.Calendar.Year"
+                 aria-labelledby="cycle-calendar-title">
+            <header class="cycle-calendar-header">
+                <div>
+                    <p>CALENDAR</p>
+                    <h2 id="cycle-calendar-title">日历</h2>
+                </div>
+                <div class="calendar-controls" aria-label="切换日历月份">
+                    <div class="calendar-stepper">
+                        <button type="button" data-calendar-previous aria-label="上一个月">@Icon("chevron-left")</button>
+                        <span class="calendar-select">
+                            <select data-calendar-year aria-label="选择年份"></select>
+                            @Icon("chevron-down")
+                        </span>
+                        <span class="calendar-select">
+                            <select data-calendar-month aria-label="选择月份"></select>
+                            @Icon("chevron-down")
+                        </span>
+                        <button type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
+                    </div>
+                    <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
+                </div>
+            </header>
+            <div class="calendar-body">
+                <div class="calendar-month">
+                    <div class="calendar-weekdays" aria-hidden="true">
+                        <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                    </div>
+                    <div class="calendar-grid" data-calendar-grid role="grid" aria-label="花信月历"></div>
+                    <div class="cycle-calendar-legend" aria-label="图例">
+                        <span><i class="phase-period"></i>经期</span>
+                        <span><i class="phase-predicted"></i>预测窗口</span>
+                        <span><i class="phase-fertile"></i>易孕期</span>
+                        <span><i class="phase-ovulation"></i>排卵日</span>
+                        <span><i class="phase-safe"></i>安全期</span>
+                        <span><i class="has-log"></i>当天有记录</span>
+                    </div>
+                </div>
+                <aside class="calendar-agenda cycle-agenda" aria-live="polite">
+                    <header>
+                        <span data-agenda-weekday></span>
+                        <h3 data-agenda-date></h3>
+                        <p data-agenda-phase></p>
+                    </header>
+                    <div data-agenda-body></div>
+                    <footer>
+                        <button class="cycle-action is-primary" type="button" data-agenda-edit>@Icon("pen-line")补充这一天</button>
+                    </footer>
+                </aside>
+            </div>
+        </section>
+
+        <aside class="cycle-disclaimer">
+            @Icon("circle-alert")
+            <p>
+                <strong>生活参考，不是医疗判断</strong>
+                <span>
+                    平均值、预测窗口、排卵日和易孕期都由已有记录现算而来，会随着记录变化。
+                    「安全期」只是易孕期以外的日子，<b>不能当作避孕依据</b>；如有异常或不适，请咨询专业医务人员。
+                </span>
+            </p>
+        </aside>
+
+        <section class="cycle-history" id="history" aria-labelledby="cycle-history-title">
+            <header>
+                <div><p>HISTORY</p><h2 id="cycle-history-title">历史时间轴</h2></div>
+                <span>共 @dashboard.History.TotalCount 次记录</span>
+            </header>
+
+            @if (dashboard.History.Items.Count == 0)
+            {
+                <div class="cycle-history-empty">
+                    @Icon("calendar-heart")
+                    <strong>等待第一封花信</strong>
+                    <span>可以从今天开始，也可以一起补记一段过往记录。</span>
+                </div>
+            }
+            else
+            {
+                <ol class="cycle-timeline">
+                    @foreach (var item in dashboard.History.Items)
+                    {
+                        <li class="cycle-timeline-item @(item.IsActive ? "is-active" : null)">
+                            <div class="cycle-timeline-mark" aria-hidden="true">
+                                <b>@item.StartDate.Day</b>
+                                <small>@item.StartDate.ToString("yyyy.MM")</small>
+                            </div>
+                            <article class="cycle-timeline-card">
+                                <header>
+                                    <h3>@Short(item.StartDate) – @(item.EndDate is { } end ? Short(end) : "进行中")</h3>
+                                    <div class="cycle-tags">
+                                        @foreach (var tag in item.Tags)
+                                        {
+                                            <span class="cycle-tag tone-@tag.Tone.ToString().ToLowerInvariant()">@tag.Text</span>
+                                        }
+                                    </div>
+                                </header>
+
+                                <p class="cycle-timeline-summary">@item.Summary.Text</p>
+
+                                <dl class="cycle-timeline-facts">
+                                    <div><dt>持续</dt><dd>@item.DurationDays 天</dd></div>
+                                    <div><dt>周期</dt><dd>@(item.CycleDays is { } gap ? $"{gap} 天" : "首次")</dd></div>
+                                    <div><dt>经量峰值</dt><dd>@item.PeakFlow.Name()</dd></div>
+                                    <div><dt>补充记录</dt><dd>@item.LogCount 天</dd></div>
+                                </dl>
+
+                                @if (item.Symptoms != CycleSymptom.None)
+                                {
+                                    <p class="cycle-timeline-symptoms">@Icon("circle-alert")@item.Symptoms.Join()</p>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(item.Note))
+                                {
+                                    <blockquote>@item.Note</blockquote>
+                                }
+
+                                <footer>
+                                    <small>
+                                        @item.CreatedByName 记录
+                                        @if (item.UpdatedAt != item.CreatedAt)
+                                        {
+                                            <text> · @item.UpdatedByName 更新</text>
+                                        }
+                                        @if (item.Summary.FromModel)
+                                        {
+                                            <text> · 小结由模型生成</text>
+                                        }
+                                    </small>
+                                    <span class="cycle-timeline-tools">
+                                        <button class="cycle-mini" type="button" data-cycle-open="edit-@item.Id">@Icon("pen-line")编辑</button>
+                                        <form method="post"
+                                              asp-page-handler="Delete"
+                                              data-cycle-confirm="确认删除这条记录？对应日期的身体状况仍会保留。">
+                                            <input type="hidden" name="recordId" value="@item.Id">
+                                            <button class="cycle-mini is-danger" type="submit">@Icon("trash-2")删除</button>
+                                        </form>
+                                    </span>
+                                </footer>
+                            </article>
+                        </li>
+                    }
+                </ol>
+                @foreach (var item in dashboard.History.Items)
+                {
+                    <div class="cycle-dialog" data-cycle-dialog="edit-@item.Id" aria-hidden="true">
+                        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+                        <section class="cycle-dialog-card" role="dialog" aria-modal="true" aria-labelledby="edit-record-title-@item.Id">
+                            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+                            <span class="cycle-dialog-icon">@Icon("pen-line")</span>
+                            <p>EDIT RECORD</p>
+                            <h2 id="edit-record-title-@item.Id">编辑记录</h2>
+                            <form method="post" asp-page-handler="Update" class="cycle-form">
+                                <input type="hidden" name="recordId" value="@item.Id">
+                                <partial name="_DateField" model="@(DateFieldModel.Past("startDate", "开始日期", item.StartDate, today, true, id: $"edit-start-{item.Id}"))" />
+                                <partial name="_DateField" model="@(DateFieldModel.Past("endDate", "结束日期", item.EndDate, today, false, "留空表示本次仍在进行", $"edit-end-{item.Id}"))" />
+                                <label class="cycle-field is-wide">
+                                    <span>备注</span>
+                                    <textarea name="note" maxlength="500" rows="3">@item.Note</textarea>
+                                </label>
+                                <div class="cycle-dialog-actions is-wide">
+                                    <button class="cycle-action" type="button" data-cycle-close>取消</button>
+                                    <button class="cycle-action is-primary" type="submit">保存修改</button>
+                                </div>
+                            </form>
+                        </section>
+                    </div>
+                }
+                <partial name="_Pagination" model="Model.HistoryPagination" />
+            }
+        </section>
+    </div>
+
+    @if (current.IsActive)
+    {
+        <div class="cycle-dialog" data-cycle-dialog="end-record" aria-hidden="true">
+            <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+            <section class="cycle-dialog-card is-small" role="dialog" aria-modal="true" aria-labelledby="end-record-title">
+                <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+                <span class="cycle-dialog-icon">@Icon("circle-check")</span>
+                <p>FINISH RECORD</p>
+                <h2 id="end-record-title">确认今天结束？</h2>
+                <span class="cycle-dialog-message">结束日期将记录为今天，之后双方仍可在时间轴或日历中修改。</span>
+                <form method="post" asp-page-handler="End" class="cycle-dialog-actions">
+                    <button class="cycle-action" type="button" data-cycle-close>取消</button>
+                    <button class="cycle-action is-primary" type="submit">确认结束</button>
+                </form>
+            </section>
+        </div>
+    }
+
+    <div class="cycle-dialog" data-cycle-dialog="create-record" aria-hidden="true">
+        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+        <section class="cycle-dialog-card" role="dialog" aria-modal="true" aria-labelledby="create-record-title">
+            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+            <span class="cycle-dialog-icon">@Icon("calendar-heart")</span>
+            <p>COMPLETE RECORD</p>
+            <h2 id="create-record-title">补记一次</h2>
+            <form method="post" asp-page-handler="Create" class="cycle-form">
+                <input type="hidden" name="requestKey" value="@Guid.NewGuid()">
+                <partial name="_DateField" model="@(DateFieldModel.Past("startDate", "开始日期", null, today, true, id: "create-start"))" />
+                <partial name="_DateField" model="@(DateFieldModel.Past("endDate", "结束日期", null, today, false, "留空表示本次仍在进行", "create-end"))" />
+                <label class="cycle-field is-wide">
+                    <span>备注 <small>选填</small></span>
+                    <textarea name="note" maxlength="500" rows="3" placeholder="例如：本次状态，或想和对方一起留意的变化"></textarea>
+                </label>
+                <div class="cycle-dialog-actions is-wide">
+                    <button class="cycle-action" type="button" data-cycle-close>取消</button>
+                    <button class="cycle-action is-primary" type="submit">保存记录</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    @* 删除等操作共用此确认弹窗，提示内容由脚本写入。 *@
+    <div class="cycle-dialog" data-cycle-dialog="confirm" aria-hidden="true">
+        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+        <section class="cycle-dialog-card is-small" role="dialog" aria-modal="true" aria-labelledby="cycle-confirm-title">
+            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+            <span class="cycle-dialog-icon is-danger">@Icon("trash-2")</span>
+            <p>PLEASE CONFIRM</p>
+            <h2 id="cycle-confirm-title">请确认操作</h2>
+            <span class="cycle-dialog-message" data-confirm-text></span>
+            <div class="cycle-dialog-actions">
+                <button class="cycle-action" type="button" data-cycle-close>取消</button>
+                <button class="cycle-action is-danger" type="button" data-confirm-ok>确认</button>
+            </div>
+        </section>
+    </div>
+
+    @* 每日补充弹窗由日历打开，字段值由脚本根据当天记录填充。 *@
+    <div class="cycle-dialog" data-cycle-dialog="day-editor" aria-hidden="true">
+        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+        <section class="cycle-dialog-card is-wide" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
+            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+            <span class="cycle-dialog-icon">@Icon("list-checks")</span>
+            <p>DAILY LOG</p>
+            <h2 id="day-editor-title" data-day-title>补充这一天</h2>
+            <span class="cycle-dialog-message" data-day-hint></span>
+
+            <form method="post" asp-page-handler="Day" class="cycle-form is-single">
+                <input type="hidden" name="date" data-day-date value="">
+
+                <fieldset class="cycle-choice">
+                    <legend>经量</legend>
+                    <label><input type="radio" name="flow" value="0" checked><span>未填</span></label>
+                    @foreach (var flow in CycleLabels.AllFlows)
+                    {
+                        <label><input type="radio" name="flow" value="@((int)flow)"><span>@flow.Name()</span></label>
+                    }
+                </fieldset>
+
+                <fieldset class="cycle-choice">
+                    <legend>心情</legend>
+                    <label><input type="radio" name="mood" value="0" checked><span>未填</span></label>
+                    @foreach (var mood in CycleLabels.AllMoods)
+                    {
+                        <label><input type="radio" name="mood" value="@((int)mood)"><span>@mood.Name()</span></label>
+                    }
+                </fieldset>
+
+                <fieldset class="cycle-choice">
+                    <legend>不适程度</legend>
+                    @for (var level = 0; level <= 3; level++)
+                    {
+                        <label><input type="radio" name="pain" value="@level" checked="@(level == 0)"><span>@CycleLabels.PainName(level)</span></label>
+                    }
+                </fieldset>
+
+                <fieldset class="cycle-choice is-multi">
+                    <legend>身体状况 <small>可多选</small></legend>
+                    @foreach (var symptom in CycleLabels.AllSymptoms)
+                    {
+                        <label><input type="checkbox" name="symptoms" value="@((int)symptom)"><span>@symptom.Name()</span></label>
+                    }
+                </fieldset>
+
+                <label class="cycle-field">
+                    <span>补充说明 <small>选填</small></span>
+                    <textarea name="note" maxlength="300" rows="3" placeholder="例如：下午休息后舒服了一些，想让你也知道"></textarea>
+                </label>
+
+                <div class="cycle-dialog-actions">
+                    <button class="cycle-action" type="button" data-cycle-close>取消</button>
+                    <button class="cycle-action is-primary" type="submit">保存这一天</button>
+                </div>
+            </form>
+        </section>
+    </div>
+</main>

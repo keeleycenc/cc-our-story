@@ -8,6 +8,7 @@ using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Models;
 using OurStory.Core.Options;
+using OurStory.Services.Cycles;
 using OurStory.Services.Settings;
 using OurStory.Web.Infrastructure;
 using System.ComponentModel.DataAnnotations;
@@ -23,7 +24,14 @@ namespace OurStory.Web.Areas.Admin.Pages;
 /// </remarks>
 public class SettingsModel(
     ISettingsService settings,
-    ActiveConfiguration configuration) : PageModel {
+    ActiveConfiguration configuration,
+    ICycleInsightService insight,
+    ICycleService cycles) : PageModel {
+    /// <summary>
+    /// 手动补写花信小结时的单次处理上限
+    /// </summary>
+    private const int CycleRefreshBatch = 20;
+
     /// <summary>
     /// 执行 Input 操作
     /// </summary>
@@ -39,12 +47,12 @@ public class SettingsModel(
     /// 获取一个值，指示当前登录的人能否改心意规则
     /// </summary>
     /// <remarks>
-    /// 心意的发放和价格区间只让男主动：这类站点一般是男生搭给女生的
+    /// 获取一个值，指示当前用户是否有权配置心意发放与价格区间
     /// </remarks>
     public bool CanEditHeartRules => User.Role() == UserRole.Boy;
 
     /// <summary>
-    /// 获取当前实际生效的存储方式：OSS 参数没配全时它会和上面选的不一样
+    /// 获取当前实际生效的存储方式；OSS 配置不完整时可能与所选策略不同
     /// </summary>
     public string EffectiveDriverText =>
         configuration.Storage.EffectiveDriver == StorageDriver.AliyunOss ? "阿里云 OSS" : "本地目录";
@@ -60,12 +68,28 @@ public class SettingsModel(
     public bool EmailConfigured => configuration.Email.Enabled && configuration.Email.IsConfigured;
 
     /// <summary>
+    /// 获取一个值，指示花信小结是否启用模型服务
+    /// </summary>
+    public bool CycleInsightConfigured => configuration.CycleInsight.IsUsable;
+
+    /// <summary>
+    /// 获取一个值，指示当前配置是否已保存 API Key
+    /// </summary>
+    public bool CycleInsightHasKey => !string.IsNullOrWhiteSpace(configuration.CycleInsight.ApiKey);
+
+    /// <summary>
+    /// 获取最近一次模型通道测试结果；尚未测试时为 <see langword="null"/>
+    /// </summary>
+    public CycleInsightProbe? CycleProbe { get; private set; }
+
+    /// <summary>
     /// 处理 GET 请求
     /// </summary>
     public async Task OnGetAsync(CancellationToken cancellationToken) {
         var site = await settings.GetAsync(cancellationToken);
         var storage = configuration.Storage;
         var email = configuration.Email;
+        var cycle = configuration.CycleInsight;
 
         Input = new InputModel {
             TimeZone = configuration.Site.TimeZone,
@@ -76,6 +100,14 @@ public class SettingsModel(
             OssAccessKeySecret = storage.Oss.AccessKeySecret,
             OssPublicBaseUrl = storage.Oss.PublicBaseUrl,
             OssApiEndpoint = storage.Oss.ApiEndpoint,
+            CycleInsightEnabled = cycle.Enabled,
+            CycleInsightBaseUrl = cycle.BaseUrl,
+            CycleInsightModel = cycle.Model,
+            CycleInsightApiKey = string.Empty,
+            CycleInsightTone = cycle.Tone,
+            CycleInsightTimeoutSeconds = cycle.TimeoutSeconds,
+            CycleInsightMaxOutputTokens = cycle.MaxOutputTokens,
+            CycleInsightRefreshHours = cycle.RefreshHours,
             EmailEnabled = email.Enabled,
             EmailHost = email.Host,
             EmailPort = email.Port,
@@ -172,7 +204,7 @@ public class SettingsModel(
 
         await settings.SaveAsync(site, cancellationToken);
 
-        // 时区和附件存储落在配置文件里，写不进去（比如只读挂载）提示
+        // 时区和附件存储写入配置文件；写入失败时向页面返回错误提示。
         if (!configuration.Update(SaveRuntimeOptions, out var error)) {
             Error = $"内容已经保存，但 {configuration.FilePath} 无法写入：{error}";
             return Page();
@@ -183,7 +215,44 @@ public class SettingsModel(
     }
 
     /// <summary>
-    /// 心意规则的范围检查，都合规就返回 null
+    /// 使用示例数据测试花信小结模型调用
+    /// </summary>
+    /// <remarks>
+    /// 测试使用已保存的配置，配置修改后应先完成保存。
+    /// </remarks>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>带回执的页面响应</returns>
+    public async Task<IActionResult> OnPostTestCycleAsync(CancellationToken cancellationToken) {
+        try {
+            CycleProbe = await insight.ProbeAsync(cancellationToken);
+        } catch (Exception exception) when (exception is not OperationCanceledException) {
+            CycleProbe = CycleInsightProbe.Failed($"模型调用发生异常：{exception.Message}");
+        }
+
+        await OnGetAsync(cancellationToken);
+        return Page();
+    }
+
+    /// <summary>
+    /// 立即补充缺失或已失效的花信小结
+    /// </summary>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>补写结果</returns>
+    public async Task<IActionResult> OnPostRefreshCycleAsync(CancellationToken cancellationToken) {
+        if (!CycleInsightConfigured) {
+            TempData["Flash"] = "模型通道尚未启用，当前小结由站内规则实时生成，无需执行补写。";
+            return RedirectToPage();
+        }
+
+        var written = await cycles.RefreshSummariesAsync(CycleRefreshBatch, cancellationToken);
+        TempData["Flash"] = written > 0
+            ? $"已补写 {written} 条花信小结。"
+            : "当前没有需要补写的小结，或模型本次未返回有效内容。";
+        return RedirectToPage();
+    }
+
+    /// <summary>
+    /// 验证心意规则范围；验证通过时返回 null
     /// </summary>
     private string? HeartRuleError() {
         if (!InRange(Input.RewardVisit, 0, 100)
@@ -202,7 +271,7 @@ public class SettingsModel(
         }
 
         if (Input.ShopPriceMax < Input.ShopPriceMin) {
-            return "心愿的最高价不能比最低价还低。";
+            return "心愿最高价格不能低于最低价格。";
         }
 
         return InRange(Input.ShopListingDays, 1, 3650) && InRange(Input.ShopValidDays, 1, 3650)
@@ -259,6 +328,25 @@ public class SettingsModel(
         next.Storage.Oss.ApiEndpoint = Trim(Input.OssApiEndpoint).TrimEnd('/');
 
         SaveEmailOptions(next.Email);
+        SaveCycleInsightOptions(next.CycleInsight);
+    }
+
+    private void SaveCycleInsightOptions(CycleInsightOptions cycle) {
+        cycle.Enabled = Input.CycleInsightEnabled;
+        cycle.BaseUrl = Trim(Input.CycleInsightBaseUrl).TrimEnd('/');
+        cycle.Model = Trim(Input.CycleInsightModel);
+        cycle.Tone = Trim(Input.CycleInsightTone);
+        cycle.TimeoutSeconds = Input.CycleInsightTimeoutSeconds;
+        cycle.MaxOutputTokens = Input.CycleInsightMaxOutputTokens;
+        cycle.RefreshHours = Input.CycleInsightRefreshHours;
+
+        if (!string.IsNullOrWhiteSpace(Input.CycleInsightApiKey)) {
+            cycle.ApiKey = Input.CycleInsightApiKey.Trim();
+        }
+
+        if (Input.CycleInsightClearApiKey) {
+            cycle.ApiKey = string.Empty;
+        }
     }
 
     private void SaveEmailOptions(EmailOptions email) {
@@ -287,7 +375,7 @@ public class SettingsModel(
         public string TimeZone { get; set; } = "Asia/Shanghai";
 
         /// <summary>
-        /// 获取或设置附件存储方式；留空表示自动（OSS 参数填全了就走 OSS）
+        /// 获取或设置附件存储方式；留空表示在 OSS 配置完整时自动使用 OSS
         /// </summary>
         public StorageDriver? StorageDriver { get; set; }
 
@@ -481,6 +569,62 @@ public class SettingsModel(
         /// 获取或设置是否允许游客发表评论
         /// </summary>
         public bool AllowGuestComments { get; set; } = true;
+
+        #region 花信小结
+
+        /// <summary>
+        /// 获取或设置一个值，指示是否让模型来写花信的周期小结
+        /// </summary>
+        public bool CycleInsightEnabled { get; set; }
+
+        /// <summary>
+        /// 获取或设置兼容 Responses 协议的服务地址
+        /// </summary>
+        [StringLength(300, ErrorMessage = "花信小结服务地址不能超过 300 个字符")]
+        public string? CycleInsightBaseUrl { get; set; }
+
+        /// <summary>
+        /// 获取或设置模型名称
+        /// </summary>
+        [StringLength(120, ErrorMessage = "花信小结模型名称不能超过 120 个字符")]
+        public string? CycleInsightModel { get; set; }
+
+        /// <summary>
+        /// 获取或设置新的 API Key；留空表示保持不变
+        /// </summary>
+        [StringLength(300, ErrorMessage = "花信小结 API Key 不能超过 300 个字符")]
+        public string? CycleInsightApiKey { get; set; }
+
+        /// <summary>
+        /// 获取或设置一个值，指示是否清除已保存的 API Key
+        /// </summary>
+        public bool CycleInsightClearApiKey { get; set; }
+
+        /// <summary>
+        /// 获取或设置附加在站点统一写作要求之后的语气偏好
+        /// </summary>
+        [StringLength(500, ErrorMessage = "花信小结语气偏好不能超过 500 个字符")]
+        public string? CycleInsightTone { get; set; }
+
+        /// <summary>
+        /// 获取或设置单次调用超时秒数
+        /// </summary>
+        [Range(5, 300, ErrorMessage = "花信小结调用超时必须在 5 到 300 秒之间")]
+        public int CycleInsightTimeoutSeconds { get; set; } = 45;
+
+        /// <summary>
+        /// 获取或设置单次调用允许生成的最大输出 Token 数
+        /// </summary>
+        [Range(64, 8192, ErrorMessage = "花信小结输出上限必须在 64 到 8192 Token 之间")]
+        public int CycleInsightMaxOutputTokens { get; set; } = 8192;
+
+        /// <summary>
+        /// 获取或设置后台补写小结的间隔小时数
+        /// </summary>
+        [Range(1, 168, ErrorMessage = "花信小结补写间隔必须在 1 到 168 小时之间")]
+        public int CycleInsightRefreshHours { get; set; } = 12;
+
+        #endregion
 
         #region boy 特有
 

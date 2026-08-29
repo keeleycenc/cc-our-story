@@ -38,6 +38,7 @@
 	<meta name="apple-mobile-web-app-title" content="@site.SiteTitle">
 	<link rel="stylesheet" href="@Assets.Url("assets/variables.css")">
 	<link rel="stylesheet" href="@Assets.Url("assets/admin.css")">
+	<link rel="stylesheet" href="@Assets.Url("assets/datefield.css")">
 	<link rel="stylesheet" href="@Assets.Url("assets/lightbox.css")">
 	<link rel="stylesheet" href="@Assets.Url("assets/pagination.css")">
 	<script>
@@ -56,9 +57,8 @@
 <body class="admin">
 	@Sprite()
 
-	@* 手机上的顶栏：站名、总览与两个常用入口、配色开关和「更多」。
-	   手机浏览器自己的地址栏就占着屏幕底部，所以导航全部收到顶上，别再占一条底栏。
-	   它是 body 这根竖排里的第一格，不用 fixed，中间的内容区才是那个会滚的元素 *@
+	@* 移动端顶栏包含站名、常用入口、配色切换与完整导航入口。
+	   导航位于页面顶部，内容区域独立滚动。 *@
 	<header class="admin-bar">
 		<a class="admin-logo" href="/"><span>CC</span> Our Story</a>
 		<nav class="admin-bar-nav" aria-label="常用入口">
@@ -86,15 +86,14 @@
 			</div>
 		</aside>
 
-		@* 内容限宽居中：屏幕再宽，正文也不会被拉成一整行看不完的长条 *@
+		@* 内容区域限宽并居中显示，以保证宽屏下的可读性。 *@
 		<main class="admin-main">
 			<div class="admin-canvas">
 				<header class="admin-top">
 					<div>
 						<p>@ViewData["Eyebrow"]</p>
 						<h1>@ViewData["Title"]</h1>
-						@* 「返回列表」跟着标题走：编辑页的表单底部只留保存和预览，
-						   要退出去的时候眼睛不用先扫到页尾 *@
+						@* 编辑页面在标题区域提供返回入口，表单底部保留主要操作。 *@
 						@if (ViewData["BackUrl"] is string backUrl)
 						{
 							<a class="admin-back" href="@backUrl">@Icon("arrow-left")@(ViewData["BackText"] as string ?? "返回列表")</a>
@@ -116,11 +115,10 @@
 		</main>
 	</div>
 
-	@* 会滚的是中间的内容区，不是整页，所以这个按钮由脚本去滚 .admin-main *@
+	@* 回到顶部按钮滚动独立的 .admin-main 内容区域。 *@
 	<button class="admin-to-top" type="button" aria-label="回到顶部" title="回到顶部" hidden>@Icon("arrow-up")</button>
 
-	@* 「更多」：从底部推上来的一张卡片，整份导航都在里面，
-	   顶栏放不下的入口不用去别处找 *@
+	@* 「更多」面板在移动端承载完整后台导航。 *@
 	<div class="admin-sheet" id="admin-more" data-sheet>
 		<div class="admin-sheet-mask" data-sheet-close></div>
 		<div class="admin-sheet-card" role="dialog" aria-modal="true" aria-label="后台导航">
@@ -140,6 +138,7 @@
 
 	<script src="@Assets.Url("assets/pwa.js")" defer></script>
 	<script src="@Assets.Url("assets/lightbox.js")" defer></script>
+	<script src="@Assets.Url("assets/datefield.js")" defer></script>
 	<script src="@Assets.Url("assets/admin.js")" defer></script>
 	@await RenderSectionAsync("Scripts", required: false)
 </body>

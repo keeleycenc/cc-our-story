@@ -24,6 +24,11 @@ public static class PageNumbers {
     public const int AffinityHistoryPageSize = 8;
 
     /// <summary>
+    /// 花信历史每页展示数量
+    /// </summary>
+    public const int CycleHistoryPageSize = 10;
+
+    /// <summary>
     /// 从查询串里取当前页码，取不到或不合法时当作第一页
     /// </summary>
     /// <param name="request"></param>

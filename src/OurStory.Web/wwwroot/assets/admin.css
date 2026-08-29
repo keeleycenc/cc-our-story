@@ -50,8 +50,7 @@ p { margin: 0 }
     overflow: hidden;
 }
 
-/* 滚动条细一点、轨道透明，别在内容右边糊出一条灰带，看着像多占了一列；
-   gutter 常驻，内容不会因为滚动条时有时无而左右横跳 */
+/* 使用细滚动条与透明轨道，并预留固定 gutter，避免内容因滚动条状态变化而横向移动。 */
 .admin-main {
     position: relative;
     min-width: 0;
@@ -65,7 +64,7 @@ p { margin: 0 }
     scrollbar-color: var(--line-strong) transparent;
 }
 
-/* 会滚的一直是 .admin-main：弹层盖上来的时候，别让底下的内容跟着滚 */
+/* 弹层打开时锁定 .admin-main 内容区域的滚动。 */
 body.admin.sheet-open .admin-main { overflow: hidden }
 
 /* 正文限宽：宽屏下不让表格和表单被拉成一整行，行长稳定，看着也不飘 */
@@ -299,7 +298,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .admin-day-item:hover { border-color: var(--pink); background: var(--surface); color: inherit }
 
-/* 今天就是这一天：整张卡片提起来说，不用去找那个小标签 */
+/* 使用整卡样式突出当天记录。 */
 .admin-day-item.is-today { border-color: var(--pink); background: var(--pink-soft) }
 
 .admin-day-mark {
@@ -378,8 +377,8 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     color: var(--ink);
     font-size: 13px;
     line-height: 1.75;
-    white-space: pre-wrap;      /* 留言里的换行原样保留 */
-    overflow-wrap: anywhere;    /* 一长串不带空格的地址也别把卡片撑开 */
+    white-space: pre-wrap;      /* 保留留言正文中的换行。 */
+    overflow-wrap: anywhere;    /* 长文本可在任意位置换行，避免撑开卡片。 */
 }
 
 /* 折叠只在有脚本时生效：展开按钮也归它管，没有脚本就老老实实全文显示 */
@@ -671,77 +670,10 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .field input[type="time"]::-webkit-calendar-picker-indicator,
 .field input[type="month"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .72 }
 
-/* 日期／时间选择器：全站共用 _DateField 这一份，外框自己画，
-   里面仍是原生控件，手机上照样能调出系统的滚轮 */
-.date-field > label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px }
-.date-field > small { display: block; margin-top: 6px; color: var(--faint); font-size: 11px }
-
-.date-control {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding-right: 6px;
-    border: 1px solid var(--line-strong);
-    border-radius: 12px;
-    background: var(--surface);
-    transition: border-color .18s, box-shadow .18s;
-}
-
-.date-control:focus-within { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
-
-/* 输入框自己不再画边框，边框归外面那层壳，两者叠起来才是一个控件 */
-.field.date-field .date-control input {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 0;
-    min-height: 40px;
-    padding: 10px 0 10px 13px;
-    border: 0;
-    background: none;
-    box-shadow: none;
-}
-
-.field.date-field .date-control input:focus { box-shadow: none }
-
-/* 有了自己的日历按钮，浏览器自带的那个图标就收起来，免得并排出现两个 */
-.date-control.has-picker input::-webkit-calendar-picker-indicator { display: none }
-
-.date-control-open {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    flex: none;
-    border: 0;
-    border-radius: 10px;
-    background: none;
-    color: var(--muted);
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color .18s, color .18s;
-}
-
-.date-control-open:hover { background: var(--surface-muted); color: var(--pink-dark) }
-
-.date-control-now {
-    flex: none;
-    padding: 5px 11px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface-soft);
-    color: var(--muted);
-    font: 11px var(--sans);
-    cursor: pointer;
-    transition: border-color .18s, color .18s;
-}
-
-.date-control-now:hover { border-color: var(--pink); color: var(--pink-dark) }
-.date-control-open[hidden], .date-control-now[hidden] { display: none }
-
 /* 栅格里的每一格都允许被压缩，否则某一项撑不下就把整行推宽 */
 .field-grid > .field { min-width: 0 }
 
-/* 选文件：浏览器自带的那个按钮太出戏，连按钮带框一起改成站点的样子 */
+/* 统一文件选择控件与站点视觉样式。 */
 .field input[type="file"] {
     width: 100%;
     padding: 9px 12px;
@@ -771,7 +703,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .field input[type="file"]:hover::file-selector-button { border-color: var(--pink); color: var(--pink-dark) }
 
-/* 老一点的 WebKit 只认这个别名，写在一起会让整条规则失效，所以单独再来一遍 */
+/* 为旧版 WebKit 单独保留兼容属性，避免影响标准规则。 */
 .field input[type="file"]::-webkit-file-upload-button {
     margin-right: 12px;
     padding: 7px 15px;
@@ -818,6 +750,45 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     background: var(--surface-soft);
 }
 
+.panel-switch { display: inline-flex; align-items: center; gap: 9px; flex: none; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none }
+.panel-switch input { position: absolute; width: 1px; height: 1px; opacity: 0 }
+
+.panel-switch span::before {
+    content: "";
+    display: inline-block;
+    width: 34px;
+    height: 20px;
+    margin-right: 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-muted);
+    vertical-align: -5px;
+    transition: background-color .18s, border-color .18s;
+}
+
+.panel-switch span::after {
+    content: "";
+    position: absolute;
+    right: auto;
+    width: 14px;
+    height: 14px;
+    margin: 3px 0 0 -31px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+    transition: transform .18s;
+}
+
+.panel-switch span { position: relative; display: inline-flex; align-items: center }
+.panel-switch input:checked + span::before { border-color: transparent; background: var(--pink) }
+.panel-switch input:checked + span::after { transform: translateX(14px) }
+.panel-switch input:checked + span { color: var(--pink-dark) }
+.panel-switch input:focus-visible + span::before { outline: 2px solid var(--pink); outline-offset: 2px }
+
+[data-lock].is-locked { opacity: .5 }
+[data-lock].is-locked input, [data-lock].is-locked textarea { cursor: not-allowed }
+[data-lock].is-locked .btn { pointer-events: none }
+
 /* 9. 按钮 ---------------------------------------------------------------- */
 .btn {
     display: inline-flex;
@@ -838,7 +809,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .btn-ghost { background: transparent; border-color: var(--line-strong); color: var(--ink) }
 .btn-ghost:hover { background: var(--surface-muted); border-color: var(--pink); color: var(--pink-dark) }
 
-/* 删除是不可逆的，按钮平时就用红色说清楚，别等到点下去才提醒 */
+/* 不可逆操作使用危险色进行持续提示。 */
 .btn-danger { background: transparent; border-color: var(--line-strong); color: var(--danger) }
 .btn-danger .icon { color: var(--danger) }
 .btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger-strong) }
@@ -849,7 +820,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 
 .btn-small { padding: 6px 11px; font-size: 12px; border-radius: 10px }
 
-/* 点不动的按钮就别再对鼠标有反应：hover 还变色会让人以为能点 */
+/* 禁用和处理中按钮不响应悬停样式。 */
 .btn.is-busy, .btn:disabled { opacity: .5; cursor: not-allowed }
 
 .btn:disabled:hover, .btn.is-busy:hover {
@@ -943,7 +914,7 @@ body.admin.sheet-open .admin-main { overflow: hidden }
 .btn.is-busy .push-spinner { display: inline-block }
 .btn.is-busy .icon-idle { display: none }
 
-/* 标题旁边那个：只在忙的时候露出来，细一点，不抢标题的戏 */
+/* 仅在处理期间显示标题旁的轻量状态指示器。 */
 h2 > .push-spinner {
     display: inline-block;
     width: 13px;
@@ -1008,7 +979,7 @@ h2 > .push-spinner[hidden] { display: none }
 .device-actions { display: flex; flex: none; align-items: center; gap: 8px }
 .device-actions form { margin: 0 }
 
-/* 每台设备的测试结果就近显示，不用抬头去别处找 */
+/* 设备测试结果显示在对应设备设置附近。 */
 .device-note { display: block; margin-top: 7px; font-size: 12px; color: var(--muted) }
 .device-note[data-kind="ok"] { color: var(--pink-dark) }
 .device-note[data-kind="warn"] { color: var(--danger) }
@@ -1315,7 +1286,7 @@ h2 > .push-spinner[hidden] { display: none }
 
 .file-picked li.is-more { background: var(--pink-soft); color: var(--pink-dark) }
 
-/* 上传进度：一批图片走一条，传完停一下再收起来 */
+/* 单批图片共用一条上传进度，完成后延迟收起。 */
 .upload-progress { margin-top: 13px }
 .upload-progress[hidden] { display: none }
 
@@ -1839,8 +1810,8 @@ body.auth-page {
         overflow: hidden;
     }
 
-    /* flex-basis 给 0，高度就完全由剩下的空间说了算，是个确定值；
-       行再钉成 minmax(0, 1fr)，内容再长也撑不开这一格，只会在里面滚 */
+    /* flex-basis 设为 0，使容器占用剩余高度；
+       行高使用 minmax(0, 1fr)，超长内容在区域内部滚动。 */
     .admin-shell {
         flex: 1 1 0;
         grid-template-columns: minmax(0, 1fr);
@@ -1853,8 +1824,7 @@ body.auth-page {
     .admin-side { display: none }
     .admin-main { height: 100%; padding: 20px 15px calc(28px + env(safe-area-inset-bottom)) }
 
-    /* 顶栏：站名、总览与两个常用入口、配色开关和「更多」。
-       手机上底部是浏览器地址栏的地盘，导航一律走顶上，不再单开一条底栏 */
+    /* 移动端顶栏包含站名、常用入口、配色开关与完整导航入口。 */
     .admin-bar {
         flex: none;
         z-index: 30;
@@ -1889,7 +1859,7 @@ body.auth-page {
     .admin-bar-nav a.is-active { background: var(--pink-soft); color: var(--pink-dark) }
     .admin-more { background: var(--surface-muted); color: var(--ink) }
 
-    /* 更多：从底部推上来的一张卡片，整份导航都在里面 */
+    /* 完整导航使用底部弹出面板展示。 */
     .admin-sheet.is-open { display: block; position: fixed; inset: 0; z-index: 40 }
 
     .admin-sheet-mask { position: absolute; inset: 0; background: rgba(0, 0, 0, .42); animation: sheet-fade .2s ease }
@@ -1899,7 +1869,7 @@ body.auth-page {
         right: 0;
         bottom: 0;
         left: 0;
-        /* 整份导航都收在这里，屏幕矮的时候让卡片自己滚，别顶出可视区 */
+        /* 低高度屏幕下允许导航面板内部滚动。 */
         max-height: 86dvh;
         overflow-y: auto;
         padding: 9px 15px calc(18px + env(safe-area-inset-bottom));
@@ -1929,7 +1899,7 @@ body.auth-page {
     .admin-sheet-links a.is-active .icon { color: var(--pink-dark) }
     .admin-sheet-dismiss { justify-content: center; width: 100%; margin-top: 14px }
 
-    /* 顶栏已经有配色开关和站名，页面头部只留标题 */
+    /* 移动端顶栏已包含配色开关和站名，页面头部仅保留标题。 */
     .admin-top { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px }
     .admin-top h1 { font-size: 23px }
     .admin-who { display: none }
@@ -1943,12 +1913,11 @@ body.auth-page {
     .markdown-editor-pane, .markdown-preview-pane { min-height: 380px }
     .admin-moment-item, .admin-comment-item { grid-template-columns: minmax(0, 1fr); gap: 13px }
 
-    /* 窄屏放不下三格，「还有多少天」落到标题下面，仍旧和标题左对齐 */
+    /* 窄屏下将日期计数移动到标题下方并保持左对齐。 */
     .admin-day-item { grid-template-columns: auto minmax(0, 1fr); row-gap: 11px }
     .admin-day-count { grid-column: 2; justify-self: start }
 
-    /* 操作按钮改成等宽的格子：用 flex 的话每一格都不肯小于自己的内容，
-       「删除」外面还套了层 form，最后几个按钮宽窄不一 */
+    /* 操作按钮采用等宽网格，保证按钮及其表单容器宽度一致。 */
     .admin-moment-actions, .admin-comment-actions {
         display: grid;
         grid-auto-flow: column;
@@ -1961,7 +1930,7 @@ body.auth-page {
     .admin-moment-actions form, .admin-comment-actions form { display: block }
     .admin-moment-actions .btn, .admin-comment-actions .btn { width: 100%; justify-content: center }
 
-    /* 氛围组：头像和正文并排还放得下，操作按钮落到下面去，和上面两栏对齐 */
+    /* 氛围组在移动端保留头像与正文双列布局，操作按钮位于下一行。 */
     .atmosphere-card { grid-template-columns: auto minmax(0, 1fr); row-gap: 14px }
 
     .atmosphere-actions {
@@ -1977,7 +1946,7 @@ body.auth-page {
     .atmosphere-actions form { display: block }
     .atmosphere-actions .btn { width: 100%; justify-content: center }
 
-    /* 「话题」那一格自己占满一行，两个按钮再平分下面一行 */
+    /* 「话题」字段独占一行，两个操作按钮平分下一行。 */
     .atmosphere-try { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px }
     .atmosphere-try-topic { grid-column: 1 / -1; margin-right: 0 }
     .atmosphere-try-topic select { flex: 1; max-width: none; min-width: 0 }

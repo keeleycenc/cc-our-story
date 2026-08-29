@@ -123,7 +123,7 @@ internal sealed class LlmAtmosphereService(
         var options = configuration.LlmAtmosphere;
 
         if (options.Find(memberId) is not { IsConfigured: true } member) {
-            return AtmosphereProbe.Blocked("这个角色的服务地址、模型或 API Key 配置还不完整。");
+            return AtmosphereProbe.Blocked("该角色的服务地址、模型或 API Key 配置不完整。");
         }
 
         var moment = momentId > 0
@@ -135,7 +135,7 @@ internal sealed class LlmAtmosphereService(
                 .FirstOrDefaultAsync(cancellationToken);
 
         if (moment is null) {
-            return AtmosphereProbe.Blocked("还没有适合互动的点点滴滴，可以先发布一条再来试试。");
+            return AtmosphereProbe.Blocked("暂无适合互动的点点滴滴，请先发布一条内容后再进行测试。");
         }
 
         // 手动测试同样遵守发布状态与隐私设置，不绕过正常的内容保护规则
@@ -196,12 +196,12 @@ internal sealed class LlmAtmosphereService(
     private static string Explain(ResponsesFailure failure) => failure switch {
         ResponsesFailure.Unauthorized => "API Key 无效，请检查是否填写正确，或密钥是否已经失效。",
         ResponsesFailure.Forbidden => "当前账号暂时没有访问该模型的权限，也可能是服务商尚未为该账号开放 Responses 接口。",
-        ResponsesFailure.RateLimited => "请求有些频繁啦，服务端暂时限流，请稍等片刻后再试。",
+        ResponsesFailure.RateLimited => "请求频率过高，模型服务当前限流，请稍后重试。",
         ResponsesFailure.Unreachable => "暂时无法连接到模型服务，可能是网络不稳定，或本次请求等待超时。",
-        ResponsesFailure.Rejected => "这次请求没有被模型服务接受，可能与服务地址、模型名称或 Responses 协议兼容配置有关，详细原因可在站点日志中查看。",
-        ResponsesFailure.Truncated => "这次话还没说完，输出额度就已经用完啦。推理模型会先思考再回答，思考过程也会占用额度，可以适当调高该角色的「单条最多写多少 token」。",
-        ResponsesFailure.Empty => "请求已经完成，不过这次模型没有留下可以显示的文字内容，可以稍后再试一次。",
-        _ => "这次调用没有成功，详细原因可以在站点日志中查看。"
+        ResponsesFailure.Rejected => "本次请求未被模型服务接受，可能与服务地址、模型名称或 Responses 协议兼容配置有关，详细原因请查看站点日志。",
+        ResponsesFailure.Truncated => "模型输出内容被截断。推理过程也会占用输出额度，请适当提高该角色的「单条最多写多少 Token」。",
+        ResponsesFailure.Empty => "请求已完成，但模型未返回可展示的文本内容，请稍后重试。",
+        _ => "本次调用未成功，详细原因请查看站点日志。"
     };
 
     private static bool Speakable(Moment? moment, LlmAtmosphereOptions options) =>
@@ -288,7 +288,7 @@ internal sealed class LlmAtmosphereService(
             : [];
 
         var request = new ResponsesRequest(
-            member,
+            member.ToEndpoint(options.TimeoutSeconds),
             AtmospherePrompt.Instructions(member),
             AtmospherePrompt.Input(moment, clock.ToLocal(moment.MomentDate), history, target),
             attached);

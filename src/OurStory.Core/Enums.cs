@@ -206,7 +206,7 @@ public enum NotificationTopic {
     Moment = 0,
 
     /// <summary>
-    /// 纪念日：对方新记下一个日子，或者今天 / 明天就是某个日子
+    /// 纪念日：对方新增日期，或相关日期为今天 / 明天
     /// </summary>
     Anniversary = 1,
 
@@ -231,7 +231,7 @@ public enum NotificationTopic {
     Direct = 5,
 
     /// <summary>
-    /// 后台点的「通知测试」，只发给自己，同样不受那几项开关影响
+    /// 后台「通知测试」，仅发送给当前用户，不受业务通知开关影响
     /// </summary>
     Test = 6,
 
@@ -311,4 +311,230 @@ public enum CommentSource {
     /// LLM 氛围组
     /// </summary>
     LlmAtmosphere = 2
+}
+
+/// <summary>
+/// 花信某一天的经量
+/// </summary>
+public enum CycleFlow {
+    /// <summary>
+    /// 没有填写
+    /// </summary>
+    Unset = 0,
+
+    /// <summary>
+    /// 点滴
+    /// </summary>
+    Spotting = 1,
+
+    /// <summary>
+    /// 少
+    /// </summary>
+    Light = 2,
+
+    /// <summary>
+    /// 中等
+    /// </summary>
+    Medium = 3,
+
+    /// <summary>
+    /// 多
+    /// </summary>
+    Heavy = 4
+}
+
+/// <summary>
+/// 花信某一天的心情
+/// </summary>
+public enum CycleMood {
+    /// <summary>
+    /// 没有填写
+    /// </summary>
+    Unset = 0,
+
+    /// <summary>
+    /// 状态不错
+    /// </summary>
+    Good = 1,
+
+    /// <summary>
+    /// 平静
+    /// </summary>
+    Calm = 2,
+
+    /// <summary>
+    /// 低落
+    /// </summary>
+    Low = 3,
+
+    /// <summary>
+    /// 容易烦躁
+    /// </summary>
+    Irritable = 4,
+
+    /// <summary>
+    /// 疲惫
+    /// </summary>
+    Tired = 5
+}
+
+/// <summary>
+/// 花信某一天记下的不适。可以同时选中多项，因此按位存放
+/// </summary>
+[Flags]
+public enum CycleSymptom {
+    /// <summary>
+    /// 没有记录任何不适
+    /// </summary>
+    None = 0,
+
+    /// <summary>
+    /// 腹痛
+    /// </summary>
+    Cramps = 1,
+
+    /// <summary>
+    /// 腰酸
+    /// </summary>
+    Backache = 1 << 1,
+
+    /// <summary>
+    /// 头痛
+    /// </summary>
+    Headache = 1 << 2,
+
+    /// <summary>
+    /// 胸胀
+    /// </summary>
+    BreastTenderness = 1 << 3,
+
+    /// <summary>
+    /// 犯困乏力
+    /// </summary>
+    Fatigue = 1 << 4,
+
+    /// <summary>
+    /// 恶心
+    /// </summary>
+    Nausea = 1 << 5,
+
+    /// <summary>
+    /// 长痘
+    /// </summary>
+    Acne = 1 << 6,
+
+    /// <summary>
+    /// 胃口变化
+    /// </summary>
+    Appetite = 1 << 7,
+
+    /// <summary>
+    /// 失眠
+    /// </summary>
+    Insomnia = 1 << 8,
+
+    /// <summary>
+    /// 情绪起伏
+    /// </summary>
+    MoodSwings = 1 << 9
+}
+
+/// <summary>
+/// 周期小结的生成来源
+/// </summary>
+public enum CycleSummarySource {
+    /// <summary>
+    /// 站内规则
+    /// </summary>
+    Rule = 0,
+
+    /// <summary>
+    /// 由配置好的模型生成
+    /// </summary>
+    Model = 1
+}
+
+/// <summary>
+/// 月历上一天所处的阶段
+/// </summary>
+public enum CyclePhase {
+    /// <summary>
+    /// 暂无足够记录可供判断
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
+    /// 已经记录在案的经期
+    /// </summary>
+    Period = 1,
+
+    /// <summary>
+    /// 预测的下次经期窗口
+    /// </summary>
+    Predicted = 2,
+
+    /// <summary>
+    /// 推算的易孕期
+    /// </summary>
+    Fertile = 3,
+
+    /// <summary>
+    /// 推算的排卵日
+    /// </summary>
+    Ovulation = 4,
+
+    /// <summary>
+    /// 易孕期以外的参考日期，俗称安全期
+    /// </summary>
+    Safe = 5
+}
+
+/// <summary>
+/// 一条历史记录相对既往规律的判断
+/// </summary>
+public enum CycleRhythm {
+    /// <summary>
+    /// 之前没有可比的记录
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
+    /// 与既往规律相符
+    /// </summary>
+    Normal = 1,
+
+    /// <summary>
+    /// 早于既往规律
+    /// </summary>
+    Early = 2,
+
+    /// <summary>
+    /// 晚于既往规律
+    /// </summary>
+    Late = 3
+}
+
+/// <summary>
+/// 页面标签的视觉语调
+/// </summary>
+public enum CycleTagTone {
+    /// <summary>
+    /// 中性说明
+    /// </summary>
+    Neutral = 0,
+
+    /// <summary>
+    /// 状态正常
+    /// </summary>
+    Normal = 1,
+
+    /// <summary>
+    /// 值得留意
+    /// </summary>
+    Attention = 2,
+
+    /// <summary>
+    /// 正在进行
+    /// </summary>
+    Active = 3
 }

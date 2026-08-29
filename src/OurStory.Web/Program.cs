@@ -18,23 +18,22 @@ using OurStory.Web.Infrastructure;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 
-// --reset-password / --list-accounts 这类维护命令走的是同一套配置和依赖注入，
-// 只是执行完就退出，不会去监听端口
+// 维护命令与 Web 应用共用配置和依赖注入，执行完成后直接退出，不启动端口监听。
 var maintenance = MaintenanceCommand.Parse(args);
 
 var builder = WebApplication.CreateBuilder(MaintenanceCommand.StripFrom(args));
 
-// 站点配置只有一处来源：数据目录下的 ourstory.json
+// 站点配置统一读取数据目录下的 ourstory.json。
 var store = ConfigurationStore.Create(builder.Environment.ContentRootPath);
 var loaded = store.Load();
 
-// 日志级别也是默认值，跟着代码走
+// 日志级别使用代码中的默认配置
 builder.Logging.AddFilter(
     "Microsoft.AspNetCore",
     builder.Environment.IsDevelopment() ? LogLevel.Information : LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
-// --lan：开发时让同一个 Wi-Fi 下的手机也能打开
+// --lan：开发时允许同一局域网内的设备访问站点。
 var lanUrl = LanBinding.IsRequested(args)
     ? LanBinding.Resolve(args, builder.Configuration["urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS"))
     : null;
@@ -45,7 +44,7 @@ if (lanUrl is not null) {
 
 builder.Services.AddOurStory(store, loaded.Configuration, store.DataDirectory);
 
-// 密钥落盘，容器重启后登录状态和已解锁的记录都还在
+// 持久化数据保护密钥，确保容器重启后登录状态与解锁记录保持有效。
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(store.DataDirectory, "keys")))
     .SetApplicationName("CC.OurStory");
@@ -66,14 +65,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 builder.Services.AddRazorPages(options => {
-    // 后台整个区域都要登录，登录页本身在前台，不受影响
+    // 后台区域统一要求登录；登录页位于前台区域，不受该规则影响。
     _ = options.Conventions.AuthorizeAreaFolder("Admin", "/");
 });
 
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
-// Razor 默认把非拉丁字符转义成 &#x4E2D; 这种实体，整站中文会让页面凭空大一圈，
-// 查看源代码时也完全读不了。放行全部 Unicode，输出原样的 UTF-8。
+// 允许 Razor 直接输出 Unicode 字符，避免中文被转换为字符实体。
 builder.Services.Configure<WebEncoderOptions>(options =>
     options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 
@@ -90,10 +88,11 @@ builder.Services.AddHostedService<NotificationScheduler>();
 builder.Services.AddHostedService<AnniversaryRewardScheduler>();
 builder.Services.AddHostedService<LlmAtmosphereWorker>();
 builder.Services.AddHostedService<LlmAtmosphereSweeper>();
+builder.Services.AddHostedService<CycleInsightWorker>();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options => {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // 反代通常就在同一台机器上，网段未知，所以不限制来源
+    // 反向代理通常与应用位于同一主机，且网段不可预知，因此不限制代理来源。
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -115,13 +114,13 @@ if (!app.Environment.IsDevelopment()) {
 
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 
-// .webmanifest 不在默认的类型表里，不显式登记的话会被当成未知类型直接 404
+// 显式注册 .webmanifest MIME 类型，避免静态文件中间件返回 404。
 var contentTypes = new FileExtensionContentTypeProvider();
 contentTypes.Mappings[".webmanifest"] = "application/manifest+json";
 
 app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypes });
 
-// 附件放在数据目录里而不是 wwwroot 里：发布包可以整个覆盖，数据不会被冲掉
+// 附件存放在数据目录中，使应用发布覆盖不会影响用户数据。
 var uploadsRoot = app.Services.GetRequiredService<StoragePaths>().UploadsRoot;
 app.UseStaticFiles(new StaticFileOptions {
     FileProvider = new PhysicalFileProvider(uploadsRoot),
@@ -139,8 +138,8 @@ app.MapMediaEndpoints();
 app.MapPushEndpoints();
 app.MapAtmosphereEndpoints();
 
-// 存活探针：容器和反代拿它判断站点还活着。只探数据库连不连得上，
-// 不查任何业务数据，也不渲染页面
+// 存活探针供容器与反向代理判断站点状态，仅检查数据库连接，
+// 不查询业务数据或渲染页面。
 app.MapGet("/healthz", async (OurStoryDbContext db, CancellationToken cancellationToken) =>
     await db.Database.CanConnectAsync(cancellationToken)
         ? Results.Text("ok")

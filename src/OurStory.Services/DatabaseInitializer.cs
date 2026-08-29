@@ -19,10 +19,10 @@ using System.Security.Cryptography;
 
 namespace OurStory.Services;
 
-/// <summary>首次启动时自动创建出来的账号，会打进启动日志，方便第一次登录</summary>
+/// <summary>表示首次启动时自动创建并写入启动日志的账号信息</summary>
 /// <param name="UserName">登录名</param>
-/// <param name="Password">明文口令，只在创建的这一次出现</param>
-/// <param name="Role">男主还是女主</param>
+/// <param name="Password">仅在首次创建时提供的明文口令</param>
+/// <param name="Role">账号角色</param>
 public record SeededAccount(string UserName, string Password, UserRole Role);
 
 /// <summary>
@@ -54,12 +54,12 @@ public class DatabaseInitializer(
     private readonly SiteOptions _options = configuration.Site;
 
     /// <summary>
-    /// 获取访客指纹使用的盐配置键，存储在设置表中，重启后统计不会中断
+    /// 获取访客指纹盐值的配置键；盐值持久化后可保证重启前后的统计连续性
     /// </summary>
     public const string VisitorSecretKey = "system.visitorSecret";
 
     /// <summary>
-    /// 获取商店预设初始化时间配置键，有值后不会重复初始化
+    /// 获取商店预设初始化时间配置键；存在该值时不重复初始化
     /// </summary>
     public const string ShopPresetsSeededKey = "shop.presetsSeededAt";
 
@@ -77,7 +77,8 @@ public class DatabaseInitializer(
         await db.Database.MigrateAsync(cancellationToken);
 
         await EnsureVisitorSecretAsync(cancellationToken);
-        var seeded = await EnsureAccountsAsync(cancellationToken);
+        var relationshipId = await EnsureRelationshipAsync(cancellationToken);
+        var seeded = await EnsureAccountsAsync(relationshipId, cancellationToken);
 
         await EnsureShopPresetsAsync(cancellationToken);
         await EnsureAffinityQuestionsAsync(cancellationToken);
@@ -207,7 +208,29 @@ public class DatabaseInitializer(
         await settings.SetRawAsync(VisitorSecretKey, secret, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<SeededAccount>> EnsureAccountsAsync(CancellationToken cancellationToken) {
+    private async Task<int> EnsureRelationshipAsync(CancellationToken cancellationToken) {
+        var relationship = await db.CoupleRelationships
+            .OrderByDescending(item => item.IsActive)
+            .ThenBy(item => item.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (relationship is null) {
+            relationship = new CoupleRelationship { IsActive = true, CreatedAt = DateTimeOffset.UtcNow };
+            _ = db.CoupleRelationships.Add(relationship);
+            _ = await db.SaveChangesAsync(cancellationToken);
+        }
+
+        if (!relationship.IsActive) {
+            relationship.IsActive = true;
+            _ = await db.SaveChangesAsync(cancellationToken);
+        }
+
+        _ = await db.Users
+            .Where(user => user.CoupleRelationshipId == null)
+            .ExecuteUpdateAsync(update => update.SetProperty(user => user.CoupleRelationshipId, relationship.Id), cancellationToken);
+        return relationship.Id;
+    }
+
+    private async Task<IReadOnlyList<SeededAccount>> EnsureAccountsAsync(int relationshipId, CancellationToken cancellationToken) {
         if (await db.Users.AnyAsync(cancellationToken)) {
             return [];
         }
@@ -226,6 +249,7 @@ public class DatabaseInitializer(
 
         foreach (var seed in seeds) {
             _ = db.Users.Add(new User {
+                CoupleRelationshipId = relationshipId,
                 UserName = seed.UserName,
                 Role = seed.Role,
                 PasswordHash = PasswordHasher.Hash(seed.Password),

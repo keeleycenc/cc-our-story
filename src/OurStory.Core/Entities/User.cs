@@ -14,6 +14,11 @@ public class User {
     public int Id { get; set; }
 
     /// <summary>
+    /// 获取或设置当前所属情侣关系
+    /// </summary>
+    public int? CoupleRelationshipId { get; set; }
+
+    /// <summary>
     /// 获取或设置登录名，全站唯一，不区分大小写
     /// </summary>
     public string UserName { get; set; } = string.Empty;
@@ -47,4 +52,9 @@ public class User {
     /// 获取或设置用户关联的点点滴滴列表
     /// </summary>
     public ICollection<Moment> Moments { get; set; } = [];
+
+    /// <summary>
+    /// 获取或设置当前所属情侣关系
+    /// </summary>
+    public CoupleRelationship? CoupleRelationship { get; set; }
 }

@@ -11,6 +11,7 @@ using OurStory.Core.Models;
 using OurStory.Core.Options;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.Cycles;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.LlmAtmosphere;
 using OurStory.Services.Moments;
@@ -23,13 +24,13 @@ namespace OurStory.Tests;
 /// 需要数据库的服务测试共用的几个替身
 /// </summary>
 internal static class TestDoubles {
-    /// <summary>一个只属于这次测试的内存库。</summary>
+    /// <summary>获取当前测试使用的内存数据库。</summary>
     public static OurStoryDbContext Database(string name) =>
         new(new DbContextOptionsBuilder<OurStoryDbContext>()
             .UseInMemoryDatabase(name + "-" + Guid.NewGuid().ToString("n"))
             .Options);
 
-    /// <summary>没配时区，等于 UTC，断言时间时不用跟着机器跑。</summary>
+    /// <summary>提供未配置时区的 UTC 站点时钟，避免断言受宿主时区影响。</summary>
     public static SiteClock Clock() =>
         new(new ActiveConfiguration(new ConfigurationStore("."), new OurStoryConfiguration()));
 
@@ -39,7 +40,7 @@ internal static class TestDoubles {
     /// <summary>心意流水不参与断言时给一份空实现，省得每处都拼一套。</summary>
     public static IHeartPointService NoPoints() => new HeartPointStub();
 
-    /// <summary>只把排队的通知收进列表，不真的往外发。</summary>
+    /// <summary>仅收集待发送通知，不调用外部推送服务。</summary>
     public static NotificationQueueSpy Notifications() => new();
 
     /// <summary>氛围组不参与断言时给一份只记账的替身。</summary>
@@ -51,12 +52,12 @@ internal static class TestDoubles {
             LlmAtmosphere = atmosphere ?? new LlmAtmosphereOptions()
         });
 
-    /// <summary>时钟归测试管，攒单那类靠计时器的行为不用真的等。</summary>
+    /// <summary>提供由测试控制的时钟，避免等待真实计时器。</summary>
     public static FakeTimeProvider Time() => new();
 }
 
 /// <summary>
-/// 一个真的 SQLite 库，只是建在内存里。
+/// 基于 SQLite 内存模式的测试数据库。
 ///
 /// 心意和商城要靠唯一索引挡重复发放、靠事务保证扣心意和改状态一起生效，
 /// 还用到了 ExecuteUpdate —— 这三样 InMemory provider 都做不到，
@@ -70,13 +71,17 @@ internal sealed class SqliteHarness : IAsyncDisposable {
         Db = db;
     }
 
-    /// <summary>这次测试用的数据库上下文。</summary>
+    /// <summary>获取当前测试使用的数据库上下文。</summary>
     public OurStoryDbContext Db { get; }
 
-    /// <summary>建一个空库，表结构照实体映射生成。</summary>
+    /// <summary>为并发场景创建共享同一 SQLite 内存库的独立上下文。</summary>
+    public OurStoryDbContext CreateContext() => new(new DbContextOptionsBuilder<OurStoryDbContext>()
+        .UseSqlite(_connection)
+        .Options);
+
+    /// <summary>创建空数据库，并根据实体映射生成表结构。</summary>
     /// <param name="createSchema">
-    /// 建好表再返回。要测启动流程的话传 false —— 那条路自己会跑迁移，
-    /// 表已经建好了再跑一遍会撞车
+    /// 返回前创建表结构。测试启动流程时传入 false，由迁移流程负责建表。
     /// </param>
     public static SqliteHarness Create(bool createSchema = true) {
         // 连接一关内存库就没了，所以这条连接得一直开着
@@ -94,11 +99,13 @@ internal sealed class SqliteHarness : IAsyncDisposable {
         return new SqliteHarness(connection, db);
     }
 
-    /// <summary>放两个人进去，返回男主和女主的主键。</summary>
+    /// <summary>创建情侣关系及双方账号，并返回双方账号标识。</summary>
     public async Task<(int BoyId, int GirlId)> SeedCoupleAsync() {
-        var boy = new User { UserName = "boy", Role = UserRole.Boy, PasswordHash = "test" };
-        var girl = new User { UserName = "girl", Role = UserRole.Girl, PasswordHash = "test" };
+        var relationship = new CoupleRelationship { IsActive = true };
+        var boy = new User { UserName = "boy", Role = UserRole.Boy, PasswordHash = "test", CoupleRelationship = relationship };
+        var girl = new User { UserName = "girl", Role = UserRole.Girl, PasswordHash = "test", CoupleRelationship = relationship };
 
+        _ = Db.CoupleRelationships.Add(relationship);
         Db.Users.AddRange(boy, girl);
         _ = await Db.SaveChangesAsync();
         return (boy.Id, girl.Id);
@@ -134,7 +141,7 @@ internal sealed class SettingsStub(SiteSettings? settings = null) : ISettingsSer
 /// <summary>
 /// 把排队的通知留在手边，测试可以直接翻这份清单
 /// </summary>
-/// <remarks>发通知是「做完这件事顺带的动静」，不该让业务测试真的去连推送服务。</remarks>
+/// <remarks>业务测试仅验证通知请求，不连接外部推送服务。</remarks>
 internal sealed class NotificationQueueSpy : INotificationQueue {
     /// <summary>按排队顺序记下的所有通知。</summary>
     public List<NotificationRequest> Sent { get; } = [];
@@ -158,7 +165,7 @@ internal sealed class NotificationQueueSpy : INotificationQueue {
 /// <summary>
 /// 把排给氛围组的待办留在手边，测试直接翻这份清单
 /// </summary>
-/// <remarks>真的去掷骰子、连模型，这类业务测试就没法断言了。</remarks>
+/// <remarks>使用确定性结果，避免随机数或外部模型影响断言。</remarks>
 internal sealed class AtmosphereSchedulerSpy : ILlmAtmosphereScheduler {
     /// <summary>按顺序记下的所有待办。</summary>
     public List<LlmAtmosphereTrigger> Scheduled { get; } = [];
@@ -192,7 +199,7 @@ internal sealed class AtmosphereSchedulerSpy : ILlmAtmosphereScheduler {
 /// <summary>
 /// 按事先摆好的答案作答的模型，一次调用取走一个
 /// </summary>
-/// <remarks>答案用完之后一律回 <see cref="ResponsesFailure.Unreachable"/>，免得测试悄悄多调一次还看不出来。</remarks>
+/// <remarks>预设结果用尽后返回 <see cref="ResponsesFailure.Unreachable"/>，便于发现非预期的额外调用。</remarks>
 internal sealed class ResponsesClientStub(params ResponsesResult[] answers) : IResponsesClient {
     private readonly Queue<ResponsesResult> _answers = new(answers);
 
@@ -208,7 +215,7 @@ internal sealed class ResponsesClientStub(params ResponsesResult[] answers) : IR
     }
 }
 
-/// <summary>按需交出几张假图，不碰磁盘也不连 OSS。</summary>
+/// <summary>按需返回测试图片，不访问磁盘或 OSS。</summary>
 internal sealed class MomentImageSourceStub(params string[] urls) : IMomentImageSource {
     public Task<IReadOnlyList<ResponsesImage>> CollectAsync(
         Moment moment,
@@ -277,7 +284,7 @@ internal sealed class FakeTimeProvider : TimeProvider {
     public void Advance(TimeSpan span) {
         var target = GetUtcNow() + span;
 
-        // 回调里可能又把自己往后排（每点一下都重新计时），所以一轮一轮地找最近的那个
+        // 回调可能重新安排自身计时，因此每轮均重新查找最近的计时器。
         while (Next(target) is { } timer) {
             lock (_gate) {
                 _now = timer.DueAt!.Value;
@@ -297,7 +304,7 @@ internal sealed class FakeTimeProvider : TimeProvider {
         }
     }
 
-    /// <summary>截止时刻之前最早响的那个计时器；都还没到点就返回 null。</summary>
+    /// <summary>返回截止时刻前最早触发的计时器；不存在时返回 null。</summary>
     private FakeTimer? Next(DateTimeOffset until) {
         lock (_gate) {
             return _timers
@@ -332,4 +339,30 @@ internal sealed class FakeTimeProvider : TimeProvider {
             return ValueTask.CompletedTask;
         }
     }
+}
+
+/// <summary>
+/// 不连接模型服务的周期小结测试替身
+/// </summary>
+/// <remarks>业务测试仅验证事实读写，不调用外部模型服务。</remarks>
+internal sealed class CycleInsightStub(string? text = null) : ICycleInsightService {
+    /// <summary>获取小结生成调用次数。</summary>
+    public int Calls { get; private set; }
+
+    public bool UsesModel => text is not null;
+
+    public Task<CycleSummaryText> WriteAsync(
+        CycleNarrativeContext context,
+        CancellationToken cancellationToken = default) {
+        Calls++;
+
+        return Task.FromResult(text is null
+            ? new CycleSummaryText(CycleNarrative.Compose(context), CycleSummarySource.Rule, null)
+            : new CycleSummaryText(text, CycleSummarySource.Model, DateTimeOffset.UnixEpoch));
+    }
+
+    public Task<CycleInsightProbe> ProbeAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(text is null
+            ? CycleInsightProbe.Failed("测试替身未配置模型返回内容。")
+            : CycleInsightProbe.Success(text));
 }

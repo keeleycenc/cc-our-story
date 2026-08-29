@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace OurStory.Core.Configuration;
 
 /// <summary>
-/// 当前生效的那份配置
+/// 提供当前生效的站点配置
 /// </summary>
 public sealed class ActiveConfiguration(ConfigurationStore store, OurStoryConfiguration current) {
     private readonly ConfigurationStore _store = store;
@@ -42,6 +42,11 @@ public sealed class ActiveConfiguration(ConfigurationStore store, OurStoryConfig
     public LlmAtmosphereOptions LlmAtmosphere => Current.LlmAtmosphere;
 
     /// <summary>
+    /// 获取花信小结的模型通道参数
+    /// </summary>
+    public CycleInsightOptions CycleInsight => Current.CycleInsight;
+
+    /// <summary>
     /// 获取配置文件的完整路径，后台页面上会显示出来
     /// </summary>
     public string FilePath => _store.FilePath;
@@ -67,7 +72,7 @@ public sealed class ActiveConfiguration(ConfigurationStore store, OurStoryConfig
     }
 
     /// <summary>
-    /// 走一遍序列化来深拷贝：以后往配置里加节点，这里不用跟着改
+    /// 通过序列化完成深拷贝，新增配置节点时无需同步修改此方法
     /// </summary>
     private static OurStoryConfiguration Clone(OurStoryConfiguration configuration) =>
         JsonSerializer.Deserialize<OurStoryConfiguration>(

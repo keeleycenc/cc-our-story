@@ -14,7 +14,7 @@
 
     var storageDrivers = new[]
     {
-        new SelectListItem("自动（OSS 填全了就用 OSS）", ""),
+        new SelectListItem("自动（OSS 配置完整时使用 OSS）", ""),
         new SelectListItem("本地目录", "Local"),
         new SelectListItem("阿里云 OSS", "AliyunOss")
     };
@@ -26,7 +26,7 @@
         new SelectListItem("不加密", "None")
     };
 }
-<form method="post">
+<form method="post" data-dirty-guard>
     @if (!string.IsNullOrEmpty(Model.Error))
     {
         <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
@@ -82,11 +82,11 @@
             </label>
             <label class="field">
                 <span>男主头像地址</span>
-                <input asp-for="Input.BoyAvatar" type="text" maxlength="500" placeholder="留空显示文字头像">
+                <input asp-for="Input.BoyAvatar" type="text" maxlength="500" placeholder="留空时显示文字头像">
             </label>
             <label class="field">
                 <span>女主头像地址</span>
-                <input asp-for="Input.GirlAvatar" type="text" maxlength="500" placeholder="留空显示文字头像">
+                <input asp-for="Input.GirlAvatar" type="text" maxlength="500" placeholder="留空时显示文字头像">
             </label>
             <label class="field">
                 <span>男主个性短句</span>
@@ -128,7 +128,7 @@
     <div class="admin-panel">
         <h2>@Icon("image")附件存储</h2>
         <p class="admin-panel-hint">
-            本地和 OSS 用的是同一套路径规则，把 uploads 整个传上去再切过来，已有图片的地址不会变。
+            本地存储与 OSS 使用相同的路径规则。完整同步 <code>uploads</code> 后再切换存储策略，已有图片地址将保持不变。
         </p>
         <div class="field-grid">
             <label class="field">
@@ -158,7 +158,7 @@
             </label>
             <label class="field">
                 <span>自定义 API 端点</span>
-                <input asp-for="Input.OssApiEndpoint" type="text" maxlength="200" placeholder="留空按 Region 拼">
+                <input asp-for="Input.OssApiEndpoint" type="text" maxlength="200" placeholder="留空时根据 Region 自动生成">
             </label>
         </div>
     </div>
@@ -171,7 +171,7 @@
             </span>
         </div>
         <p class="admin-panel-hint">
-            邮件与 Web Push 可以同时工作；单个渠道失败不会阻止另一个渠道继续投递
+            邮件与 Web Push 可以同时启用；单个渠道失败不会影响另一个渠道继续投递。
         </p>
 
         <label class="field-check email-master">
@@ -198,7 +198,7 @@
             </label>
             <label class="field">
                 <span>SMTP 密码 / 邮箱授权码</span>
-                <input asp-for="Input.EmailPassword" type="password" maxlength="500" autocomplete="new-password" placeholder="留空保持现有密码">
+                <input asp-for="Input.EmailPassword" type="password" maxlength="500" autocomplete="new-password" placeholder="留空以保留现有密码">
             </label>
             <label class="field">
                 <span>通知发送邮箱（From）</span>
@@ -215,14 +215,103 @@
         </div>
     </div>
 
-    @* 心意的发放和价格区间只让男主动，女主登录时这一块整个不出现 *@
+    <div class="admin-panel">
+        <div class="panel-head">
+            <h2>@Icon("calendar-days")花信如期</h2>
+            <label class="panel-switch">
+                <input asp-for="Input.CycleInsightEnabled" type="checkbox" data-lock-toggle="cycle-insight">
+                <span>启用模型小结</span>
+            </label>
+        </div>
+
+        <p class="admin-panel-hint">
+            周期小结默认由站内规则实时生成，无需配置模型即可使用。启用兼容 Responses 协议的模型服务后，系统将优先使用模型生成；
+            调用失败、返回空内容或关闭此功能时，将自动回退到站内规则，不影响页面展示。
+            API Key 仅保存在 <code>@Model.ConfigFilePath</code> 中，不会在页面或日志中显示。
+        </p>
+
+        <p class="atmosphere-notice">
+            @Icon("circle-alert")经期记录属于两个人的私密数据。启用前，请确认双方均同意将相关日期与身体状况发送至所配置的模型服务；
+            请求包含 <code>store=false</code>，内容不会写入模型服务端的会话历史。
+        </p>
+
+        <div data-lock="cycle-insight">
+            <div class="field-grid">
+                <label class="field">
+                    <span>服务地址</span>
+                    <input asp-for="Input.CycleInsightBaseUrl" type="url" maxlength="300" placeholder="https://api.openai.com/v1" autocomplete="off">
+                    <small>填写至 <code>/v1</code> 即可，系统会自动追加 <code>/responses</code></small>
+                </label>
+                <label class="field">
+                    <span>模型</span>
+                    <input asp-for="Input.CycleInsightModel" type="text" maxlength="120" placeholder="gpt-4.1-mini" autocomplete="off">
+                </label>
+                <label class="field">
+                    <span>API Key</span>
+                    <input asp-for="Input.CycleInsightApiKey" type="password" maxlength="300" autocomplete="new-password"
+                           placeholder="@(Model.CycleInsightHasKey ? "留空以保留现有 Key" : "sk-…")">
+                </label>
+                <label class="field">
+                    <span>单次调用超时（秒）</span>
+                    <input asp-for="Input.CycleInsightTimeoutSeconds" type="number" min="5" max="300">
+                </label>
+                <label class="field">
+                    <span>单次最多生成（Token）</span>
+                    <input asp-for="Input.CycleInsightMaxOutputTokens" type="number" min="64" max="8192">
+                    <small>该值为输出上限；推理模型通常需要预留更充足的 Token</small>
+                </label>
+                <label class="field">
+                    <span>后台补写间隔（小时）</span>
+                    <input asp-for="Input.CycleInsightRefreshHours" type="number" min="1" max="168">
+                    <small>后台任务将按此间隔补充缺失或已失效的小结</small>
+                </label>
+            </div>
+
+            <label class="field">
+                <span>语气偏好 <small>选填</small></span>
+                <textarea asp-for="Input.CycleInsightTone" rows="3" maxlength="500" placeholder="例如：正式克制，带有情侣共同记录、彼此关心的温度"></textarea>
+                <small>该内容会附加在站点统一写作要求之后。医疗安全限制已由系统统一设置，无需重复填写</small>
+            </label>
+
+            @if (Model.CycleInsightHasKey)
+            {
+                <label class="field-check">
+                    <input asp-for="Input.CycleInsightClearApiKey" type="checkbox">
+                    <span>清除已保存的 API Key</span>
+                </label>
+            }
+
+            <div class="form-actions">
+                <button class="btn btn-ghost" type="submit" asp-page-handler="TestCycle">@Icon("sparkles")测试模型通道</button>
+                <button class="btn btn-ghost" type="submit" asp-page-handler="RefreshCycle">@Icon("history")立即补写小结</button>
+                <span class="channel-status" data-kind="@(Model.CycleInsightConfigured ? "ok" : "muted")">
+                    @(Model.CycleInsightConfigured ? "模型通道已就绪" : "当前由站内规则生成")
+                </span>
+            </div>
+
+            <p class="admin-panel-hint">测试与补写均使用已保存的配置。修改配置后，请先保存再执行相应操作。</p>
+        </div>
+
+        @if (Model.CycleProbe is { } probe)
+        {
+            <div class="atmosphere-probe @(probe.Ok ? "is-ok" : "is-bad")">
+                <p class="atmosphere-probe-head">@Icon(probe.Ok ? "circle-check" : "circle-alert")@probe.Message</p>
+                @if (probe.Ok)
+                {
+                    <blockquote>@probe.Text</blockquote>
+                }
+            </div>
+        }
+    </div>
+
+    @* 心意发放与价格区间仅允许男主账号配置。 *@
     @if (Model.CanEditHeartRules)
     {
         <div class="admin-panel">
             <h2>@Icon("coins")心意规则</h2>
 
             <p class="admin-panel-hint">
-                心意只用来记录彼此的投入，每项奖励每天最多获得一次，重复记录不会重复累计
+                心意用于记录彼此的投入。每项奖励每天最多获得一次，重复记录不会重复累计。
             </p>
 
             <div class="field-grid">

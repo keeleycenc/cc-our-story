@@ -6,12 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OurStory.Core.Abstractions;
 using OurStory.Core.Configuration;
+using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
 using OurStory.Services.Accounts;
 using OurStory.Services.Affinity;
 using OurStory.Services.Anniversaries;
 using OurStory.Services.Comments;
+using OurStory.Services.Cycles;
 using OurStory.Services.HeartPoints;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.LlmAtmosphere;
@@ -40,7 +42,7 @@ public static class ServiceCollectionExtensions {
         OurStoryConfiguration configuration,
         string dataDirectory) {
         // 各处用配置都从 ActiveConfiguration 现取，不在构造时缓存：
-        // 后台一保存就换成新的那份，不用重启站点
+        // 后台保存配置后立即更新活动配置，无需重启站点
         _ = services.AddSingleton(store);
         _ = services.AddSingleton(new ActiveConfiguration(store, configuration));
 
@@ -70,7 +72,7 @@ public static class ServiceCollectionExtensions {
             client.Timeout = TimeSpan.FromMinutes(5);
         });
 
-        // 两个驱动都建好，用哪个由 FileStorageRouter 按当前配置临时决定
+        // 同时注册两种存储驱动，由 FileStorageRouter 根据当前配置选择
         _ = services.AddSingleton<LocalFileStorage>();
         _ = services.AddSingleton<AliyunOssFileStorage>();
         _ = services.AddSingleton<IFileStorage, FileStorageRouter>();
@@ -82,6 +84,11 @@ public static class ServiceCollectionExtensions {
         _ = services.AddScoped<IAnniversaryRewardService, AnniversaryRewardService>();
         _ = services.AddScoped<IMomentService, MomentService>();
         _ = services.AddScoped<ICommentService, CommentService>();
+        _ = services.AddSingleton(new CycleAnalysisOptions());
+        _ = services.AddSingleton<CycleWriteCoordinator>();
+        _ = services.AddSingleton<ICycleAnalysisService, RuleBasedCycleAnalysisService>();
+        _ = services.AddSingleton<ICycleInsightService, CycleInsightService>();
+        _ = services.AddScoped<ICycleService, CycleService>();
         _ = services.AddScoped<IHeartbeatService, HeartbeatService>();
         _ = services.AddScoped<IHeartPointService, HeartPointService>();
         _ = services.AddScoped<IShopService, ShopService>();

@@ -9,7 +9,7 @@ using Xunit;
 namespace OurStory.Tests;
 
 /// <summary>
-/// 按 Responses 协议拼请求、读响应，以及把模型写回来的话收拾干净
+/// 验证 Responses 协议请求构造、响应读取与模型文本清理
 /// </summary>
 public class ResponsesProtocolTests {
     [Theory]
@@ -18,7 +18,7 @@ public class ResponsesProtocolTests {
     [InlineData("  https://gateway.local/v1  ", "https://gateway.local/v1/responses")]
     [InlineData("https://gateway.local/v1/responses", "https://gateway.local/v1/responses")]
     public void 服务地址会补上responses这一段(string configured, string expected) =>
-        Assert.Equal(expected, ResponsesClient.Endpoint(configured));
+        Assert.Equal(expected, ResponsesClient.Address(configured));
 
     [Fact]
     public void 纯文本请求只有一条文字内容() {
@@ -80,7 +80,7 @@ public class ResponsesProtocolTests {
     }
 
     [Fact]
-    public void 网关顺手拼好的正文可以直接用() {
+    public void 网关提供的聚合正文可以直接读取() {
         Assert.Equal("好久没见你们出门了", ResponsesClient.ReadText("""{ "output_text": "好久没见你们出门了" }"""));
     }
 
@@ -129,7 +129,7 @@ public class ResponsesProtocolTests {
         Assert.True(ResponsesClient.IsTruncated("""{ "incomplete_details": { "reason": "max_output_tokens" } }"""));
 
     [Fact]
-    public void 模型给自己加的名字前缀会被削掉() =>
+    public void 移除模型添加的角色名称前缀() =>
         Assert.Equal("这张照片好好看", AtmospherePrompt.Clean("阿柔：这张照片好好看", "阿柔"));
 
     [Fact]
@@ -139,11 +139,11 @@ public class ResponsesProtocolTests {
     }
 
     [Fact]
-    public void 句子当中的引号留着不动() =>
+    public void 保留句子内部的引号() =>
         Assert.Equal("你说的「一起看海」实现了", AtmospherePrompt.Clean("你说的「一起看海」实现了", "阿柔"));
 
     [Fact]
-    public void 写成好几段的只留第一段() =>
+    public void 多段模型输出仅保留第一段() =>
         Assert.Equal("真好呀", AtmospherePrompt.Clean("真好呀\n\n另外我建议你们下次带上防晒", "阿柔"));
 
     [Fact]
@@ -172,7 +172,7 @@ public class ResponsesProtocolTests {
     #region 私有方法
 
     private static ResponsesRequest Request(params string[] images) =>
-        new(Member(), "你是阿柔", "他们去看海了", [.. images.Select(url => new ResponsesImage(url))]);
+        new(Member().ToEndpoint(60), "你是阿柔", "他们去看海了", [.. images.Select(url => new ResponsesImage(url))]);
 
     private static LlmAtmosphereMember Member() =>
         new() {

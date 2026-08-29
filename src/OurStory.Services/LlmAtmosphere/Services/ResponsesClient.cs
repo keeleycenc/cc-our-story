@@ -3,7 +3,6 @@
 // See LICENSE file in the project root for full license information.
 
 using Microsoft.Extensions.Logging;
-using OurStory.Core.Configuration;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -23,7 +22,6 @@ namespace OurStory.Services.LlmAtmosphere;
 /// </remarks>
 internal sealed class ResponsesClient(
     IHttpClientFactory clients,
-    ActiveConfiguration configuration,
     ILogger<ResponsesClient> logger) : IResponsesClient {
     /// <summary>
     /// 命名 HttpClient 的名字
@@ -31,7 +29,7 @@ internal sealed class ResponsesClient(
     public const string HttpClientName = "ourstory.llm";
 
     /// <summary>
-    /// 出错时日志里最多带多少个字符的响应体，够定位问题就行
+    /// 发生错误时允许写入日志的最大响应正文长度
     /// </summary>
     private const int ErrorBodyLimit = 400;
 
@@ -45,12 +43,12 @@ internal sealed class ResponsesClient(
     public async Task<ResponsesResult> CompleteAsync(ResponsesRequest request, CancellationToken cancellationToken = default) {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!Uri.TryCreate(Endpoint(request.Member.BaseUrl), UriKind.Absolute, out var endpoint)) {
-            logger.LogWarning("氛围组「{Member}」的服务地址不是合法的 URL，跳过。", request.Member.Name);
+        if (!Uri.TryCreate(Address(request.Endpoint.BaseUrl), UriKind.Absolute, out var endpoint)) {
+            logger.LogWarning("「{Caller}」的服务地址不是有效的 URL，已取消本次调用。", request.Endpoint.Label);
             return ResponsesResult.Failed(ResponsesFailure.Rejected);
         }
 
-        var seconds = Math.Clamp(configuration.LlmAtmosphere.TimeoutSeconds, 5, 300);
+        var seconds = Math.Clamp(request.Endpoint.TimeoutSeconds, 5, 300);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(seconds));
 
@@ -58,8 +56,7 @@ internal sealed class ResponsesClient(
             Content = new StringContent(Body(request).ToJsonString(Json), Encoding.UTF8, "application/json")
         };
 
-        // Key 只出现在这一行，任何日志、异常和页面上都不会带上它
-        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.Member.ApiKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.Endpoint.ApiKey);
 
         try {
             using var response = await clients.CreateClient(HttpClientName).SendAsync(message, timeout.Token);
@@ -68,9 +65,9 @@ internal sealed class ResponsesClient(
             if (!response.IsSuccessStatusCode) {
                 var failure = Classify(response.StatusCode);
                 logger.LogWarning(
-                    "氛围组「{Member}」调用模型 {Model} 失败（{Status}）：{Body}",
-                    request.Member.Name,
-                    request.Member.Model,
+                    "「{Caller}」调用模型 {Model} 失败（{Status}）：{Body}",
+                    request.Endpoint.Label,
+                    request.Endpoint.Model,
                     (int)response.StatusCode,
                     Clip(body));
 
@@ -84,15 +81,15 @@ internal sealed class ResponsesClient(
             var text = ReadText(body);
             return text.Length > 0 ? ResponsesResult.Success(text) : ResponsesResult.Failed(ResponsesFailure.Empty);
         } catch (JsonException exception) {
-            logger.LogWarning(exception, "氛围组「{Member}」拿回来的响应不是合法 JSON。", request.Member.Name);
+            logger.LogWarning(exception, "「{Caller}」返回的响应不是有效的 JSON。", request.Endpoint.Label);
             return ResponsesResult.Failed(ResponsesFailure.Empty);
         } catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested) {
             throw;
         } catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException) {
             logger.LogWarning(
                 exception,
-                "氛围组「{Member}」连不上模型服务 {Host}。",
-                request.Member.Name,
+                "「{Caller}」无法连接模型服务 {Host}。",
+                request.Endpoint.Label,
                 endpoint.Host);
 
             return ResponsesResult.Failed(ResponsesFailure.Unreachable);
@@ -101,7 +98,7 @@ internal sealed class ResponsesClient(
 
     #region 私有方法
 
-    internal static string Endpoint(string baseUrl) {
+    internal static string Address(string baseUrl) {
         var trimmed = (baseUrl ?? string.Empty).Trim().TrimEnd('/');
 
         return trimmed.EndsWith("/responses", StringComparison.OrdinalIgnoreCase)
@@ -123,16 +120,16 @@ internal sealed class ResponsesClient(
         }
 
         return new JsonObject {
-            ["model"] = request.Member.Model,
+            ["model"] = request.Endpoint.Model,
             ["instructions"] = request.Instructions,
             ["input"] = new JsonArray(new JsonObject {
                 ["role"] = "user",
                 ["content"] = content
             }),
-            ["max_output_tokens"] = Math.Clamp(request.Member.MaxOutputTokens, 32, 4096),
+            ["max_output_tokens"] = Math.Clamp(request.Endpoint.MaxOutputTokens, 32, 8192),
             ["stream"] = false,
 
-            // 这是两个人的私事，没必要留在对端的历史里
+            // 私密内容不写入模型服务端的会话历史
             ["store"] = false
         };
     }

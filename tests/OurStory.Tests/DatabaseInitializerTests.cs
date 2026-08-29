@@ -16,9 +16,22 @@ using Xunit;
 namespace OurStory.Tests;
 
 /// <summary>
-/// 启动时那几步：建表、建账号、放自带预设、把旧数据补记成心意
+/// 验证启动时的建表、账号创建、内置预设及历史数据迁移流程
 /// </summary>
 public class DatabaseInitializerTests {
+    [Fact]
+    public async Task 首次启动会把两个账号归入同一段有效情侣关系() {
+        await using var harness = SqliteHarness.Create(createSchema: false);
+
+        _ = await Initializer(harness).InitializeAsync();
+
+        var users = await harness.Db.Users.AsNoTracking().OrderBy(user => user.Id).ToListAsync();
+        var relationship = Assert.Single(await harness.Db.CoupleRelationships.AsNoTracking().ToListAsync());
+        Assert.True(relationship.IsActive);
+        Assert.Equal(2, users.Count);
+        Assert.All(users, user => Assert.Equal(relationship.Id, user.CoupleRelationshipId));
+    }
+
     [Fact]
     public async Task 首次启动会放入自带的心愿预设() {
         await using var harness = SqliteHarness.Create(createSchema: false);
@@ -30,7 +43,7 @@ public class DatabaseInitializerTests {
         Assert.Equal(DefaultShopPresets.All[0].Title, presets[0].Title);
         Assert.All(presets, preset => Assert.True(preset.IsActive));
 
-        // 自带的一律不配图，免得后台列表变成一面照片墙
+        // 内置预设不配置图片，避免后台列表出现大量重复视觉内容。
         Assert.All(presets, preset => Assert.Null(preset.CoverUrl));
     }
 
@@ -86,7 +99,7 @@ public class DatabaseInitializerTests {
     }
 
     [Fact]
-    public async Task 预设被删光之后不会重新塞回来() {
+    public async Task 预设全部删除后不会重新创建() {
         await using var harness = SqliteHarness.Create(createSchema: false);
         var settings = new SettingsStub();
 
@@ -117,7 +130,7 @@ public class DatabaseInitializerTests {
         await using var harness = SqliteHarness.Create(createSchema: false);
         var settings = new SettingsStub();
 
-        // 先建好表和两个账号，再塞一点「商城上线之前」的旧数据
+        // 先创建表结构与双方账号，再写入商城功能上线前的历史数据。
         _ = await Initializer(harness, settings).InitializeAsync();
         var boy = await harness.Db.Users.SingleAsync(user => user.Role == UserRole.Boy);
 

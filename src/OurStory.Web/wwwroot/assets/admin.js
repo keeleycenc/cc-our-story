@@ -1,8 +1,6 @@
 (function () {
   'use strict';
 
-  /* 配色切换：和前台共用 localStorage 里的那一项，两边保持一致
-     手机顶栏和 PC 页头各有一个开关，两个都要接上 */
   const root = document.documentElement;
   document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
     toggle.addEventListener('click', () => {
@@ -12,7 +10,6 @@
     });
   });
 
-  /* 手机顶栏的「更多」：整份导航收在一张从底部推上来的卡片里 */
   const sheet = document.querySelector('[data-sheet]');
   if (sheet) {
     const openers = document.querySelectorAll('[data-sheet-open]');
@@ -31,8 +28,6 @@
     });
   }
 
-  /* 回到顶部：后台滚的是中间那块内容区，不是整个页面，
-     所以监听和滚动都得冲着 .admin-main 去，window.scrollTo 在这儿没用 */
   const canvas = document.querySelector('.admin-main');
   const toTop = document.querySelector('.admin-to-top');
   if (canvas && toTop) {
@@ -183,8 +178,7 @@
     });
   });
 
-  /* 留言正文折起来：CSS 里先按四行截断，这里只负责判断有没有被截到 ——
-     没截到就不摆按钮，免得短短一句话下面还挂个没用的「展开」 */
+  /* 留言正文由 CSS 限制为四行，仅在内容实际被截断时显示展开按钮。 */
   document.querySelectorAll('[data-clamp]').forEach((text) => {
     const toggle = text.parentNode.querySelector('[data-clamp-toggle]');
     if (!toggle) return;
@@ -222,7 +216,7 @@
     image.addEventListener('error', () => mark('is-failed'));
   });
 
-  /* 图片库里的「复制链接」：文件名那一行放不下完整地址，靠这个按钮取 */
+  /* 图片库通过复制按钮获取文件的完整地址。 */
   document.querySelectorAll('[data-copy]').forEach((button) => {
     const label = button.querySelector('span') || button;
     const original = label.textContent;
@@ -255,42 +249,21 @@
     });
   });
 
-  /* 日期／时间选择器：值和弹出的那张日历仍旧交给原生控件，
-     这里只补两件浏览器没做好的事 —— 一个自己画的日历按钮，
-     和一个把日期跳到今天的快捷。两个按钮都是先藏着、确认能用了才亮出来 */
-  const pad = (value) => String(value).padStart(2, '0');
+  document.querySelectorAll('[data-lock-toggle]').forEach((toggle) => {
+    const area = document.querySelector('[data-lock="' + toggle.dataset.lockToggle + '"]');
+    if (!area) return;
 
-  const localStamp = (withTime) => {
-    const now = new Date();
-    const day = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
-    return withTime ? day + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes()) : day;
-  };
-
-  document.querySelectorAll('[data-date-field]').forEach((field) => {
-    const input = field.querySelector('[data-date-input]');
-    if (!input) return;
-
-    const open = field.querySelector('[data-date-open]');
-    const now = field.querySelector('[data-date-now]');
-
-    // showPicker 不是哪儿都有；调不动就别摆按钮，把浏览器自带的日历图标留着
-    if (open && typeof input.showPicker === 'function') {
-      field.classList.add('has-picker');
-      open.hidden = false;
-      open.addEventListener('click', () => {
-        try { input.showPicker(); } catch (error) { input.focus(); }
+    const sync = () => {
+      const locked = !toggle.checked;
+      area.classList.toggle('is-locked', locked);
+      area.querySelectorAll('input, textarea').forEach((field) => { field.readOnly = locked; });
+      area.querySelectorAll('input[type="checkbox"], input[type="radio"], select, button').forEach((field) => {
+        field.disabled = locked;
       });
-    }
+    };
 
-    if (now) {
-      now.hidden = false;
-      now.addEventListener('click', () => {
-        input.value = localStamp(input.type === 'datetime-local');
-        // 离开保护和其它监听都盯着这两个事件，改完得说一声
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    }
+    toggle.addEventListener('change', sync);
+    sync();
   });
 
   document.querySelectorAll('[data-anniversary-calendar-editor]').forEach((editor) => {
@@ -362,7 +335,7 @@
     request.open('POST', '/admin/media?handler=Upload');
     request.responseType = 'json';
 
-    // 传大图时这个事件一直在报进度，进度条走的就是它
+    // 使用上传进度事件更新进度条。
     if (request.upload) {
       request.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) onProgress(event.loaded / event.total);
@@ -399,7 +372,7 @@
     };
   };
 
-  /* 挨个上传，每传完一张就回调一次，最后给出这一批的结果 */
+  /* 顺序上传文件，每个文件完成后回调，并在结束时返回批次结果。 */
   const uploadAll = async (files, host, onDone) => {
     const board = progressBoard(host);
     const total = files.length;
@@ -526,7 +499,7 @@
       confirmDialog({
         title: card.dataset.shopTipTitle || '温馨提示',
         text: tip,
-        ok: '知道啦',
+        ok: '知道了',
         notice: true,
         danger: false,
         icon: done ? 'circle-check' : 'clock'

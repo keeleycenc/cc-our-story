@@ -8,6 +8,7 @@ using OurStory.Core.Models;
 using OurStory.Services.Heartbeats;
 using OurStory.Services.Affinity;
 using OurStory.Services.Anniversaries;
+using OurStory.Services.Cycles;
 using OurStory.Services.Moments;
 using OurStory.Services.Settings;
 using OurStory.Services.Shop;
@@ -26,6 +27,7 @@ public class IndexModel(
     IHeartbeatService heartbeats,
     IShopService shop,
     IAffinityService affinity,
+    ICycleService cycles,
     VisitorIdentityAccessor visitors,
     HeartbeatTokenService tokens,
     MomentUnlockStore unlockStore) : PageModel {
@@ -80,6 +82,11 @@ public class IndexModel(
     public string AffinityStatus { get; private set; } = "今日待回答";
 
     /// <summary>
+    /// 首页花信如期入口状态
+    /// </summary>
+    public string CycleStatus { get; private set; } = "登录后查看 · 仅限情侣";
+
+    /// <summary>
     /// 获取 IsGuest
     /// </summary>
     public bool IsGuest => Heartbeat.Role == "guest";
@@ -111,12 +118,18 @@ public class IndexModel(
             ? await affinity.GetTodayStatusAsync(userId, User.Role(), cancellationToken)
             : "登录后参与 · 仅限情侣";
 
+        CycleStatus = User.UserId() is { } cycleUserId
+            ? await cycles.GetHomeStatusAsync(cycleUserId, cancellationToken)
+            : "登录后查看 · 仅限情侣";
+
         LoveLetter = Site.LoveLetters.Count == 0
             ? string.Empty
             : Site.LoveLetters[RandomNumberGenerator.GetInt32(Site.LoveLetters.Count)];
     }
 
-    /// <summary>页面上这个身份的称呼。</summary>
+    /// <summary>
+    /// 获取当前身份在页面上的显示名称
+    /// </summary>
     public string RoleName() => Heartbeat.Role switch {
         "boy" => Site.BoyName,
         "girl" => Site.GirlName,

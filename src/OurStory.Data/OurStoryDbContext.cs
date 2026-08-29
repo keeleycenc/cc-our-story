@@ -11,13 +11,28 @@ namespace OurStory.Data;
 /// <summary>
 /// 获取整站唯一的数据库上下文
 ///
-/// 表都很小（两个人的站点），所以没有分库分表之类的考虑
+/// 当前数据规模较小，无需采用分库分表方案
 /// </summary>
 public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : DbContext(options) {
     /// <summary>
     /// 获取用户数据集合
     /// </summary>
     public DbSet<User> Users => Set<User>();
+
+    /// <summary>
+    /// 获取情侣关系数据集合
+    /// </summary>
+    public DbSet<CoupleRelationship> CoupleRelationships => Set<CoupleRelationship>();
+
+    /// <summary>
+    /// 获取花信记录数据集合
+    /// </summary>
+    public DbSet<CycleRecord> CycleRecords => Set<CycleRecord>();
+
+    /// <summary>
+    /// 获取花信每日补充记录数据集合
+    /// </summary>
+    public DbSet<CycleDailyLog> CycleDailyLogs => Set<CycleDailyLog>();
 
     /// <summary>
     /// 获取动态数据集合
@@ -96,7 +111,7 @@ public class OurStoryDbContext(DbContextOptions<OurStoryDbContext> options) : Db
         base.OnModelCreating(modelBuilder);
         _ = modelBuilder.ApplyConfigurationsFromAssembly(typeof(OurStoryDbContext).Assembly);
 
-        // 放在映射之后：这一步要遍历已经建好的模型，把所有时间戳列改成整数
+        // 在实体映射完成后遍历模型，并将所有时间戳列转换为整数类型
         TimestampConverters.Apply(modelBuilder);
     }
 }

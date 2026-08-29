@@ -10,7 +10,7 @@ namespace OurStory.Core.Configuration;
 /// 整份站点配置，对应数据目录下的 <c>ourstory.json</c>
 /// </summary>
 /// <remarks>
-/// 以后要加配置，在这里挂个新属性或新的 Options 类就行，别的地方不用动
+/// 新增配置项时，可在此处添加对应属性或 Options 类型
 /// </remarks>
 public class OurStoryConfiguration {
     /// <summary>
@@ -37,4 +37,9 @@ public class OurStoryConfiguration {
     /// 获取或设置 LLM 氛围组：一群按人设留言的虚拟朋友
     /// </summary>
     public LlmAtmosphereOptions LlmAtmosphere { get; set; } = new();
+
+    /// <summary>
+    /// 获取或设置花信如期的模型小结通道
+    /// </summary>
+    public CycleInsightOptions CycleInsight { get; set; } = new();
 }
