@@ -243,10 +243,109 @@
                     </header>
                     <div data-agenda-body></div>
                     <footer>
-                        <button class="cycle-action is-primary" type="button" data-agenda-edit>@Icon("pen-line")补充这一天</button>
+                        <button class="cycle-action is-primary" type="button" data-agenda-edit
+                                aria-expanded="false" aria-controls="cycle-day-editor">@Icon("pen-line")补充这一天</button>
                     </footer>
                 </aside>
             </div>
+
+            @* 每日补充表单在日历底部展开，字段值由脚本根据当前选中日期填充。 *@
+            <section class="cycle-day-editor" id="cycle-day-editor" data-day-editor hidden
+                     tabindex="-1" aria-labelledby="day-editor-title">
+                <header class="cycle-day-editor-head">
+                    <span class="cycle-day-editor-icon">@Icon("list-checks")</span>
+                    <div>
+                        <p>DAILY LOG</p>
+                        <h3 id="day-editor-title" data-day-title>补充这一天</h3>
+                        <span data-day-hint></span>
+                    </div>
+                </header>
+
+                <form method="post" asp-page-handler="Day" class="cycle-form cycle-day-editor-form">
+                    <input type="hidden" name="date" data-day-date value="">
+
+                    <section class="cycle-day-editor-section is-wide" aria-labelledby="day-editor-basics-title">
+                        <div class="cycle-day-editor-section-head">
+                            <h4 id="day-editor-basics-title">基础记录</h4>
+                        </div>
+
+                        <div class="cycle-day-editor-basics">
+                            <label class="cycle-field">
+                                <span>经量</span>
+                                <span class="cycle-select">
+                                    <select name="flow">
+                                        <option value="0">未填</option>
+                                        @foreach (var flow in CycleLabels.AllFlows)
+                                        {
+                                            <option value="@((int)flow)">@flow.Name()</option>
+                                        }
+                                    </select>
+                                    @Icon("chevron-down")
+                                </span>
+                            </label>
+
+                            <label class="cycle-field">
+                                <span>不适程度</span>
+                                <span class="cycle-select">
+                                    <select name="pain">
+                                        @for (var level = 0; level <= 3; level++)
+                                        {
+                                            <option value="@level">@CycleLabels.PainName(level)</option>
+                                        }
+                                    </select>
+                                    @Icon("chevron-down")
+                                </span>
+                            </label>
+
+                            <label class="cycle-field">
+                                <span>心情</span>
+                                <span class="cycle-select">
+                                    <select name="mood">
+                                        <option value="0">未填</option>
+                                        @foreach (var mood in CycleLabels.AllMoods)
+                                        {
+                                            <option value="@((int)mood)">@mood.Name()</option>
+                                        }
+                                    </select>
+                                    @Icon("chevron-down")
+                                </span>
+                            </label>
+
+                            <label class="cycle-field">
+                                <span>主要身体状况</span>
+                                <span class="cycle-select">
+                                    <select name="symptoms" data-primary-symptom>
+                                        <option value="0">未选择</option>
+                                        @foreach (var symptom in CycleLabels.AllSymptoms)
+                                        {
+                                            <option value="@((int)symptom)">@symptom.Name()</option>
+                                        }
+                                    </select>
+                                    @Icon("chevron-down")
+                                </span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <fieldset class="cycle-choice cycle-day-editor-symptoms is-wide">
+                        <legend><strong>其他身体状况</strong><small>可多选 · 没有可不选</small></legend>
+                        @foreach (var symptom in CycleLabels.AllSymptoms)
+                        {
+                            <label><input type="checkbox" name="symptoms" value="@((int)symptom)" data-secondary-symptom><span>@symptom.Name()</span></label>
+                        }
+                    </fieldset>
+
+                    <label class="cycle-field cycle-day-editor-note is-wide">
+                        <span>补充说明 <small>选填</small></span>
+                        <textarea name="note" maxlength="300" rows="3" placeholder="例如：下午休息后舒服了一些，想让你也知道"></textarea>
+                    </label>
+
+                    <div class="cycle-day-editor-actions is-wide">
+                        <button class="cycle-action" type="button" data-day-editor-cancel>取消</button>
+                        <button class="cycle-action is-primary" type="submit">确认保存</button>
+                    </div>
+                </form>
+            </section>
         </section>
 
         <aside class="cycle-disclaimer">
@@ -427,63 +526,4 @@
         </section>
     </div>
 
-    @* 每日补充弹窗由日历打开，字段值由脚本根据当天记录填充。 *@
-    <div class="cycle-dialog" data-cycle-dialog="day-editor" aria-hidden="true">
-        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
-        <section class="cycle-dialog-card is-wide" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
-            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
-            <span class="cycle-dialog-icon">@Icon("list-checks")</span>
-            <p>DAILY LOG</p>
-            <h2 id="day-editor-title" data-day-title>补充这一天</h2>
-            <span class="cycle-dialog-message" data-day-hint></span>
-
-            <form method="post" asp-page-handler="Day" class="cycle-form is-single">
-                <input type="hidden" name="date" data-day-date value="">
-
-                <fieldset class="cycle-choice">
-                    <legend>经量</legend>
-                    <label><input type="radio" name="flow" value="0" checked><span>未填</span></label>
-                    @foreach (var flow in CycleLabels.AllFlows)
-                    {
-                        <label><input type="radio" name="flow" value="@((int)flow)"><span>@flow.Name()</span></label>
-                    }
-                </fieldset>
-
-                <fieldset class="cycle-choice">
-                    <legend>心情</legend>
-                    <label><input type="radio" name="mood" value="0" checked><span>未填</span></label>
-                    @foreach (var mood in CycleLabels.AllMoods)
-                    {
-                        <label><input type="radio" name="mood" value="@((int)mood)"><span>@mood.Name()</span></label>
-                    }
-                </fieldset>
-
-                <fieldset class="cycle-choice">
-                    <legend>不适程度</legend>
-                    @for (var level = 0; level <= 3; level++)
-                    {
-                        <label><input type="radio" name="pain" value="@level" checked="@(level == 0)"><span>@CycleLabels.PainName(level)</span></label>
-                    }
-                </fieldset>
-
-                <fieldset class="cycle-choice is-multi">
-                    <legend>身体状况 <small>可多选</small></legend>
-                    @foreach (var symptom in CycleLabels.AllSymptoms)
-                    {
-                        <label><input type="checkbox" name="symptoms" value="@((int)symptom)"><span>@symptom.Name()</span></label>
-                    }
-                </fieldset>
-
-                <label class="cycle-field">
-                    <span>补充说明 <small>选填</small></span>
-                    <textarea name="note" maxlength="300" rows="3" placeholder="例如：下午休息后舒服了一些，想让你也知道"></textarea>
-                </label>
-
-                <div class="cycle-dialog-actions">
-                    <button class="cycle-action" type="button" data-cycle-close>取消</button>
-                    <button class="cycle-action is-primary" type="submit">保存这一天</button>
-                </div>
-            </form>
-        </section>
-    </div>
 </main>

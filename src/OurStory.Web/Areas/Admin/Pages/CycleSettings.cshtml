@@ -1,0 +1,115 @@
+@page "/admin/cycles"
+@model OurStory.Web.Areas.Admin.Pages.CycleSettingsModel
+@inject AssetVersionProvider Assets
+@{
+    ViewData["ActiveMenu"] = "cycles";
+    ViewData["Eyebrow"] = "CYCLE INSIGHT";
+    ViewData["Title"] = "花信如期";
+}
+
+<form class="admin-panel" method="post" data-dirty-guard>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <p class="admin-error">@Icon("circle-alert")@Model.Error</p>
+    }
+
+    <div class="panel-head">
+        <h2>@Icon("calendar-days")周期小结</h2>
+        <label class="panel-switch">
+            <input asp-for="Input.Enabled" type="checkbox" data-lock-toggle="cycle-insight">
+            <span>启用模型小结</span>
+        </label>
+    </div>
+
+    <p class="admin-panel-hint">
+        周期小结默认由站内规则实时生成，无需配置模型即可使用。启用兼容 Responses 协议的模型服务后，系统将优先使用模型生成；
+        调用失败、返回空内容或关闭此功能时，将自动回退到站内规则
+    </p>
+
+    <p class="atmosphere-notice">
+        @Icon("circle-alert")经期记录属于两个人的私密数据。启用前，请确认双方均同意将相关日期与身体状况发送至所配置的模型服务
+    </p>
+
+    <div data-lock="cycle-insight">
+        <div class="field-grid">
+            <label class="field">
+                <span>服务地址</span>
+                <input asp-for="Input.BaseUrl" type="url" maxlength="300" placeholder="https://api.openai.com/v1" autocomplete="off">
+                <small>填写至 <code>/v1</code> 即可，系统会自动追加 <code>/responses</code></small>
+            </label>
+            <label class="field">
+                <span>模型</span>
+                <input asp-for="Input.Model" type="text" maxlength="120" placeholder="gpt-4.1-mini" autocomplete="off">
+            </label>
+            <label class="field">
+                <span>API Key</span>
+                <input asp-for="Input.ApiKey" type="password" maxlength="300" autocomplete="new-password"
+                       placeholder="@(Model.HasApiKey ? "留空以保留现有 Key" : "sk-…")">
+            </label>
+            <label class="field">
+                <span>单次调用超时（秒）</span>
+                <input asp-for="Input.TimeoutSeconds" type="number" min="5" max="300">
+            </label>
+            <label class="field">
+                <span>单次最多生成（Token）</span>
+                <input asp-for="Input.MaxOutputTokens" type="number" min="64" max="8192">
+                <small>该值为输出上限；推理模型通常需要预留更充足的 Token</small>
+            </label>
+            <label class="field">
+                <span>后台补写间隔（小时）</span>
+                <input asp-for="Input.RefreshHours" type="number" min="1" max="168">
+                <small>后台任务将按此间隔补充缺失或已失效的小结</small>
+            </label>
+        </div>
+
+        <label class="field">
+            <span>语气偏好 <small>选填</small></span>
+            <textarea asp-for="Input.Tone" rows="3" maxlength="500" placeholder="例如：正式克制，带有情侣共同记录、彼此关心的温度"></textarea>
+            <small>该内容会附加在站点统一写作要求之后。医疗安全限制已由系统统一设置，无需重复填写</small>
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn" type="submit">@Icon("save")保存设置</button>
+        @if (Model.IsConfigured)
+        {
+            <span class="channel-status" data-kind="ok">模型通道已就绪</span>
+        }
+    </div>
+</form>
+
+<div class="admin-panel" data-cycle-insight-actions
+     data-test-url="/api/cycle-insight/test"
+     data-refresh-url="/api/cycle-insight/refresh">
+    <h2>@Icon("sparkles")模型操作</h2>
+    <p class="admin-panel-hint">
+        测试与补写均使用已保存的配置。修改配置后，请先保存再执行相应操作
+    </p>
+
+    <div class="form-actions cycle-insight-actions">
+        <button class="btn btn-ghost" type="button" data-cycle-insight-action="test"
+                disabled="@(Model.IsConfigured ? null : "disabled")">
+            <span class="push-spinner" aria-hidden="true"></span>
+            @Icon("sparkles", "icon-idle")<span>测试模型通道</span>
+        </button>
+        <button class="btn btn-ghost" type="button" data-cycle-insight-action="refresh"
+                disabled="@(Model.IsConfigured ? null : "disabled")">
+            <span class="push-spinner" aria-hidden="true"></span>
+            @Icon("history", "icon-idle")<span>立即补写小结</span>
+        </button>
+    </div>
+
+    @if (!Model.IsConfigured)
+    {
+        <p class="cycle-insight-actions-hint">请先启用模型小结、完整填写通道配置并保存。</p>
+    }
+
+    <div class="cycle-insight-feedback" data-cycle-insight-feedback aria-live="polite" hidden>
+        <p data-cycle-insight-message></p>
+        <blockquote data-cycle-insight-text hidden></blockquote>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Assets.Url("assets/cycle-settings.js")" defer></script>
+}

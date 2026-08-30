@@ -42,7 +42,9 @@
   });
 
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && activeDialog) closeDialog(activeDialog);
+    if (event.key !== 'Escape') return;
+    if (activeDialog) closeDialog(activeDialog);
+    else if (editor && !editor.hidden) closeDayEditor(true);
   });
 
   var confirmDialog = document.querySelector('[data-cycle-dialog="confirm"]');
@@ -164,6 +166,7 @@
   }
 
   function renderAgenda(day) {
+    if (selected && selected.date !== day.date) closeDayEditor(false);
     selected = day;
     grid.querySelectorAll('.calendar-day').forEach(function (button) {
       var isSelected = button.dataset.date === day.date;
@@ -215,6 +218,7 @@
     }
 
     agendaEdit.hidden = day.isFuture;
+    if (day.isFuture) closeDayEditor(false);
   }
 
   /* ------------------------------------------------------------ 月历格子 */
@@ -307,39 +311,94 @@
 
   /* ------------------------------------------------------- 补充某一天 */
 
-  var editor = document.querySelector('[data-cycle-dialog="day-editor"]');
+  var editor = calendar.querySelector('[data-day-editor]');
+  var editorCloseTimer = null;
+  var editorCloseDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
 
-  function check(form, name, value) {
-    var input = form.querySelector('input[name="' + name + '"][value="' + value + '"]');
-    if (input) input.checked = true;
+  function select(form, name, value) {
+    var input = form.querySelector('select[name="' + name + '"]');
+    if (input) input.value = String(value);
+  }
+
+  function syncSecondarySymptoms(form) {
+    var primary = form.querySelector('[data-primary-symptom]');
+    var primaryValue = primary ? Number(primary.value) : 0;
+    form.querySelectorAll('[data-secondary-symptom]').forEach(function (box) {
+      var isPrimary = primaryValue !== 0 && Number(box.value) === primaryValue;
+      if (isPrimary) box.checked = false;
+      box.closest('label').hidden = isPrimary;
+    });
   }
 
   function openDayEditor(day) {
     if (!editor) return;
+    if (editorCloseTimer) {
+      window.clearTimeout(editorCloseTimer);
+      editorCloseTimer = null;
+    }
     var form = editor.querySelector('form');
     form.reset();
 
     form.querySelector('[data-day-date]').value = day.date;
-    editor.querySelector('[data-day-title]').textContent = fullDate(day.date);
+    editor.querySelector('[data-day-title]').textContent = '补充 ' + fullDate(day.date);
     editor.querySelector('[data-day-hint]').textContent = day.periodDay
       ? '经期第 ' + day.periodDay + ' 天 · ' + day.phaseName
       : day.phaseName + ' · ' + day.phaseHint;
 
     if (day.log) {
-      check(form, 'flow', day.log.flow);
-      check(form, 'mood', day.log.mood);
-      check(form, 'pain', day.log.pain);
-      form.querySelectorAll('input[name="symptoms"]').forEach(function (box) {
-        box.checked = (day.log.symptoms & Number(box.value)) !== 0;
+      select(form, 'flow', day.log.flow);
+      select(form, 'mood', day.log.mood);
+      select(form, 'pain', day.log.pain);
+
+      var symptomBoxes = Array.from(form.querySelectorAll('[data-secondary-symptom]'));
+      var primarySymptom = symptomBoxes.find(function (box) {
+        return (day.log.symptoms & Number(box.value)) !== 0;
+      });
+      form.querySelector('[data-primary-symptom]').value = primarySymptom ? primarySymptom.value : '0';
+      symptomBoxes.forEach(function (box) {
+        box.checked = box !== primarySymptom && (day.log.symptoms & Number(box.value)) !== 0;
       });
       form.querySelector('textarea[name="note"]').value = day.log.note;
     }
+    syncSecondarySymptoms(form);
 
-    openDialog('day-editor', agendaEdit);
+    editor.hidden = false;
+    agendaEdit.setAttribute('aria-expanded', 'true');
+    window.requestAnimationFrame(function () {
+      editor.classList.add('is-open');
+      editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      editor.focus({ preventScroll: true });
+    });
+  }
+
+  function closeDayEditor(restoreFocus) {
+    if (!editor || editor.hidden) return;
+    if (editorCloseTimer) window.clearTimeout(editorCloseTimer);
+    editor.classList.remove('is-open');
+    agendaEdit.setAttribute('aria-expanded', 'false');
+    editorCloseTimer = window.setTimeout(function () {
+      if (!editor.classList.contains('is-open')) editor.hidden = true;
+      editorCloseTimer = null;
+    }, editorCloseDelay);
+    if (restoreFocus && !agendaEdit.hidden) agendaEdit.focus();
   }
 
   agendaEdit.addEventListener('click', function () {
-    if (selected) openDayEditor(selected);
+    if (!selected) return;
+    if (editor.classList.contains('is-open')) closeDayEditor(true);
+    else openDayEditor(selected);
+  });
+
+  editor.querySelectorAll('[data-day-editor-cancel]').forEach(function (button) {
+    button.addEventListener('click', function () { closeDayEditor(true); });
+  });
+
+  editor.querySelector('[data-primary-symptom]').addEventListener('change', function (event) {
+    syncSecondarySymptoms(event.currentTarget.form);
+  });
+
+  editor.querySelector('form').addEventListener('submit', function (event) {
+    if (!event.defaultPrevented && event.currentTarget.checkValidity()) closeDayEditor(false);
   });
 
   /* -------------------------------------------------------------- 切月 */

@@ -750,40 +750,50 @@ body.admin.sheet-open .admin-main { overflow: hidden }
     background: var(--surface-soft);
 }
 
-.panel-switch { display: inline-flex; align-items: center; gap: 9px; flex: none; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none }
+.panel-switch { display: inline-flex; align-items: center; flex: none; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent }
 .panel-switch input { position: absolute; width: 1px; height: 1px; opacity: 0 }
 
 .panel-switch span::before {
     content: "";
-    display: inline-block;
-    width: 34px;
-    height: 20px;
-    margin-right: 9px;
+    width: 36px;
+    height: 22px;
+    flex: none;
     border: 1px solid var(--line-strong);
     border-radius: 999px;
     background: var(--surface-muted);
-    vertical-align: -5px;
-    transition: background-color .18s, border-color .18s;
+    box-sizing: border-box;
+    transition: background-color .18s, border-color .18s, box-shadow .18s;
 }
 
 .panel-switch span::after {
     content: "";
     position: absolute;
-    right: auto;
-    width: 14px;
-    height: 14px;
-    margin: 3px 0 0 -31px;
+    top: 50%;
+    left: 3px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--surface);
     box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+    transform: translateY(-50%);
     transition: transform .18s;
 }
 
-.panel-switch span { position: relative; display: inline-flex; align-items: center }
+.panel-switch span { position: relative; display: inline-flex; align-items: center; gap: 9px; min-height: 24px }
+.panel-switch:hover span::before { border-color: var(--pink) }
 .panel-switch input:checked + span::before { border-color: transparent; background: var(--pink) }
-.panel-switch input:checked + span::after { transform: translateX(14px) }
+.panel-switch input:checked + span::after { transform: translate(14px, -50%) }
 .panel-switch input:checked + span { color: var(--pink-dark) }
 .panel-switch input:focus-visible + span::before { outline: 2px solid var(--pink); outline-offset: 2px }
+
+.cycle-insight-actions { flex-wrap: wrap }
+.cycle-insight-actions-hint { margin: 10px 0 0; line-height: 1.65 }
+.cycle-insight-feedback { margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft) }
+.cycle-insight-feedback.is-ok { border-color: color-mix(in srgb, var(--pink) 35%, var(--line)); background: var(--pink-softer) }
+.cycle-insight-feedback.is-bad { border-color: color-mix(in srgb, var(--danger) 32%, var(--line)); background: var(--danger-soft) }
+.cycle-insight-feedback p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7 }
+.cycle-insight-feedback.is-bad p { color: var(--danger) }
+.cycle-insight-feedback blockquote { margin: 10px 0 0; padding: 10px 14px; border-left: 2px solid var(--pink); border-radius: 0 12px 12px 0; background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.75; white-space: pre-wrap }
 
 [data-lock].is-locked { opacity: .5 }
 [data-lock].is-locked input, [data-lock].is-locked textarea { cursor: not-allowed }
@@ -1905,6 +1915,12 @@ body.auth-page {
     .admin-who { display: none }
 
     .admin-panel { padding: 20px 16px }
+    .panel-head { align-items: flex-start }
+    .panel-switch span { white-space: nowrap }
+    .cycle-insight-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+    .cycle-insight-actions .btn { width: 100%; min-width: 0; padding-right: 10px; padding-left: 10px; justify-content: center; white-space: nowrap }
+    .cycle-insight-actions .channel-status { grid-column: 1 / -1; justify-self: start }
+    .cycle-insight-actions-hint { margin-top: 12px }
     .form-grid, .anniversary-options { grid-template-columns: 1fr }
     .markdown-composer-head { align-items: flex-start; flex-direction: column }
     .markdown-mode { align-self: stretch }
