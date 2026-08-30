@@ -373,10 +373,45 @@
     .cycle-status { grid-template-columns: 1fr; text-align: center }
     .cycle-summary { text-align: left }
     .cycle-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-    .cycle-timeline { padding-left: 0 }
-    .cycle-timeline::before { display: none }
-    .cycle-timeline-mark { position: static; width: auto; height: auto; margin-bottom: 8px; padding: 5px 12px; border-radius: 999px; grid-auto-flow: column; align-items: baseline; gap: 7px }
-    .cycle-timeline-mark small { margin: 0 }
+
+    /* 移动端保留纵向时间轴：日期贴着节点排列，记录内容独立成卡。 */
+    .cycle-timeline { padding-left: 54px }
+    .cycle-timeline::before { display: block; top: 20px; bottom: -4px; left: 20px }
+    .cycle-timeline-item { margin-bottom: 30px }
+    .cycle-timeline-item:last-child { margin-bottom: 0 }
+
+    .cycle-timeline-mark {
+        top: 14px;
+        left: -54px;
+        width: 40px;
+        height: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        place-content: start center;
+    }
+
+    .cycle-timeline-mark::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border: 2px solid var(--surface);
+        border-radius: 50%;
+        background: var(--pink);
+        box-shadow: 0 0 0 1px var(--pink-dark);
+    }
+
+    .cycle-timeline-mark b { margin-top: 9px; font-size: 16px }
+    .cycle-timeline-mark small { margin-top: 3px; font-size: 7px }
+    .cycle-timeline-item.is-active .cycle-timeline-mark { border: 0; background: transparent }
+
+    .cycle-timeline-card { padding: 18px 16px; border-radius: 18px }
+    .cycle-timeline-card h3 { font-size: 16px }
+    .cycle-timeline-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding-top: 13px; border-top: 1px solid var(--line) }
+    .cycle-timeline-card > footer { flex-wrap: nowrap }
+    .cycle-timeline-card > footer small { min-width: 0 }
+    .cycle-timeline-tools { flex: none }
 }
 
 @media (max-width: 600px) {
@@ -403,6 +438,11 @@
 @media (max-width: 420px) {
     .cycle-stats { grid-template-columns: 1fr }
     .cycle-stats article { min-height: 112px }
+    .cycle-timeline { padding-left: 50px }
+    .cycle-timeline::before { left: 18px }
+    .cycle-timeline-mark { left: -50px; width: 36px }
+    .cycle-timeline-card { padding-right: 14px; padding-left: 14px }
+    .cycle-timeline-card > footer { align-items: flex-start; flex-direction: column }
 }
 
 @media (prefers-reduced-motion: reduce) {
