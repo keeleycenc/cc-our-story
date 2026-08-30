@@ -139,6 +139,35 @@
 .cycle-summary figcaption em { margin-left: auto; color: var(--faint); font-size: 8px; font-style: normal }
 .cycle-summary p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8 }
 
+.cycle-summary-box [data-summary-text] {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+.cycle-summary-box.is-open [data-summary-text] { display: block; overflow: visible; -webkit-line-clamp: none; line-clamp: none }
+
+.cycle-summary-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--pink-dark);
+    font-size: 10px;
+    line-height: 1.6;
+    cursor: pointer;
+}
+
+.cycle-summary-toggle[hidden] { display: none }
+.cycle-summary-toggle:hover { text-decoration: underline }
+.cycle-summary-toggle .icon { width: 12px; height: 12px; font-size: 12px; transition: transform .2s }
+.cycle-summary-box.is-open .cycle-summary-toggle .icon { transform: rotate(180deg) }
+
 /* 5. 统计 ---------------------------------------------------------------- */
 
 .cycle-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 18px 0 52px }

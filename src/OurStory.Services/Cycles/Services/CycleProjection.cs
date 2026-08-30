@@ -26,6 +26,11 @@ internal sealed class CycleProjection {
     private readonly CycleFact[] _facts;
 
     /// <summary>
+    /// 按“此前记录条数”缓存的历史基线，避免逐条记录重复分析
+    /// </summary>
+    private readonly Dictionary<int, CycleStatistics> _baselines = [];
+
+    /// <summary>
     /// 创建页面投影
     /// </summary>
     /// <param name="analysis">周期分析服务</param>
@@ -69,10 +74,11 @@ internal sealed class CycleProjection {
     public CycleRecordItem Item(CycleRecord record) {
         ArgumentNullException.ThrowIfNull(record);
 
-        var cycleDays = CycleDays(record);
-        var appraisal = _analysis.Appraise(Fact(record), cycleDays, Statistics, _today);
+        var prior = Prior(record);
+        var cycleDays = CycleDays(prior, record);
+        var appraisal = _analysis.Appraise(Fact(record), cycleDays, Baseline(prior), _today);
         var days = LogsIn(record);
-        var context = Context(record, cycleDays, appraisal);
+        var context = Context(record, prior, cycleDays, appraisal);
 
         return new CycleRecordItem(
             record.Id,
@@ -100,11 +106,16 @@ internal sealed class CycleProjection {
     /// </summary>
     /// <param name="record">周期记录</param>
     /// <returns>供规则或模型使用的上下文</returns>
+    /// <remarks>
+    /// 上下文只包含目标周期及其之前的记录，比较基线也只由此前记录算出，
+    /// 因此补写旧周期的小结时不会看到当时尚未发生的数据。
+    /// </remarks>
     public CycleNarrativeContext Context(CycleRecord record) {
         ArgumentNullException.ThrowIfNull(record);
 
-        var cycleDays = CycleDays(record);
-        return Context(record, cycleDays, _analysis.Appraise(Fact(record), cycleDays, Statistics, _today));
+        var prior = Prior(record);
+        var cycleDays = CycleDays(prior, record);
+        return Context(record, prior, cycleDays, _analysis.Appraise(Fact(record), cycleDays, Baseline(prior), _today));
     }
 
     /// <summary>
@@ -251,13 +262,31 @@ internal sealed class CycleProjection {
     private int Duration(CycleRecord record) =>
         (record.EndDate ?? _today).DayNumber - record.StartDate.DayNumber + 1;
 
-    private int? CycleDays(CycleRecord record) {
-        var previous = _records
+    private static int? CycleDays(CycleRecord[] prior, CycleRecord record) {
+        var previous = prior
             .Where(item => item.StartDate < record.StartDate)
             .Select(item => item.StartDate)
             .DefaultIfEmpty()
             .Max();
         return previous == default ? null : record.StartDate.DayNumber - previous.DayNumber;
+    }
+
+    private CycleRecord[] Prior(CycleRecord record) => [.. _records.Where(item => Precedes(item, record))];
+
+    // 与 _records 的排序保持一致：开始日期相同的重复登记按记录先后排序，
+    // 这样序号与基线的取值范围都是 _records 的前缀，不会因取用顺序不同而漂移。
+    private static bool Precedes(CycleRecord earlier, CycleRecord later) =>
+        earlier.StartDate < later.StartDate
+        || (earlier.StartDate == later.StartDate && earlier.Id < later.Id);
+
+    private CycleStatistics Baseline(CycleRecord[] prior) {
+        if (_baselines.TryGetValue(prior.Length, out var cached)) {
+            return cached;
+        }
+
+        var baseline = _analysis.Analyze([.. prior.Select(Fact)], _today);
+        _baselines[prior.Length] = baseline;
+        return baseline;
     }
 
     private CycleDailyLog[] LogsIn(CycleRecord record) {
@@ -279,23 +308,44 @@ internal sealed class CycleProjection {
                 log.UpdatedAt);
     }
 
-    private CycleNarrativeContext Context(CycleRecord record, int? cycleDays, CycleAppraisal appraisal) => new(
-        record.StartDate,
-        record.EndDate,
-        Duration(record),
-        cycleDays,
-        appraisal.CycleDelta,
-        appraisal.Rhythm,
-        record.Note,
-        Statistics.AverageCycleDays,
-        Statistics.AveragePeriodDays,
-        [.. LogsIn(record).Select(item => new CycleDayFact(
-            item.Date,
-            item.Flow,
-            item.Mood,
-            item.Pain,
-            item.Symptoms,
-            item.Note))]);
+    private CycleNarrativeContext Context(
+        CycleRecord record,
+        CycleRecord[] prior,
+        int? cycleDays,
+        CycleAppraisal appraisal) {
+        var baseline = Baseline(prior);
+        var window = prior.TakeLast(CycleNarrative.HistoryWindow - 1).ToArray();
+        var offset = prior.Length - window.Length;
+
+        return new CycleNarrativeContext(
+            record.StartDate,
+            record.EndDate,
+            Duration(record),
+            cycleDays,
+            appraisal.CycleDelta,
+            appraisal.Rhythm,
+            record.Note,
+            baseline.AverageCycleDays,
+            baseline.AveragePeriodDays,
+            DayFacts(record),
+            prior.Length + 1,
+            [.. window.Select((item, index) => new CyclePastFact(
+                offset + index + 1,
+                item.StartDate,
+                item.EndDate,
+                Duration(item),
+                CycleDays(prior[..(offset + index)], item),
+                item.Note,
+                DayFacts(item)))]);
+    }
+
+    private CycleDayFact[] DayFacts(CycleRecord record) => [.. LogsIn(record).Select(item => new CycleDayFact(
+        item.Date,
+        item.Flow,
+        item.Mood,
+        item.Pain,
+        item.Symptoms,
+        item.Note))];
 
     private static CycleSummaryText Summary(CycleRecord record, CycleNarrativeContext context) =>
         record.Summary.Length > 0 && record.SummaryStamp == CycleNarrative.Stamp(context)

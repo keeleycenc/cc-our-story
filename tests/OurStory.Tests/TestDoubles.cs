@@ -349,12 +349,16 @@ internal sealed class CycleInsightStub(string? text = null) : ICycleInsightServi
     /// <summary>获取小结生成调用次数。</summary>
     public int Calls { get; private set; }
 
+    /// <summary>获取每次生成小结时收到的事实上下文。</summary>
+    public List<CycleNarrativeContext> Contexts { get; } = [];
+
     public bool UsesModel => text is not null;
 
     public Task<CycleSummaryText> WriteAsync(
         CycleNarrativeContext context,
         CancellationToken cancellationToken = default) {
         Calls++;
+        Contexts.Add(context);
 
         return Task.FromResult(text is null
             ? new CycleSummaryText(CycleNarrative.Compose(context), CycleSummarySource.Rule, null)

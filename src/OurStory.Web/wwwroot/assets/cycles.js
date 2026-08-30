@@ -96,6 +96,63 @@
     });
   });
 
+  /* ------------------------------------------------------------ 小结折叠 */
+
+  function measureSummary(box) {
+    var text = box.querySelector('[data-summary-text]');
+    var toggle = box.querySelector('[data-summary-toggle]');
+    if (!text || !toggle || box.classList.contains('is-open')) return;
+    toggle.hidden = text.scrollHeight <= text.clientHeight + 1;
+  }
+
+  function measureSummaries(root) {
+    (root || document).querySelectorAll('[data-summary-box]').forEach(measureSummary);
+  }
+
+  function summaryBox(className, text) {
+    var box = element('div', 'cycle-summary-box');
+    box.setAttribute('data-summary-box', '');
+
+    var body = element('p', className, text);
+    body.setAttribute('data-summary-text', '');
+    box.append(body);
+
+    var toggle = element('button', 'cycle-summary-toggle');
+    toggle.type = 'button';
+    toggle.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('data-summary-toggle', '');
+    toggle.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg>'
+      + '<span data-summary-label>展开</span>';
+    box.append(toggle);
+
+    return box;
+  }
+
+  document.addEventListener('click', function (event) {
+    var toggle = event.target.closest('[data-summary-toggle]');
+    if (!toggle) return;
+
+    var box = toggle.closest('[data-summary-box]');
+    if (!box) return;
+
+    var open = box.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var label = toggle.querySelector('[data-summary-label]');
+    if (label) label.textContent = open ? '收起' : '展开';
+  });
+
+  measureSummaries();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { measureSummaries(); });
+  }
+
+  var summaryTimer = 0;
+  window.addEventListener('resize', function () {
+    window.clearTimeout(summaryTimer);
+    summaryTimer = window.setTimeout(function () { measureSummaries(); }, 150);
+  });
+
   /* ---------------------------------------------------------------- 日历 */
 
   var calendar = document.querySelector('[data-cycle-calendar]');
@@ -197,7 +254,7 @@
       });
       card.append(tags);
 
-      if (day.record.summary) card.append(element('p', 'cycle-agenda-summary', day.record.summary));
+      if (day.record.summary) card.append(summaryBox('cycle-agenda-summary', day.record.summary));
       if (day.record.note) card.append(element('blockquote', null, day.record.note));
       agendaBody.append(card);
     }
@@ -219,6 +276,7 @@
 
     agendaEdit.hidden = day.isFuture;
     if (day.isFuture) closeDayEditor(false);
+    measureSummaries(agendaBody);
   }
 
   /* ------------------------------------------------------------ 月历格子 */

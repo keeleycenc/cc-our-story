@@ -71,6 +71,156 @@ public sealed class CycleInsightTests {
         Assert.NotEqual(stamp, CycleNarrative.Stamp(original with { Note = "改了备注" }));
         Assert.NotEqual(stamp, CycleNarrative.Stamp(original with { EndDate = original.EndDate!.Value.AddDays(1) }));
         Assert.NotEqual(stamp, CycleNarrative.Stamp(original with { Days = [] }));
+
+        Assert.NotEqual(stamp, CycleNarrative.Stamp(original with { History = [original.History[0]] }));
+        Assert.NotEqual(
+            stamp,
+            CycleNarrative.Stamp(original with {
+                History = [original.History[0], original.History[1] with { Note = "改了历史备注" }]
+            }));
+    }
+
+    [Fact]
+    public void 输入按分析目标与此前历史分段并只要求写目标周期() {
+        var input = CycleNarrative.Input(Context());
+
+        Assert.Contains("分析目标：第 3 个周期", input, StringComparison.Ordinal);
+        Assert.Contains("携带范围：第 1 至第 3 个周期，共 3 个周期", input, StringComparison.Ordinal);
+        Assert.Contains("此前历史", input, StringComparison.Ordinal);
+        Assert.Contains("第 2 个周期：2026 年 4 月 6 日 至 2026 年 4 月 10 日", input, StringComparison.Ordinal);
+        Assert.Contains("夜里疼醒过", input, StringComparison.Ordinal);
+        Assert.Contains("既往平均周期（不含本次）：28 天", input, StringComparison.Ordinal);
+        Assert.Contains("请仅为“本次周期（第 3 个周期）”撰写一段小结。", input, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task 上下文只携带目标周期之前的记录且基线不含本次() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var options = new CycleAnalysisOptions();
+        var insight = new CycleInsightStub("模型写的那一段");
+        var service = new CycleService(
+            harness.Db,
+            TestDoubles.Clock(),
+            new SettingsStub(),
+            new RuleBasedCycleAnalysisService(options),
+            insight,
+            options,
+            new CycleWriteCoordinator());
+
+        var today = TestDoubles.Clock().Today;
+        var first = today.AddDays(-28 * 15);
+
+        for (var index = 0; index < 15; index++) {
+            var start = first.AddDays(index * 28);
+            _ = await service.CreateAsync(boyId, new CycleRecordSubmission(
+                start,
+                start.AddDays(4),
+                $"第 {index + 1} 次",
+                Guid.NewGuid().ToString()));
+        }
+
+        // 第 1 个周期的每日记录应随历史一并携带给后续周期。
+        _ = await service.SaveDayAsync(boyId, new CycleDaySubmission(
+            first,
+            CycleFlow.Heavy,
+            CycleMood.Low,
+            3,
+            CycleSymptom.Cramps,
+            "第一次的补充记录"));
+
+        Assert.Equal(15, await service.RefreshSummariesAsync(30));
+
+        // 页面按同一份事实重算指纹，补写好的模型小结应当全部命中。
+        var history = (await service.GetDashboardAsync(boyId, 1, 20, today.Year, today.Month)).History.Items;
+        Assert.All(history, item => Assert.True(item.Summary.FromModel));
+
+        var contexts = insight.Contexts.ToDictionary(item => item.Ordinal);
+        Assert.Equal(15, contexts.Count);
+
+        var firstCycle = contexts[1];
+        Assert.Empty(firstCycle.History);
+        Assert.Null(firstCycle.AverageCycleDays);
+        Assert.Null(firstCycle.AveragePeriodDays);
+
+        var third = contexts[3];
+        Assert.Equal([1, 2], third.History.Select(item => item.Ordinal));
+        Assert.Equal(28, third.AverageCycleDays);
+        Assert.Equal(5, third.AveragePeriodDays);
+        Assert.Contains(third.History[0].Days, day => day.Note == "第一次的补充记录");
+
+        // 最新周期最多携带含自身在内的 12 个周期，且不含之后的任何记录。
+        var latest = contexts[15];
+        Assert.Equal(11, latest.History.Count);
+        Assert.Equal(4, latest.WindowStartOrdinal);
+        Assert.Equal([4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], latest.History.Select(item => item.Ordinal));
+        Assert.All(latest.History, item => Assert.True(item.StartDate < latest.StartDate));
+    }
+
+    [Fact]
+    public async Task 目标周期之后新增记录不会让旧小结失效() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var options = new CycleAnalysisOptions();
+        var service = new CycleService(
+            harness.Db,
+            TestDoubles.Clock(),
+            new SettingsStub(),
+            new RuleBasedCycleAnalysisService(options),
+            new CycleInsightStub("模型写的那一段"),
+            options,
+            new CycleWriteCoordinator());
+
+        var today = TestDoubles.Clock().Today;
+        var first = today.AddDays(-100);
+
+        _ = await service.CreateAsync(boyId, Submission(first, first.AddDays(4)));
+        _ = await service.CreateAsync(boyId, Submission(first.AddDays(28), first.AddDays(32)));
+        Assert.Equal(2, await service.RefreshSummariesAsync(10));
+
+        _ = await service.CreateAsync(boyId, Submission(first.AddDays(56), first.AddDays(60)));
+
+        // 只有新记录需要补写，此前两条的指纹不受之后数据影响。
+        Assert.Equal(1, await service.RefreshSummariesAsync(10));
+        Assert.Equal(0, await service.RefreshSummariesAsync(10));
+    }
+
+    [Fact]
+    public async Task 改动携带窗口之外但仍影响基线的旧周期会让目标小结失效() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var options = new CycleAnalysisOptions();
+        var service = new CycleService(
+            harness.Db,
+            TestDoubles.Clock(),
+            new SettingsStub(),
+            new RuleBasedCycleAnalysisService(options),
+            new CycleInsightStub("模型写的那一段"),
+            options,
+            new CycleWriteCoordinator());
+
+        var today = TestDoubles.Clock().Today;
+        var first = today.AddDays(-28 * 15);
+
+        for (var index = 0; index < 15; index++) {
+            var start = first.AddDays(index * 28);
+            _ = await service.CreateAsync(boyId, Submission(start, start.AddDays(4)));
+        }
+
+        Assert.Equal(15, await service.RefreshSummariesAsync(30));
+
+        // 第 2 个周期落在最新周期携带的 12 个周期（第 4～15 个）之外，却仍参与既往平均周期的计算。
+        var second = await harness.Db.CycleRecords
+            .OrderBy(item => item.StartDate)
+            .Skip(1)
+            .FirstAsync();
+        _ = await service.UpdateAsync(boyId, second.Id, first.AddDays(16), first.AddDays(20), string.Empty);
+
+        // 最新周期自身未被改动，但既往平均周期由 28 天变为 29 天，小结应随之失效。
+        var history = (await service.GetDashboardAsync(boyId, 1, 20, today.Year, today.Month)).History.Items;
+        Assert.Equal(28, history[0].CycleDays);
+        Assert.Equal(-1, history[0].CycleDelta);
+        Assert.False(history[0].Summary.FromModel);
     }
 
     [Fact]
@@ -134,6 +284,9 @@ public sealed class CycleInsightTests {
 
     #region 私有方法
 
+    private static CycleRecordSubmission Submission(DateOnly start, DateOnly? end) =>
+        new(start, end, string.Empty, Guid.NewGuid().ToString());
+
     private static CycleNarrativeContext Context() => new(
         new DateOnly(2026, 5, 4),
         new DateOnly(2026, 5, 8),
@@ -147,6 +300,25 @@ public sealed class CycleInsightTests {
         [
             new CycleDayFact(new DateOnly(2026, 5, 4), CycleFlow.Medium, CycleMood.Tired, 2, CycleSymptom.Cramps, string.Empty),
             new CycleDayFact(new DateOnly(2026, 5, 6), CycleFlow.Light, CycleMood.Calm, 0, CycleSymptom.None, "状态已有改善")
+        ],
+        3,
+        [
+            new CyclePastFact(
+                1,
+                new DateOnly(2026, 3, 9),
+                new DateOnly(2026, 3, 13),
+                5,
+                null,
+                string.Empty,
+                []),
+            new CyclePastFact(
+                2,
+                new DateOnly(2026, 4, 6),
+                new DateOnly(2026, 4, 10),
+                5,
+                28,
+                "上次一直用着暖宝宝",
+                [new CycleDayFact(new DateOnly(2026, 4, 6), CycleFlow.Heavy, CycleMood.Low, 3, CycleSymptom.Cramps, "夜里疼醒过")])
         ]);
 
     private static CycleInsightService Insight(

@@ -155,7 +155,17 @@
                             @Icon("book-heart")本次小结
                             <em>@(summary.FromModel ? "模型生成" : "系统生成")</em>
                         </figcaption>
-                        <p>@summary.Text</p>
+                        <div class="cycle-summary-box" data-summary-box>
+                            <p id="cycle-summary-current" data-summary-text>@summary.Text</p>
+                            <button class="cycle-summary-toggle"
+                                    type="button"
+                                    hidden
+                                    aria-expanded="false"
+                                    aria-controls="cycle-summary-current"
+                                    data-summary-toggle>
+                                @Icon("chevron-down")<span data-summary-label>展开</span>
+                            </button>
+                        </div>
                     </figure>
                 }
             </div>
@@ -394,7 +404,17 @@
                                     </div>
                                 </header>
 
-                                <p class="cycle-timeline-summary">@item.Summary.Text</p>
+                                <div class="cycle-summary-box" data-summary-box>
+                                    <p class="cycle-timeline-summary" id="cycle-summary-@item.Id" data-summary-text>@item.Summary.Text</p>
+                                    <button class="cycle-summary-toggle"
+                                            type="button"
+                                            hidden
+                                            aria-expanded="false"
+                                            aria-controls="cycle-summary-@item.Id"
+                                            data-summary-toggle>
+                                        @Icon("chevron-down")<span data-summary-label>展开</span>
+                                    </button>
+                                </div>
 
                                 <dl class="cycle-timeline-facts">
                                     <div><dt>持续</dt><dd>@item.DurationDays 天</dd></div>

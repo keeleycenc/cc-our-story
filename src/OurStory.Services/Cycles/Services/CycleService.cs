@@ -43,7 +43,7 @@ internal sealed class CycleService(
         var projection = await ProjectAsync(
             relationshipId,
             records,
-            Span(selectedMonth, pageRecords),
+            Span(selectedMonth, records),
             cancellationToken);
 
         return new CycleDashboard(
@@ -65,7 +65,7 @@ internal sealed class CycleService(
         var relationshipId = await RequireRelationshipAsync(userId, cancellationToken);
         var selectedMonth = SafeMonth(year, month, clock.Today);
         var records = await RecordsAsync(relationshipId, cancellationToken);
-        var projection = await ProjectAsync(relationshipId, records, Span(selectedMonth, []), cancellationToken);
+        var projection = await ProjectAsync(relationshipId, records, Span(selectedMonth, records), cancellationToken);
         return projection.Calendar(selectedMonth);
     }
 
@@ -364,7 +364,7 @@ internal sealed class CycleService(
             return 0;
         }
 
-        var projection = await ProjectAsync(relationshipId, records, Span(clock.Today, candidates), cancellationToken);
+        var projection = await ProjectAsync(relationshipId, records, Span(clock.Today, records), cancellationToken);
         var written = 0;
 
         foreach (var record in candidates) {
@@ -430,12 +430,14 @@ internal sealed class CycleService(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-    private (DateOnly From, DateOnly To) Span(DateOnly month, CycleRecord[] records) {
+    // 小结的事实指纹覆盖目标周期之前的历史，因此每日记录需要一次取全，
+    // 否则同一条记录在不同页面算出的指纹会不一致，已保存的模型小结将无法命中。
+    private (DateOnly From, DateOnly To) Span(DateOnly month, List<CycleRecord> records) {
         var first = new DateOnly(month.Year, month.Month, 1);
         var from = first.AddDays(-(7 + options.MaximumPeriodDays));
         var to = first.AddMonths(1).AddDays(7 + options.MaximumPeriodDays);
 
-        if (records.Length > 0) {
+        if (records.Count > 0) {
             var earliest = records.Min(item => item.StartDate);
             var latest = records.Max(item => item.EndDate ?? clock.Today);
             from = from < earliest ? from : earliest;

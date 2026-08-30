@@ -15,6 +15,7 @@ internal sealed class CycleInsightService(
     ActiveConfiguration configuration,
     ILogger<CycleInsightService> logger) : ICycleInsightService {
 
+    // 后台测试用的示例：第 3 个周期为分析目标，前两个周期作为比较基线。
     private static readonly CycleNarrativeContext Sample = new(
         new DateOnly(2026, 3, 2),
         new DateOnly(2026, 3, 6),
@@ -29,6 +30,31 @@ internal sealed class CycleInsightService(
             new CycleDayFact(new DateOnly(2026, 3, 2), CycleFlow.Medium, CycleMood.Tired, 2, CycleSymptom.Cramps | CycleSymptom.Backache, string.Empty),
             new CycleDayFact(new DateOnly(2026, 3, 3), CycleFlow.Heavy, CycleMood.Low, 2, CycleSymptom.Cramps, "下午休息后有所缓解"),
             new CycleDayFact(new DateOnly(2026, 3, 5), CycleFlow.Light, CycleMood.Calm, 0, CycleSymptom.None, string.Empty)
+        ],
+        3,
+        [
+            new CyclePastFact(
+                1,
+                new DateOnly(2026, 1, 4),
+                new DateOnly(2026, 1, 8),
+                5,
+                null,
+                string.Empty,
+                [
+                    new CycleDayFact(new DateOnly(2026, 1, 4), CycleFlow.Medium, CycleMood.Calm, 1, CycleSymptom.Cramps, string.Empty),
+                    new CycleDayFact(new DateOnly(2026, 1, 6), CycleFlow.Light, CycleMood.Calm, 0, CycleSymptom.None, string.Empty)
+                ]),
+            new CyclePastFact(
+                2,
+                new DateOnly(2026, 2, 1),
+                new DateOnly(2026, 2, 5),
+                5,
+                28,
+                "这次一直用着暖宝宝",
+                [
+                    new CycleDayFact(new DateOnly(2026, 2, 1), CycleFlow.Heavy, CycleMood.Tired, 2, CycleSymptom.Cramps | CycleSymptom.Backache, string.Empty),
+                    new CycleDayFact(new DateOnly(2026, 2, 3), CycleFlow.Medium, CycleMood.Low, 1, CycleSymptom.Cramps, string.Empty)
+                ])
         ]);
 
     public bool UsesModel => configuration.CycleInsight.IsUsable;
