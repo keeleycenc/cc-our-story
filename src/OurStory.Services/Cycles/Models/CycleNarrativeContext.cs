@@ -101,8 +101,14 @@ public sealed record CycleInsightProbe(bool Ok, string Message, string Text) {
     /// 创建成功结果
     /// </summary>
     /// <param name="text">模型生成的小结</param>
+    /// <param name="fromRecord">本次试写是否基于真实记录</param>
     /// <returns>成功的回执</returns>
-    public static CycleInsightProbe Success(string text) => new(true, "模型通道连接正常，以下为示例小结。", text);
+    public static CycleInsightProbe Success(string text, bool fromRecord = false) => new(
+        true,
+        fromRecord
+            ? "模型通道连接正常，以下小结基于最新一次花信记录试写。"
+            : "模型通道连接正常；当前还没有可用的花信记录，以下为示例小结",
+        text);
 
     /// <summary>
     /// 创建失败结果

@@ -19,7 +19,7 @@ public interface ICycleInsightService {
     bool UsesModel { get; }
 
     /// <summary>
-    /// 为一次周期写一段小结
+    /// 异步为一次周期写一段小结
     /// </summary>
     /// <param name="context">本次周期的全部事实</param>
     /// <param name="cancellationToken">取消令牌</param>
@@ -27,9 +27,15 @@ public interface ICycleInsightService {
     Task<CycleSummaryText> WriteAsync(CycleNarrativeContext context, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 使用示例数据测试模型调用，供后台验证配置
+    /// 异步试调用一次模型，供后台验证配置
     /// </summary>
+    /// <param name="context">用于试写的事实上下文；留空时使用内置示例</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>本次试调用的回执</returns>
-    Task<CycleInsightProbe> ProbeAsync(CancellationToken cancellationToken = default);
+    /// <remarks>
+    /// 结果只回传给调用方，不会写入任何记录；补写仍由后台任务按配置的间隔执行。
+    /// </remarks>
+    Task<CycleInsightProbe> ProbeAsync(
+        CycleNarrativeContext? context = null,
+        CancellationToken cancellationToken = default);
 }

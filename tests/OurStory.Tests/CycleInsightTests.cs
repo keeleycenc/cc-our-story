@@ -90,7 +90,10 @@ public sealed class CycleInsightTests {
         Assert.Contains("第 2 个周期：2026 年 4 月 6 日 至 2026 年 4 月 10 日", input, StringComparison.Ordinal);
         Assert.Contains("夜里疼醒过", input, StringComparison.Ordinal);
         Assert.Contains("既往平均周期（不含本次）：28 天", input, StringComparison.Ordinal);
-        Assert.Contains("请仅为“本次周期（第 3 个周期）”撰写一段小结。", input, StringComparison.Ordinal);
+        Assert.Contains("请仅为上面的“本次周期”撰写一段小结", input, StringComparison.Ordinal);
+
+        Assert.Contains("正文中不要出现", input, StringComparison.Ordinal);
+        Assert.Contains("正文中一律不得出现", CycleNarrative.Instructions(null), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -280,6 +283,48 @@ public sealed class CycleInsightTests {
 
         Assert.Equal(0, await service.RefreshSummariesAsync(5));
         Assert.Equal(0, await harness.Db.CycleRecords.CountAsync(item => item.Summary != string.Empty));
+    }
+
+    [Fact]
+    public async Task 后台试写取最新一次记录且不写入站点() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var options = new CycleAnalysisOptions();
+        var service = new CycleService(
+            harness.Db,
+            TestDoubles.Clock(),
+            new SettingsStub(),
+            new RuleBasedCycleAnalysisService(options),
+            new CycleInsightStub(),
+            options,
+            new CycleWriteCoordinator());
+
+        var today = TestDoubles.Clock().Today;
+        var first = today.AddDays(-60);
+        _ = await service.CreateAsync(boyId, Submission(first, first.AddDays(4)));
+        _ = await service.CreateAsync(boyId, Submission(first.AddDays(28), first.AddDays(32)));
+
+        // 试写复用页面与补写的同一份投影，因此看到的事实与正式生成时一致。
+        var narrative = await service.LatestNarrativeAsync(boyId);
+        Assert.NotNull(narrative);
+        Assert.Equal(2, narrative.Ordinal);
+        Assert.Equal(first.AddDays(28), narrative.StartDate);
+        Assert.Equal([1], narrative.History.Select(item => item.Ordinal));
+
+        var probe = await Insight(out var client, configured: true, ResponsesResult.Success("试写的一段")).ProbeAsync(narrative);
+        Assert.True(probe.Ok);
+        Assert.Equal("试写的一段", probe.Text);
+        Assert.Contains("最新一次花信记录", probe.Message, StringComparison.Ordinal);
+        Assert.Contains("分析目标：第 2 个周期", Assert.Single(client.Requests).Text, StringComparison.Ordinal);
+
+        // 试写不落库，正式小结仍由后台任务补写。
+        Assert.Equal(0, await harness.Db.CycleRecords.CountAsync(item => item.Summary != string.Empty));
+
+        // 不属于这段关系的用户拿不到记录，试写回退到内置示例。
+        Assert.Null(await service.LatestNarrativeAsync(9999));
+        var sample = await Insight(out _, configured: true, ResponsesResult.Success("示例小结")).ProbeAsync();
+        Assert.Equal("示例小结", sample.Text);
+        Assert.Contains("示例小结", sample.Message, StringComparison.Ordinal);
     }
 
     #region 私有方法

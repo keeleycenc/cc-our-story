@@ -365,7 +365,9 @@ internal sealed class CycleInsightStub(string? text = null) : ICycleInsightServi
             : new CycleSummaryText(text, CycleSummarySource.Model, DateTimeOffset.UnixEpoch));
     }
 
-    public Task<CycleInsightProbe> ProbeAsync(CancellationToken cancellationToken = default) =>
+    public Task<CycleInsightProbe> ProbeAsync(
+        CycleNarrativeContext? context = null,
+        CancellationToken cancellationToken = default) =>
         Task.FromResult(text is null
             ? CycleInsightProbe.Failed("测试替身未配置模型返回内容。")
             : CycleInsightProbe.Success(text));

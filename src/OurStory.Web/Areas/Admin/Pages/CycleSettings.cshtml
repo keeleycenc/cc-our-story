@@ -78,12 +78,11 @@
     </div>
 </form>
 
-<div class="admin-panel" data-cycle-insight-actions
-     data-test-url="/api/cycle-insight/test"
-     data-refresh-url="/api/cycle-insight/refresh">
+<div class="admin-panel" data-cycle-insight-actions data-test-url="/api/cycle-insight/test">
     <h2>@Icon("sparkles")模型操作</h2>
     <p class="admin-panel-hint">
-        测试与补写均使用已保存的配置。修改配置后，请先保存再执行相应操作
+        测试使用已保存的配置，并按最新一次花信记录试写一段小结，结果不会写入站点。修改配置后，请先保存再测试。
+        正式的小结由后台任务按上面的间隔自动补写
     </p>
 
     <div class="form-actions cycle-insight-actions">
@@ -91,11 +90,6 @@
                 disabled="@(Model.IsConfigured ? null : "disabled")">
             <span class="push-spinner" aria-hidden="true"></span>
             @Icon("sparkles", "icon-idle")<span>测试模型通道</span>
-        </button>
-        <button class="btn btn-ghost" type="button" data-cycle-insight-action="refresh"
-                disabled="@(Model.IsConfigured ? null : "disabled")">
-            <span class="push-spinner" aria-hidden="true"></span>
-            @Icon("history", "icon-idle")<span>立即补写小结</span>
         </button>
     </div>
 

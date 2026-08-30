@@ -75,13 +75,15 @@ internal sealed class CycleInsightService(
             : new CycleSummaryText(text, CycleSummarySource.Model, SiteClock.UtcNow);
     }
 
-    public async Task<CycleInsightProbe> ProbeAsync(CancellationToken cancellationToken = default) {
+    public async Task<CycleInsightProbe> ProbeAsync(
+        CycleNarrativeContext? context = null,
+        CancellationToken cancellationToken = default) {
         var options = configuration.CycleInsight;
         if (!options.IsConfigured) {
             return CycleInsightProbe.Failed("请先完整填写服务地址、模型名称和 API Key。");
         }
 
-        var result = await client.CompleteAsync(Request(Sample), cancellationToken);
+        var result = await client.CompleteAsync(Request(context ?? Sample), cancellationToken);
         if (!result.IsSuccess) {
             return CycleInsightProbe.Failed(result.Failure.Describe());
         }
@@ -89,7 +91,7 @@ internal sealed class CycleInsightService(
         var text = CycleNarrative.Clean(result.Text);
         return text.Length == 0
             ? CycleInsightProbe.Failed("模型返回的内容经清理后为空，请检查模型与提示词配置。")
-            : CycleInsightProbe.Success(text);
+            : CycleInsightProbe.Success(text, context is not null);
     }
 
     #region 私有方法

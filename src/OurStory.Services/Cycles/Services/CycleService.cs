@@ -329,6 +329,27 @@ internal sealed class CycleService(
         return new CycleWriteResult(CycleWriteStatus.Saved, $"{submission.Date:M 月 d 日}的状态已记下，双方都可以继续补充。");
     }
 
+    public async Task<CycleNarrativeContext?> LatestNarrativeAsync(
+        int userId,
+        CancellationToken cancellationToken = default) {
+        var relationshipId = await FindRelationshipAsync(userId, cancellationToken);
+        if (relationshipId is null) {
+            return null;
+        }
+
+        var records = await RecordsAsync(relationshipId.Value, cancellationToken);
+        if (records.Count == 0) {
+            return null;
+        }
+
+        var projection = await ProjectAsync(
+            relationshipId.Value,
+            records,
+            Span(clock.Today, records),
+            cancellationToken);
+        return projection.Context(records[^1]);
+    }
+
     public async Task<int> RefreshSummariesAsync(int limit, CancellationToken cancellationToken = default) {
         if (!insight.UsesModel || limit <= 0) {
             return 0;

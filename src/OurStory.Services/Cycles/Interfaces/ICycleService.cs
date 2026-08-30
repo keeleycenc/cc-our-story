@@ -130,6 +130,19 @@ public interface ICycleService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步整理最新一次周期的事实上下文，供后台试写模型小结
+    /// </summary>
+    /// <param name="userId">当前操作用户标识，用于校验情侣关系及数据访问权限</param>
+    /// <param name="cancellationToken">取消操作令牌</param>
+    /// <returns>最新一次周期的上下文；无权限或尚无记录时为 <see langword="null"/></returns>
+    /// <remarks>
+    /// 与页面、后台补写共用同一份投影逻辑，因此试写看到的事实与正式生成时完全一致。
+    /// </remarks>
+    Task<CycleNarrativeContext?> LatestNarrativeAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步补写过期或缺失的周期小结，由后台任务调用
     /// </summary>
     /// <param name="limit">本次最多补写多少条</param>
