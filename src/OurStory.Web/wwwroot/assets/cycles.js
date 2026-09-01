@@ -47,32 +47,6 @@
     else if (editor && !editor.hidden) closeDayEditor(true);
   });
 
-  var confirmDialog = document.querySelector('[data-cycle-dialog="confirm"]');
-  if (confirmDialog) {
-    var confirmText = confirmDialog.querySelector('[data-confirm-text]');
-    var confirmOk = confirmDialog.querySelector('[data-confirm-ok]');
-    var pendingForm = null;
-
-    document.querySelectorAll('form[data-cycle-confirm]').forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        if (form.dataset.confirmed === 'yes') return;
-        event.preventDefault();
-        pendingForm = form;
-        confirmText.textContent = form.getAttribute('data-cycle-confirm');
-        openDialog('confirm', form.querySelector('button'));
-      });
-    });
-
-    confirmOk.addEventListener('click', function () {
-      if (!pendingForm) return;
-      pendingForm.dataset.confirmed = 'yes';
-      closeDialog(confirmDialog);
-      if (pendingForm.requestSubmit) pendingForm.requestSubmit();
-      else pendingForm.submit();
-      pendingForm = null;
-    });
-  }
-
   document.querySelectorAll('.cycle-form').forEach(function (form) {
     var start = form.querySelector('input[name="startDate"]');
     var end = form.querySelector('input[name="endDate"]');
@@ -222,6 +196,11 @@
     return row;
   }
 
+  function isRegularLog(entry) {
+    return Boolean(entry.flow || entry.mood || entry.pain
+      || (entry.symptomNames && entry.symptomNames.length) || entry.note);
+  }
+
   function renderAgenda(day) {
     if (selected && selected.date !== day.date) closeDayEditor(false);
     selected = day;
@@ -259,18 +238,47 @@
       agendaBody.append(card);
     }
 
-    if (day.log) {
-      var log = element('div', 'cycle-agenda-log');
+    var dayLogs = day.logs || [];
+    dayLogs.forEach(function (entry) {
+      var log = element('article', 'cycle-agenda-log');
+      var regular = isRegularLog(entry);
+      if (entry.isIntimate) log.classList.add('is-intimate');
+
+      var head = element('header', 'cycle-agenda-log-head');
+      var kinds = element('div', 'cycle-agenda-log-kinds');
+      if (regular) kinds.append(element('span', 'is-regular', '日常记录'));
+      if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录'));
+      head.append(kinds);
+      if (entry.isIntimate) {
+        var heart = element('span', 'cycle-agenda-intimacy-heart', '♥');
+        heart.setAttribute('role', 'img');
+        heart.setAttribute('aria-label', '亲密记录');
+        head.append(heart);
+      }
+      log.append(head);
+
       var facts = element('dl', 'cycle-agenda-facts');
-      if (day.log.flow) facts.append(factRow('经量', day.log.flowName));
-      if (day.log.mood) facts.append(factRow('心情', day.log.moodName));
-      if (day.log.pain) facts.append(factRow('不适', day.log.painName));
-      if (day.log.symptomNames.length) facts.append(factRow('身体状况', day.log.symptomNames.join('、')));
+      if (entry.flow) facts.append(factRow('经量', entry.flowName));
+      if (entry.mood) facts.append(factRow('心情', entry.moodName));
+      if (entry.pain) facts.append(factRow('不适', entry.painName));
+      if (entry.symptomNames.length) facts.append(factRow('身体状况', entry.symptomNames.join('、')));
+      if (entry.isIntimate) {
+        if (entry.protectionName !== '未记录') facts.append(factRow('安全措施', entry.protectionName));
+        if (entry.outcomeName !== '未记录') facts.append(factRow('结束方式', entry.outcomeName));
+      }
       if (facts.childElementCount) log.append(facts);
-      if (day.log.note) log.append(element('p', 'cycle-agenda-note', day.log.note));
-      log.append(element('small', null, '由 ' + day.log.updatedBy + ' 记录'));
+      else if (entry.note) log.classList.add('is-note-only');
+      if (entry.note) log.append(element('p', 'cycle-agenda-note', entry.note));
+
+      var meta = element('footer', 'cycle-agenda-log-meta');
+      meta.append(element('span', null, '由 ' + entry.recordedBy + ' 记录'));
+      var recordedAt = element('time', null, entry.recordedAtText);
+      recordedAt.setAttribute('datetime', entry.recordedAt);
+      meta.append(recordedAt);
+      log.append(meta);
       agendaBody.append(log);
-    } else if (!day.isFuture) {
+    });
+    if (!dayLogs.length && !day.isFuture) {
       agendaBody.append(element('p', 'cycle-agenda-empty', '这一天暂时没有补充记录，双方都可以继续填写。'));
     }
 
@@ -286,11 +294,18 @@
     button.type = 'button';
     button.setAttribute('role', 'gridcell');
     button.dataset.date = day.date;
-    button.setAttribute('aria-label', fullDate(day.date) + ' ' + day.phaseName);
+    var logs = day.logs || [];
+    var hasRegularLog = logs.some(isRegularLog);
+    var hasIntimacyLog = logs.some(function (entry) { return entry.isIntimate; });
+    var ariaLabel = fullDate(day.date) + ' ' + day.phaseName;
+    if (hasRegularLog) ariaLabel += '，有日常记录';
+    if (hasIntimacyLog) ariaLabel += '，有亲密记录';
+    button.setAttribute('aria-label', ariaLabel);
     button.setAttribute('aria-selected', 'false');
     if (!day.inMonth) button.classList.add('is-outside');
     if (day.isToday) button.classList.add('is-today');
     if (day.isFuture) button.classList.add('is-future');
+    if (hasIntimacyLog) button.classList.add('has-intimacy');
     if (day.periodDay) button.classList.add('has-records');
     if (day.periodStart) button.classList.add('is-period-start');
     if (day.periodEnd) button.classList.add('is-period-end');
@@ -304,14 +319,25 @@
     else if (day.periodDay) label = '第 ' + day.periodDay + ' 天';
 
     var date = element('span', 'calendar-day-date');
-    date.append(element('span', 'calendar-day-number', day.day));
+    var dayNumber = element('span', 'calendar-day-number');
+    if (hasIntimacyLog) {
+      var heartShape = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      heartShape.setAttribute('viewBox', '0 0 24 24');
+      heartShape.setAttribute('aria-hidden', 'true');
+      var heartPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      heartPath.setAttribute('d', 'M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3A6.2 6.2 0 0 1 12 5.09 6.2 6.2 0 0 1 16.5 3C19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z');
+      heartShape.append(heartPath);
+      dayNumber.append(heartShape, element('span', 'calendar-day-value', day.day));
+    } else {
+      dayNumber.append(element('span', 'calendar-day-value', day.day));
+    }
+    date.append(dayNumber);
     if (label) date.append(element('small', 'calendar-day-secondary', label));
     button.append(date);
 
     var marks = element('span', 'cycle-day-marks');
     marks.setAttribute('aria-hidden', 'true');
-    if (day.periodDay) marks.append(element('i', 'is-period'));
-    if (day.log) marks.append(element('i', 'is-log'));
+    if (hasRegularLog) marks.append(element('i', 'is-log'));
     if (marks.childElementCount) button.append(marks);
 
     button.addEventListener('click', function () {
@@ -373,11 +399,6 @@
   var editorCloseTimer = null;
   var editorCloseDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
 
-  function select(form, name, value) {
-    var input = form.querySelector('select[name="' + name + '"]');
-    if (input) input.value = String(value);
-  }
-
   function syncSecondarySymptoms(form) {
     var primary = form.querySelector('[data-primary-symptom]');
     var primaryValue = primary ? Number(primary.value) : 0;
@@ -386,6 +407,24 @@
       if (isPrimary) box.checked = false;
       box.closest('label').hidden = isPrimary;
     });
+  }
+
+  function syncModule(module) {
+    var toggle = module.querySelector('[data-module-toggle]');
+    var body = module.querySelector('[data-module-body]');
+    if (!toggle || !body) return;
+    var open = toggle.checked;
+    body.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    module.classList.toggle('is-open', open);
+    body.querySelectorAll('input, select, textarea').forEach(function (input) {
+      input.disabled = !open;
+    });
+  }
+
+  function syncModules(form) {
+    form.querySelectorAll('[data-log-module]').forEach(syncModule);
+    syncSecondarySymptoms(form);
   }
 
   function openDayEditor(day) {
@@ -403,22 +442,7 @@
       ? '经期第 ' + day.periodDay + ' 天 · ' + day.phaseName
       : day.phaseName + ' · ' + day.phaseHint;
 
-    if (day.log) {
-      select(form, 'flow', day.log.flow);
-      select(form, 'mood', day.log.mood);
-      select(form, 'pain', day.log.pain);
-
-      var symptomBoxes = Array.from(form.querySelectorAll('[data-secondary-symptom]'));
-      var primarySymptom = symptomBoxes.find(function (box) {
-        return (day.log.symptoms & Number(box.value)) !== 0;
-      });
-      form.querySelector('[data-primary-symptom]').value = primarySymptom ? primarySymptom.value : '0';
-      symptomBoxes.forEach(function (box) {
-        box.checked = box !== primarySymptom && (day.log.symptoms & Number(box.value)) !== 0;
-      });
-      form.querySelector('textarea[name="note"]').value = day.log.note;
-    }
-    syncSecondarySymptoms(form);
+    syncModules(form);
 
     editor.hidden = false;
     agendaEdit.setAttribute('aria-expanded', 'true');
@@ -453,6 +477,13 @@
 
   editor.querySelector('[data-primary-symptom]').addEventListener('change', function (event) {
     syncSecondarySymptoms(event.currentTarget.form);
+  });
+
+  editor.querySelectorAll('[data-module-toggle]').forEach(function (toggle) {
+    toggle.addEventListener('change', function (event) {
+      syncModule(event.currentTarget.closest('[data-log-module]'));
+      syncSecondarySymptoms(event.currentTarget.form);
+    });
   });
 
   editor.querySelector('form').addEventListener('submit', function (event) {

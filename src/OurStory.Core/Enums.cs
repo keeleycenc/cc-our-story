@@ -379,6 +379,56 @@ public enum CycleMood {
 }
 
 /// <summary>
+/// 亲密互动中采用的安全措施
+/// </summary>
+public enum CycleIntimacyProtection {
+    /// <summary>
+    /// 没有填写
+    /// </summary>
+    Unset = 0,
+
+    /// <summary>
+    /// 使用安全套
+    /// </summary>
+    Condom = 1,
+
+    /// <summary>
+    /// 使用其它避孕措施
+    /// </summary>
+    Other = 2,
+
+    /// <summary>
+    /// 未采取安全措施
+    /// </summary>
+    None = 3
+}
+
+/// <summary>
+/// 亲密互动的结束方式
+/// </summary>
+public enum CycleIntimacyOutcome {
+    /// <summary>
+    /// 没有填写
+    /// </summary>
+    Unset = 0,
+
+    /// <summary>
+    /// 体外
+    /// </summary>
+    External = 1,
+
+    /// <summary>
+    /// 体内
+    /// </summary>
+    Internal = 2,
+
+    /// <summary>
+    /// 未涉及
+    /// </summary>
+    NotApplicable = 3
+}
+
+/// <summary>
 /// 花信某一天记下的不适。可以同时选中多项，因此按位存放
 /// </summary>
 [Flags]

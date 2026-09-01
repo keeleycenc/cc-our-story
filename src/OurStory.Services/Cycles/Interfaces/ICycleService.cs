@@ -88,37 +88,7 @@ public interface ICycleService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 异步更新指定历史周期记录的日期与备注
-    /// </summary>
-    /// <param name="userId">当前操作用户标识，用于校验写入权限</param>
-    /// <param name="recordId">待更新的周期记录标识</param>
-    /// <param name="startDate">更新后的经期开始日期</param>
-    /// <param name="endDate">更新后的经期结束日期；留空表示这条记录仍在进行</param>
-    /// <param name="note">更新后的周期补充备注</param>
-    /// <param name="cancellationToken">取消操作令牌</param>
-    /// <returns>本次周期记录更新的结构化写入结果</returns>
-    Task<CycleWriteResult> UpdateAsync(
-        int userId,
-        int recordId,
-        DateOnly startDate,
-        DateOnly? endDate,
-        string note,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 异步删除一条周期记录。当天的补充记录不受影响
-    /// </summary>
-    /// <param name="userId">当前操作用户标识，用于校验写入权限</param>
-    /// <param name="recordId">待删除的周期记录标识</param>
-    /// <param name="cancellationToken">取消操作令牌</param>
-    /// <returns>本次删除的结构化写入结果</returns>
-    Task<CycleWriteResult> DeleteAsync(
-        int userId,
-        int recordId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 异步写入或更新某一天的补充记录，并可同时调整经期边界
+    /// 异步为某一天追加一条独立的补充记录
     /// </summary>
     /// <param name="userId">当前操作用户标识，用于校验写入权限</param>
     /// <param name="submission">这一天的提交内容</param>

@@ -48,6 +48,24 @@ public static class CycleLabels {
     ];
 
     /// <summary>
+    /// 页面上按顺序展示的亲密互动安全措施
+    /// </summary>
+    public static readonly IReadOnlyList<CycleIntimacyProtection> AllIntimacyProtections = [
+        CycleIntimacyProtection.Condom,
+        CycleIntimacyProtection.Other,
+        CycleIntimacyProtection.None
+    ];
+
+    /// <summary>
+    /// 页面上按顺序展示的亲密互动结束方式
+    /// </summary>
+    public static readonly IReadOnlyList<CycleIntimacyOutcome> AllIntimacyOutcomes = [
+        CycleIntimacyOutcome.External,
+        CycleIntimacyOutcome.Internal,
+        CycleIntimacyOutcome.NotApplicable
+    ];
+
+    /// <summary>
     /// 取得经量的中文说法
     /// </summary>
     /// <param name="flow">经量</param>
@@ -72,6 +90,26 @@ public static class CycleLabels {
         CycleMood.Irritable => "容易烦躁",
         CycleMood.Tired => "疲惫",
         _ => "未填"
+    };
+
+    /// <summary>
+    /// 取得安全措施的中文说法
+    /// </summary>
+    public static string Name(this CycleIntimacyProtection protection) => protection switch {
+        CycleIntimacyProtection.Condom => "安全套",
+        CycleIntimacyProtection.Other => "其他措施",
+        CycleIntimacyProtection.None => "未采取",
+        _ => "未记录"
+    };
+
+    /// <summary>
+    /// 取得亲密互动结束方式的中文说法
+    /// </summary>
+    public static string Name(this CycleIntimacyOutcome outcome) => outcome switch {
+        CycleIntimacyOutcome.External => "体外",
+        CycleIntimacyOutcome.Internal => "体内",
+        CycleIntimacyOutcome.NotApplicable => "其它",
+        _ => "未记录"
     };
 
     /// <summary>

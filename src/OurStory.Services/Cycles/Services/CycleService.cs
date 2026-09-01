@@ -193,77 +193,6 @@ internal sealed class CycleService(
         }
     }
 
-    public async Task<CycleWriteResult> UpdateAsync(
-        int userId,
-        int recordId,
-        DateOnly startDate,
-        DateOnly? endDate,
-        string note,
-        CancellationToken cancellationToken = default) {
-        var relationshipId = await FindRelationshipAsync(userId, cancellationToken);
-        if (relationshipId is null) {
-            return Forbidden();
-        }
-
-        await using var lease = await writes.EnterAsync(relationshipId.Value, cancellationToken);
-        var record = await db.CycleRecords.SingleOrDefaultAsync(
-            item => item.Id == recordId && item.RelationshipId == relationshipId,
-            cancellationToken);
-        if (record is null) {
-            return NotFound();
-        }
-
-        if (Validate(startDate, endDate, note, options.MaximumNoteLength) is { } invalid) {
-            return invalid;
-        }
-
-        if (endDate is null
-            && await db.CycleRecords.AnyAsync(
-                item => item.RelationshipId == relationshipId && item.EndDate == null && item.Id != recordId,
-                cancellationToken)) {
-            return Conflict("已有另一条正在进行的记录，不能同时保留两条未结束记录。");
-        }
-
-        var others = await db.CycleRecords
-            .Where(item => item.RelationshipId == relationshipId && item.Id != recordId)
-            .Select(item => new CycleFact(item.StartDate, item.EndDate))
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-        if (others.Any(item => Overlaps(startDate, endDate ?? clock.Today, item.StartDate, item.EndDate ?? clock.Today))) {
-            return Conflict("调整后的日期与另一条记录重叠，请检查后重新提交。");
-        }
-
-        record.StartDate = startDate;
-        record.EndDate = endDate;
-        record.Note = Normalize(note, options.MaximumNoteLength);
-        Touch(record, userId);
-        _ = await db.SaveChangesAsync(cancellationToken);
-        return new(CycleWriteStatus.Saved, "记录已更新，双方看到的内容会保持一致。", record.Id);
-    }
-
-    public async Task<CycleWriteResult> DeleteAsync(
-        int userId,
-        int recordId,
-        CancellationToken cancellationToken = default) {
-        var relationshipId = await FindRelationshipAsync(userId, cancellationToken);
-        if (relationshipId is null) {
-            return Forbidden();
-        }
-
-        await using var lease = await writes.EnterAsync(relationshipId.Value, cancellationToken);
-        var record = await db.CycleRecords.SingleOrDefaultAsync(
-            item => item.Id == recordId && item.RelationshipId == relationshipId,
-            cancellationToken);
-        if (record is null) {
-            return NotFound();
-        }
-
-        _ = db.CycleRecords.Remove(record);
-        _ = await db.SaveChangesAsync(cancellationToken);
-
-        return new(CycleWriteStatus.Saved, "记录已删除；对应日期的身体状况仍会为双方保留。", null);
-    }
-
     public async Task<CycleWriteResult> SaveDayAsync(
         int userId,
         CycleDaySubmission submission,
@@ -284,49 +213,48 @@ internal sealed class CycleService(
         }
 
         await using var lease = await writes.EnterAsync(relationshipId.Value, cancellationToken);
-        var log = await db.CycleDailyLogs.SingleOrDefaultAsync(
-            item => item.RelationshipId == relationshipId && item.Date == submission.Date,
-            cancellationToken);
         var now = SiteClock.UtcNow;
+        var protection = submission.IsIntimate && Enum.IsDefined(submission.IntimacyProtection)
+            ? submission.IntimacyProtection
+            : CycleIntimacyProtection.Unset;
+        var outcome = submission.IsIntimate && Enum.IsDefined(submission.IntimacyOutcome)
+            ? submission.IntimacyOutcome
+            : CycleIntimacyOutcome.Unset;
         var empty = submission.Flow == CycleFlow.Unset
             && submission.Mood == CycleMood.Unset
             && submission.Pain <= 0
             && submission.Symptoms == CycleSymptom.None
+            && !submission.IsIntimate
             && note.Length == 0;
 
-        if (log is null && !empty) {
-            _ = db.CycleDailyLogs.Add(new CycleDailyLog {
-                RelationshipId = relationshipId.Value,
-                Date = submission.Date,
-                Flow = submission.Flow,
-                Mood = submission.Mood,
-                Pain = Math.Clamp(submission.Pain, 0, 3),
-                Symptoms = submission.Symptoms,
-                Note = note,
-                CreatedByUserId = userId,
-                UpdatedByUserId = userId,
-                CreatedAt = now,
-                UpdatedAt = now
-            });
-        } else if (log is not null && empty) {
-            _ = db.CycleDailyLogs.Remove(log);
-        } else if (log is not null) {
-            log.Flow = submission.Flow;
-            log.Mood = submission.Mood;
-            log.Pain = Math.Clamp(submission.Pain, 0, 3);
-            log.Symptoms = submission.Symptoms;
-            log.Note = note;
-            log.UpdatedByUserId = userId;
-            log.UpdatedAt = now;
+        if (empty) {
+            return Invalid("至少填写一项状态");
         }
+
+        _ = db.CycleDailyLogs.Add(new CycleDailyLog {
+            RelationshipId = relationshipId.Value,
+            Date = submission.Date,
+            Flow = submission.Flow,
+            Mood = submission.Mood,
+            Pain = Math.Clamp(submission.Pain, 0, 3),
+            Symptoms = submission.Symptoms,
+            IsIntimate = submission.IsIntimate,
+            IntimacyProtection = protection,
+            IntimacyOutcome = outcome,
+            Note = note,
+            CreatedByUserId = userId,
+            UpdatedByUserId = userId,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
 
         try {
             _ = await db.SaveChangesAsync(cancellationToken);
         } catch (DbUpdateException) {
-            return Conflict("另一方刚刚更新了这一天，请刷新页面后查看最新内容。");
+            return Conflict("这条补充暂时没有保存成功，请刷新后重试。");
         }
 
-        return new CycleWriteResult(CycleWriteStatus.Saved, $"{submission.Date:M 月 d 日}的状态已记下，双方都可以继续补充。");
+        return new CycleWriteResult(CycleWriteStatus.Saved, $"{submission.Date:M 月 d 日}新增了一条补充记录。");
     }
 
     public async Task<CycleNarrativeContext?> LatestNarrativeAsync(
@@ -434,11 +362,12 @@ internal sealed class CycleService(
         CancellationToken cancellationToken) {
         var logs = await db.CycleDailyLogs
             .Where(item => item.RelationshipId == relationshipId && item.Date >= span.From && item.Date <= span.To)
+            .Include(item => item.CreatedByUser)
             .Include(item => item.UpdatedByUser)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
         var site = await settings.GetAsync(cancellationToken);
-        return new CycleProjection(analysis, options, site, clock.Today, records, logs);
+        return new CycleProjection(analysis, options, site, clock, records, logs);
     }
 
     private Task<List<CycleRecord>> RecordsAsync(int relationshipId, CancellationToken cancellationToken) =>
@@ -547,9 +476,6 @@ internal sealed class CycleService(
     }
 
     private static CycleWriteResult Forbidden() => new(CycleWriteStatus.Forbidden, "此操作仅对当前情侣关系中的双方开放。");
-
-    private static CycleWriteResult NotFound() =>
-        new(CycleWriteStatus.NotFound, "未找到该记录，或该记录不属于当前情侣关系。");
 
     private static CycleWriteResult Conflict(string message) => new(CycleWriteStatus.Conflict, message);
 

@@ -4,6 +4,7 @@
 using OurStory.Core;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
+using OurStory.Core.Time;
 using System.Globalization;
 
 namespace OurStory.Services.Cycles;
@@ -21,6 +22,7 @@ internal sealed class CycleProjection {
     private readonly CycleAnalysisOptions _options;
     private readonly SiteSettings _site;
     private readonly DateOnly _today;
+    private readonly SiteClock _clock;
     private readonly CycleRecord[] _records;
     private readonly CycleDailyLog[] _logs;
     private readonly CycleFact[] _facts;
@@ -43,17 +45,18 @@ internal sealed class CycleProjection {
         ICycleAnalysisService analysis,
         CycleAnalysisOptions options,
         SiteSettings site,
-        DateOnly today,
+        SiteClock clock,
         IEnumerable<CycleRecord> records,
         IEnumerable<CycleDailyLog> logs) {
         _analysis = analysis;
         _options = options;
         _site = site;
-        _today = today;
+        _clock = clock;
+        _today = clock.Today;
         _records = [.. records.OrderBy(item => item.StartDate).ThenBy(item => item.Id)];
-        _logs = [.. logs.OrderBy(item => item.Date)];
+        _logs = [.. logs.OrderBy(item => item.Date).ThenBy(item => item.CreatedAt).ThenBy(item => item.Id)];
         _facts = [.. _records.Select(item => new CycleFact(item.StartDate, item.EndDate))];
-        Statistics = analysis.Analyze(_facts, today);
+        Statistics = analysis.Analyze(_facts, _today);
     }
 
     /// <summary>
@@ -227,7 +230,7 @@ internal sealed class CycleProjection {
                 record?.EndDate == date,
                 expectedStart == date,
                 record is null ? null : items[record.Id],
-                Log(date));
+                Logs(date));
         }
 
         var minimumYear = Math.Max(1900, _records.Select(item => item.StartDate.Year).DefaultIfEmpty(_today.Year).Min());
@@ -249,7 +252,7 @@ internal sealed class CycleProjection {
 
     private static string Detail(CycleRecord covering, bool isActive, DateOnly? expectedEnd) {
         if (!isActive) {
-            return $"记录始于 {Short(covering.StartDate)}，结束于 {Short(covering.EndDate!.Value)}；如需调整，双方可以随时更新结束日期";
+            return $"记录始于 {Short(covering.StartDate)}，结束于 {Short(covering.EndDate!.Value)}，已保留在双方的历史时间轴中";
         }
 
         return expectedEnd is { } end
@@ -294,19 +297,19 @@ internal sealed class CycleProjection {
         return [.. _logs.Where(item => item.Date >= record.StartDate && item.Date <= end)];
     }
 
-    private CycleDayLog? Log(DateOnly date) {
-        var log = Array.Find(_logs, item => item.Date == date);
-        return log is null
-            ? null
-            : new CycleDayLog(
-                log.Flow,
-                log.Mood,
-                log.Pain,
-                log.Symptoms,
-                log.Note,
-                Name(log.UpdatedByUser),
-                log.UpdatedAt);
-    }
+    private CycleDayLog[] Logs(DateOnly date) => [.. _logs
+        .Where(item => item.Date == date)
+        .Select(item => new CycleDayLog(
+            item.Flow,
+            item.Mood,
+            item.Pain,
+            item.Symptoms,
+            item.Note,
+            item.IsIntimate,
+            item.IntimacyProtection,
+            item.IntimacyOutcome,
+            Name(item.CreatedByUser),
+            _clock.ToLocal(item.CreatedAt)))];
 
     private CycleNarrativeContext Context(
         CycleRecord record,
@@ -339,13 +342,20 @@ internal sealed class CycleProjection {
                 DayFacts(item)))]);
     }
 
-    private CycleDayFact[] DayFacts(CycleRecord record) => [.. LogsIn(record).Select(item => new CycleDayFact(
-        item.Date,
-        item.Flow,
-        item.Mood,
-        item.Pain,
-        item.Symptoms,
-        item.Note))];
+    private CycleDayFact[] DayFacts(CycleRecord record) => [.. LogsIn(record)
+        .GroupBy(item => item.Date)
+        .OrderBy(group => group.Key)
+        .Select(group => {
+            var entries = group.OrderBy(item => item.CreatedAt).ThenBy(item => item.Id).ToArray();
+            var mood = entries.LastOrDefault(item => item.Mood != CycleMood.Unset)?.Mood ?? CycleMood.Unset;
+            return new CycleDayFact(
+                group.Key,
+                entries.Select(item => item.Flow).DefaultIfEmpty(CycleFlow.Unset).Max(),
+                mood,
+                entries.Max(item => item.Pain),
+                entries.Aggregate(CycleSymptom.None, (all, item) => all | item.Symptoms),
+                string.Join("；", entries.Select(item => item.Note).Where(note => note.Length > 0)));
+        })];
 
     private static CycleSummaryText Summary(CycleRecord record, CycleNarrativeContext context) =>
         record.Summary.Length > 0 && record.SummaryStamp == CycleNarrative.Stamp(context)

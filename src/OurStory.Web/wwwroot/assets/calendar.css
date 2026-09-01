@@ -101,7 +101,7 @@
 .calendar-agenda.is-today > header > span:before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor }
 .calendar-agenda h3 { margin: 8px 0 0; color: var(--cal-ink); font: 400 24px var(--serif); letter-spacing: -.02em }
 .calendar-agenda > header > small { display: block; margin-top: 8px; color: var(--cal-faint); font-size: 11px }
-.calendar-agenda > div { min-height: 0; flex: 1; padding: 14px; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 9px; scrollbar-color: var(--cal-line-strong) transparent; scrollbar-gutter: stable; scrollbar-width: thin }
+.calendar-agenda > div { min-height: 0; flex: 1; padding: 14px; overflow-y: auto; overscroll-behavior-y: auto; display: grid; align-content: start; gap: 9px; scrollbar-color: var(--cal-line-strong) transparent; scrollbar-width: thin }
 .calendar-agenda > div::-webkit-scrollbar { width: 6px }
 .calendar-agenda > div::-webkit-scrollbar-track { background: transparent }
 .calendar-agenda > div::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--cal-line-strong) }

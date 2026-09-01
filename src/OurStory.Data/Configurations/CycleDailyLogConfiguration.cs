@@ -18,8 +18,8 @@ public sealed class CycleDailyLogConfiguration : IEntityTypeConfiguration<CycleD
         _ = builder.Property(item => item.Note).HasMaxLength(300).IsRequired();
         _ = builder.Ignore(item => item.IsEmpty);
 
-        // 同一情侣关系在同一天仅保留一条补充记录
-        _ = builder.HasIndex(item => new { item.RelationshipId, item.Date }).IsUnique();
+        // 同一天允许双方按次追加，索引只负责月份与日期查询。
+        _ = builder.HasIndex(item => new { item.RelationshipId, item.Date });
 
         _ = builder.HasOne(item => item.Relationship)
             .WithMany(item => item.CycleDailyLogs)

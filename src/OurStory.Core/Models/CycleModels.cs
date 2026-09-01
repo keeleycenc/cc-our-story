@@ -102,16 +102,22 @@ public sealed record CycleSummaryText(string Text, CycleSummarySource Source, Da
 /// <param name="Pain">当天不适程度，0 到 3</param>
 /// <param name="Symptoms">当天记下的不适</param>
 /// <param name="Note">当天的补充说明</param>
-/// <param name="UpdatedByName">最后修改者的显示名称</param>
-/// <param name="UpdatedAt">最后修改时间</param>
+/// <param name="IsIntimate">是否记录了亲密互动</param>
+/// <param name="IntimacyProtection">采用的安全措施</param>
+/// <param name="IntimacyOutcome">亲密互动的结束方式</param>
+/// <param name="CreatedByName">记录者的显示名称</param>
+/// <param name="CreatedAt">站点时区下的记录时间</param>
 public sealed record CycleDayLog(
     CycleFlow Flow,
     CycleMood Mood,
     int Pain,
     CycleSymptom Symptoms,
     string Note,
-    string UpdatedByName,
-    DateTimeOffset UpdatedAt);
+    bool IsIntimate,
+    CycleIntimacyProtection IntimacyProtection,
+    CycleIntimacyOutcome IntimacyOutcome,
+    string CreatedByName,
+    DateTime CreatedAt);
 
 /// <summary>
 /// 一条周期记录在页面上的完整展示内容，历史时间轴与月历共用
@@ -126,7 +132,7 @@ public sealed record CycleDayLog(
 /// <param name="Tags">页面上直接渲染的标签</param>
 /// <param name="Note">周期补充备注</param>
 /// <param name="Summary">本次周期的小结</param>
-/// <param name="LogCount">本次经期内填写过补充记录的天数</param>
+/// <param name="LogCount">本次经期内追加的补充记录条数</param>
 /// <param name="PeakFlow">本次经期内记录到的最大经量</param>
 /// <param name="Symptoms">本次经期内记录过的全部不适</param>
 /// <param name="IsActive">是否为正在进行中的记录</param>
@@ -168,7 +174,7 @@ public sealed record CycleRecordItem(
 /// <param name="IsPeriodEnd">是否为某条记录的结束日</param>
 /// <param name="IsExpectedStart">是否为预测的下次经期开始日期</param>
 /// <param name="Record">覆盖当天的周期记录；没有时为 <see langword="null"/></param>
-/// <param name="Log">当天的补充记录；没有时为 <see langword="null"/></param>
+/// <param name="Logs">当天按记录时间排列的补充记录</param>
 public sealed record CycleCalendarDay(
     DateOnly Date,
     bool IsInMonth,
@@ -181,7 +187,7 @@ public sealed record CycleCalendarDay(
     bool IsPeriodEnd,
     bool IsExpectedStart,
     CycleRecordItem? Record,
-    CycleDayLog? Log);
+    IReadOnlyList<CycleDayLog> Logs);
 
 /// <summary>
 /// 单月周期日历数据
@@ -289,12 +295,7 @@ public enum CycleWriteStatus {
     /// <summary>
     /// 当前用户无权执行该写入操作
     /// </summary>
-    Forbidden,
-
-    /// <summary>
-    /// 目标记录不存在
-    /// </summary>
-    NotFound
+    Forbidden
 }
 
 /// <summary>
@@ -337,13 +338,19 @@ public sealed record CycleRecordSubmission(
 /// <param name="Pain">当天不适程度，0 到 3</param>
 /// <param name="Symptoms">当天记下的不适</param>
 /// <param name="Note">当天的补充说明</param>
+/// <param name="IsIntimate">是否记录了亲密互动</param>
+/// <param name="IntimacyProtection">采用的安全措施</param>
+/// <param name="IntimacyOutcome">亲密互动的结束方式</param>
 public sealed record CycleDaySubmission(
     DateOnly Date,
     CycleFlow Flow,
     CycleMood Mood,
     int Pain,
     CycleSymptom Symptoms,
-    string Note);
+    string Note,
+    bool IsIntimate = false,
+    CycleIntimacyProtection IntimacyProtection = CycleIntimacyProtection.Unset,
+    CycleIntimacyOutcome IntimacyOutcome = CycleIntimacyOutcome.Unset);
 
 /// <summary>
 /// 周期规则分析参数，独立建模以支持后续配置或其它分析实现

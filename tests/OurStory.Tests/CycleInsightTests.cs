@@ -217,7 +217,9 @@ public sealed class CycleInsightTests {
             .OrderBy(item => item.StartDate)
             .Skip(1)
             .FirstAsync();
-        _ = await service.UpdateAsync(boyId, second.Id, first.AddDays(16), first.AddDays(20), string.Empty);
+        second.StartDate = first.AddDays(16);
+        second.EndDate = first.AddDays(20);
+        _ = await harness.Db.SaveChangesAsync();
 
         // 最新周期自身未被改动，但既往平均周期由 28 天变为 29 天，小结应随之失效。
         var history = (await service.GetDashboardAsync(boyId, 1, 20, today.Year, today.Month)).History.Items;
@@ -254,11 +256,16 @@ public sealed class CycleInsightTests {
         Assert.True(summarized.Summary.FromModel);
         Assert.Equal("模型写的那一段", summarized.Summary.Text);
 
-        // 事实变化后，已保存的小结失效，页面立即回退到规则文案。
-        _ = await service.UpdateAsync(boyId, created.RecordId!.Value, start, start.AddDays(4), "改过的备注");
+        // 追加当天事实后，已保存的小结失效，页面立即回退到规则文案。
+        _ = await service.SaveDayAsync(boyId, new CycleDaySubmission(
+            start,
+            CycleFlow.Medium,
+            CycleMood.Calm,
+            0,
+            CycleSymptom.None,
+            "改过的备注"));
         var stale = (await service.GetDashboardAsync(boyId, 1, 10, today.Year, today.Month)).History.Items[0];
         Assert.False(stale.Summary.FromModel);
-        Assert.Contains("改过的备注", stale.Summary.Text, StringComparison.Ordinal);
 
         // 后续巡检重新生成模型小结。
         Assert.Equal(1, await service.RefreshSummariesAsync(5));

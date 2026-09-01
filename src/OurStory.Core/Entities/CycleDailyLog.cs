@@ -7,7 +7,7 @@ namespace OurStory.Core.Entities;
 /// 表示某一天补充的身体状况，与经期记录保持独立
 /// </summary>
 /// <remarks>
-/// 同一情侣关系在同一天仅保留一条记录，双方均可修改。
+/// 同一天可以追加多条记录，每次提交都独立保留记录人与时间。
 /// 周期日期发生变化时，每日补充记录不会随之删除。
 /// </remarks>
 public sealed class CycleDailyLog {
@@ -47,6 +47,21 @@ public sealed class CycleDailyLog {
     public CycleSymptom Symptoms { get; set; }
 
     /// <summary>
+    /// 获取或设置这次是否记录了亲密互动
+    /// </summary>
+    public bool IsIntimate { get; set; }
+
+    /// <summary>
+    /// 获取或设置亲密互动采用的安全措施
+    /// </summary>
+    public CycleIntimacyProtection IntimacyProtection { get; set; }
+
+    /// <summary>
+    /// 获取或设置亲密互动的结束方式
+    /// </summary>
+    public CycleIntimacyOutcome IntimacyOutcome { get; set; }
+
+    /// <summary>
     /// 获取或设置当天的补充说明
     /// </summary>
     public string Note { get; set; } = string.Empty;
@@ -79,6 +94,7 @@ public sealed class CycleDailyLog {
         && Mood == CycleMood.Unset
         && Pain <= 0
         && Symptoms == CycleSymptom.None
+        && !IsIntimate
         && Note.Length == 0;
 
     /// <summary>

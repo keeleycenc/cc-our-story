@@ -73,7 +73,7 @@ public sealed record CycleCalendarPayload(
 /// <param name="PeriodEnd">是否为某条记录的结束日</param>
 /// <param name="ExpectedStart">是否为预测的下次经期开始日期</param>
 /// <param name="Record">覆盖当天的周期记录</param>
-/// <param name="Log">当天的补充记录</param>
+/// <param name="Logs">当天按记录时间排列的补充记录</param>
 public sealed record CycleDayPayload(
     string Date,
     int Day,
@@ -89,7 +89,7 @@ public sealed record CycleDayPayload(
     bool PeriodEnd,
     bool ExpectedStart,
     CycleRecordPayload? Record,
-    CycleLogPayload? Log) {
+    IReadOnlyList<CycleLogPayload> Logs) {
     /// <summary>
     /// 将单日数据转换为前端传输模型
     /// </summary>
@@ -113,7 +113,7 @@ public sealed record CycleDayPayload(
             day.IsPeriodEnd,
             day.IsExpectedStart,
             day.Record is null ? null : CycleRecordPayload.From(day.Record),
-            day.Log is null ? null : CycleLogPayload.From(day.Log));
+            [.. day.Logs.Select(CycleLogPayload.From)]);
     }
 
     private static string Slug(CyclePhase phase) => phase switch {
@@ -208,7 +208,12 @@ public sealed record CycleTagPayload(string Text, string Tone) {
 /// <param name="Symptoms">按位存放的不适集合</param>
 /// <param name="SymptomNames">逐项列出的不适</param>
 /// <param name="Note">当天的补充说明</param>
-/// <param name="UpdatedBy">最后修改者</param>
+/// <param name="IsIntimate">是否记录了亲密互动</param>
+/// <param name="ProtectionName">安全措施的显示文字</param>
+/// <param name="OutcomeName">结束方式的显示文字</param>
+/// <param name="RecordedBy">记录者</param>
+/// <param name="RecordedAt">记录时间，供 time 元素使用</param>
+/// <param name="RecordedAtText">记录时间的简短显示文字</param>
 public sealed record CycleLogPayload(
     int Flow,
     string FlowName,
@@ -219,7 +224,12 @@ public sealed record CycleLogPayload(
     int Symptoms,
     IReadOnlyList<string> SymptomNames,
     string Note,
-    string UpdatedBy) {
+    bool IsIntimate,
+    string ProtectionName,
+    string OutcomeName,
+    string RecordedBy,
+    string RecordedAt,
+    string RecordedAtText) {
     /// <summary>
     /// 将每日补充记录转换为前端传输模型
     /// </summary>
@@ -238,6 +248,11 @@ public sealed record CycleLogPayload(
             (int)log.Symptoms,
             [.. log.Symptoms.Split().Select(CycleLabels.Name)],
             log.Note,
-            log.UpdatedByName);
+            log.IsIntimate,
+            log.IntimacyProtection.Name(),
+            log.IntimacyOutcome.Name(),
+            log.CreatedByName,
+            log.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture),
+            log.CreatedAt.ToString("MM-dd HH:mm", CultureInfo.InvariantCulture));
     }
 }

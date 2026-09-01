@@ -184,36 +184,6 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
     }
 
     /// <summary>
-    /// 更新一条已有记录
-    /// </summary>
-    /// <param name="recordId">记录标识</param>
-    /// <param name="startDate">开始日期</param>
-    /// <param name="endDate">结束日期；留空表示这条仍在进行</param>
-    /// <param name="note">备注</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>页面响应</returns>
-    public async Task<IActionResult> OnPostUpdateAsync(
-        int recordId,
-        DateOnly startDate,
-        DateOnly? endDate,
-        string? note,
-        CancellationToken cancellationToken) =>
-        IsCoupleAccount(out var userId)
-            ? RedirectWith(await cycles.UpdateAsync(userId, recordId, startDate, endDate, note ?? string.Empty, cancellationToken))
-            : Forbid();
-
-    /// <summary>
-    /// 删除一条记录
-    /// </summary>
-    /// <param name="recordId">记录标识</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>页面响应</returns>
-    public async Task<IActionResult> OnPostDeleteAsync(int recordId, CancellationToken cancellationToken) =>
-        IsCoupleAccount(out var userId)
-            ? RedirectWith(await cycles.DeleteAsync(userId, recordId, cancellationToken))
-            : Forbid();
-
-    /// <summary>
     /// 补充某一天的身体状态
     /// </summary>
     /// <param name="date">记录日期</param>
@@ -221,6 +191,9 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
     /// <param name="mood">心情</param>
     /// <param name="pain">不适程度</param>
     /// <param name="symptoms">勾选的不适</param>
+    /// <param name="isIntimate">是否记录亲密互动</param>
+    /// <param name="intimacyProtection">采用的安全措施</param>
+    /// <param name="intimacyOutcome">亲密互动的结束方式</param>
     /// <param name="note">补充说明</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>页面响应</returns>
@@ -230,6 +203,9 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
         CycleMood mood,
         int pain,
         int[]? symptoms,
+        bool isIntimate,
+        CycleIntimacyProtection intimacyProtection,
+        CycleIntimacyOutcome intimacyOutcome,
         string? note,
         CancellationToken cancellationToken) {
         if (!IsCoupleAccount(out var userId)) {
@@ -242,7 +218,10 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
             mood,
             pain,
             (symptoms ?? []).Aggregate(CycleSymptom.None, (all, value) => all | (CycleSymptom)value),
-            note ?? string.Empty);
+            note ?? string.Empty,
+            isIntimate,
+            intimacyProtection,
+            intimacyOutcome);
 
         return RedirectWith(await cycles.SaveDayAsync(userId, submission, cancellationToken), date.Year, date.Month);
     }

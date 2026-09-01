@@ -45,16 +45,6 @@ public sealed class CycleServiceTests {
         Assert.Equal(10, dashboard.History.Items.Count);
         Assert.Contains(dashboard.Calendar.Days, day => day.Phase == CyclePhase.Period);
 
-        var latest = dashboard.History.Items[1];
-        Assert.Equal(CycleWriteStatus.Saved, (await service.UpdateAsync(
-            boyId,
-            latest.Id,
-            latest.StartDate,
-            latest.StartDate.AddDays(11),
-            "修改后动态重算")).Status);
-        var refreshed = await service.GetDashboardAsync(boyId, 1, 10, today.Year, today.Month);
-        Assert.Equal(6, refreshed.Statistics.AveragePeriodDays);
-        Assert.Equal("修改后动态重算", refreshed.History.Items[1].Note);
     }
 
     [Fact]
@@ -137,7 +127,7 @@ public sealed class CycleServiceTests {
     }
 
     [Fact]
-    public async Task 每日补充支持新增更新清空并汇总到周期记录() {
+    public async Task 每日补充按次追加并汇总到周期记录() {
         await using var harness = SqliteHarness.Create();
         var (boyId, girlId) = await harness.SeedCoupleAsync();
         var service = Service(harness.Db);
@@ -154,27 +144,39 @@ public sealed class CycleServiceTests {
             CycleSymptom.Cramps | CycleSymptom.Backache,
             "喝了红糖水"))).Status);
         Assert.Equal(CycleWriteStatus.Saved, (await service.SaveDayAsync(boyId, new CycleDaySubmission(
-            start.AddDays(1),
+            start,
             CycleFlow.Light,
             CycleMood.Calm,
             0,
             CycleSymptom.None,
-            string.Empty))).Status);
+            string.Empty,
+            true,
+            CycleIntimacyProtection.Condom,
+            CycleIntimacyOutcome.Internal))).Status);
 
         var item = (await service.GetDashboardAsync(boyId, 1, 10, today.Year, today.Month)).History.Items[0];
         Assert.Equal(2, item.LogCount);
         Assert.Equal(CycleFlow.Heavy, item.PeakFlow);
         Assert.Equal(CycleSymptom.Cramps | CycleSymptom.Backache, item.Symptoms);
 
-        // 所有字段为空时删除该日记录，数据库中不保留空记录。
-        _ = await service.SaveDayAsync(girlId, new CycleDaySubmission(
+        var calendar = await service.GetCalendarAsync(boyId, start.Year, start.Month);
+        var day = Assert.Single(calendar.Days, value => value.Date == start);
+        Assert.Equal(2, day.Logs.Count);
+        Assert.Equal("喝了红糖水", day.Logs[0].Note);
+        Assert.True(day.Logs[1].IsIntimate);
+        Assert.Equal(CycleIntimacyProtection.Condom, day.Logs[1].IntimacyProtection);
+        Assert.Equal(CycleIntimacyOutcome.Internal, day.Logs[1].IntimacyOutcome);
+
+        // 空提交不会生成没有内容的卡片，也不会删除已有记录。
+        var empty = await service.SaveDayAsync(girlId, new CycleDaySubmission(
             start,
             CycleFlow.Unset,
             CycleMood.Unset,
             0,
             CycleSymptom.None,
             string.Empty));
-        Assert.Equal(1, await harness.Db.CycleDailyLogs.CountAsync());
+        Assert.Equal(CycleWriteStatus.Invalid, empty.Status);
+        Assert.Equal(2, await harness.Db.CycleDailyLogs.CountAsync());
     }
 
     [Fact]
@@ -201,27 +203,6 @@ public sealed class CycleServiceTests {
         Assert.Equal(before.StartDate, after.StartDate);
         Assert.Equal(before.EndDate, after.EndDate);
         Assert.Equal(2, await harness.Db.CycleDailyLogs.CountAsync());
-    }
-
-    [Fact]
-    public async Task 删除周期记录不会删除对应日期的补充记录() {
-        await using var harness = SqliteHarness.Create();
-        var (boyId, _) = await harness.SeedCoupleAsync();
-        var service = Service(harness.Db);
-        var today = TestDoubles.Clock().Today;
-        var start = today.AddDays(-8);
-        var created = await service.CreateAsync(boyId, Submission(start, start.AddDays(4)));
-        _ = await service.SaveDayAsync(boyId, new CycleDaySubmission(
-            start,
-            CycleFlow.Medium,
-            CycleMood.Low,
-            1,
-            CycleSymptom.Headache,
-            "有点头痛"));
-
-        Assert.Equal(CycleWriteStatus.Saved, (await service.DeleteAsync(boyId, created.RecordId!.Value)).Status);
-        Assert.Equal(0, await harness.Db.CycleRecords.CountAsync());
-        Assert.Equal(1, await harness.Db.CycleDailyLogs.CountAsync());
     }
 
     [Fact]
@@ -266,7 +247,7 @@ public sealed class CycleServiceTests {
     }
 
     [Fact]
-    public async Task 查询和编辑始终限制在服务端解析出的情侣关系内() {
+    public async Task 查询始终限制在服务端解析出的情侣关系内() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
         var otherRelationship = new CoupleRelationship();
@@ -280,14 +261,10 @@ public sealed class CycleServiceTests {
         _ = await harness.Db.SaveChangesAsync();
         var service = Service(harness.Db);
         var start = TestDoubles.Clock().Today.AddDays(-10);
-        var created = await service.CreateAsync(boyId, Submission(start, start.AddDays(4)));
+        _ = await service.CreateAsync(boyId, Submission(start, start.AddDays(4)));
 
         var outsiderDashboard = await service.GetDashboardAsync(outsider.Id, 1, 10, start.Year, start.Month);
         Assert.Equal(0, outsiderDashboard.Statistics.TotalRecords);
-        var update = await service.UpdateAsync(outsider.Id, created.RecordId!.Value, start, start.AddDays(5), "越权修改");
-        Assert.Equal(CycleWriteStatus.NotFound, update.Status);
-        Assert.Equal(CycleWriteStatus.NotFound, (await service.DeleteAsync(outsider.Id, created.RecordId!.Value)).Status);
-        Assert.DoesNotContain("越权修改", await harness.Db.CycleRecords.Select(item => item.Note).ToListAsync());
     }
 
     [Fact]
@@ -304,25 +281,6 @@ public sealed class CycleServiceTests {
         Assert.Equal(CycleWriteStatus.Saved, (await service.EndAsync(girlId)).Status);
         Assert.Equal(CycleWriteStatus.Conflict, (await service.EndAsync(boyId)).Status);
         Assert.Equal(0, await harness.Db.CycleRecords.CountAsync(item => item.EndDate == null));
-    }
-
-    [Fact]
-    public async Task 改动日期不能与另一条记录重叠() {
-        await using var harness = SqliteHarness.Create();
-        var (boyId, _) = await harness.SeedCoupleAsync();
-        var service = Service(harness.Db);
-        var today = TestDoubles.Clock().Today;
-        var first = today.AddDays(-40);
-        _ = await service.CreateAsync(boyId, Submission(first, first.AddDays(4)));
-        var second = await service.CreateAsync(boyId, Submission(first.AddDays(28), first.AddDays(32)));
-
-        var clash = await service.UpdateAsync(
-            boyId,
-            second.RecordId!.Value,
-            first.AddDays(2),
-            first.AddDays(6),
-            string.Empty);
-        Assert.Equal(CycleWriteStatus.Conflict, clash.Status);
     }
 
     #region 私有方法
