@@ -32,7 +32,7 @@
 		<XunitVersion>2.9.3</XunitVersion>
 
 		<!-- 固定 3.1.x：4.x 起直接引用 ImageSharp 需要在构建时提供 Six Labors License Key。 -->
-		<ImageSharpVersion>3.1.12</ImageSharpVersion>
+		<ImageSharpVersion>4.1.1</ImageSharpVersion>
 	</PropertyGroup>
 
 </Project>
