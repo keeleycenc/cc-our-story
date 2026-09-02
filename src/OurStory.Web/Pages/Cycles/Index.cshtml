@@ -224,7 +224,11 @@
                         </span>
                         <button type="button" data-calendar-next aria-label="下一个月">@Icon("chevron-right")</button>
                     </div>
-                    <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
+                    <div class="cycle-calendar-actions">
+                        <button class="calendar-today" type="button" data-calendar-today>回到今天</button>
+                        <button class="cycle-calendar-help" type="button" data-cycle-open="phase-help"
+                                aria-haspopup="dialog" aria-controls="cycle-phase-help">@Icon("book-heart")周期说明</button>
+                    </div>
                 </div>
             </header>
             <div class="calendar-body">
@@ -240,7 +244,7 @@
                             <span><i class="phase-follicular"></i>卵泡期</span>
                             <span><i class="phase-fertile"></i>易孕期</span>
                             <span><i class="phase-ovulation"></i>排卵日</span>
-                            <span><i class="phase-luteal"></i>黄体期</span>                            
+                            <span><i class="phase-luteal"></i>黄体期</span>
                             <span><i class="phase-observation"></i>观察期</span>
                         </div>
                         <div class="cycle-calendar-legend-group is-records">
@@ -524,6 +528,107 @@
                 </ol>
                 <partial name="_Pagination" model="Model.HistoryPagination" />
             }
+        </section>
+    </div>
+
+    <div class="cycle-dialog" id="cycle-phase-help" data-cycle-dialog="phase-help" aria-hidden="true">
+        <button class="cycle-dialog-mask" type="button" data-cycle-close aria-label="关闭"></button>
+        <section class="cycle-dialog-card is-wide cycle-help-dialog" role="dialog" aria-modal="true" aria-labelledby="cycle-phase-help-title">
+            <button class="cycle-dialog-close" type="button" data-cycle-close aria-label="关闭">@Icon("x")</button>
+            <span class="cycle-dialog-icon">@Icon("book-heart")</span>
+            <p>CYCLE GUIDE</p>
+            <h2 id="cycle-phase-help-title">名词说明</h2>
+
+            <label class="cycle-help-picker">
+                <span class="cycle-help-select">
+                    <select data-cycle-help-select data-dialog-autofocus aria-label="选择要了解的日历名词">
+                        <optgroup label="周期阶段">
+                            <option value="period">经期</option>
+                            <option value="follicular">卵泡期</option>
+                            <option value="fertile">易孕期</option>
+                            <option value="ovulation">排卵日</option>
+                            <option value="luteal">黄体期</option>
+                            <option value="observation">观察期</option>
+                        </optgroup>
+                        <optgroup label="日历标记">
+                            <option value="predicted">预测窗口</option>
+                            <option value="period-log">经期记录</option>
+                            <option value="daily-log">日常记录</option>
+                            <option value="joint">共同记录</option>
+                            <option value="intimacy">亲密记录</option>
+                        </optgroup>
+                    </select>
+                    @Icon("chevron-down")
+                </span>
+            </label>
+
+            <div class="cycle-help-content" aria-live="polite">
+                <article data-cycle-help-panel="period">
+                    <header><i class="phase-period"></i><div><small>周期阶段</small><h3>经期</h3></div></header>
+                    <p>经期是月经来潮持续的这段时间，通常从出现经血的第一天开始，到本次月经结束为止。</p>
+                    <span>月经开始的第一天，也就是一个新周期的第 1 天。</span>
+                </article>
+
+                <article data-cycle-help-panel="follicular" hidden>
+                    <header><i class="phase-follicular"></i><div><small>周期阶段</small><h3>卵泡期</h3></div></header>
+                    <p>卵泡期从月经开始持续到排卵前，卵巢中的卵泡会逐渐发育，其中一个通常会成为优势卵泡并准备排卵。</p>
+                    <span>这个阶段的长短变化较大，也是周期长度变化的主要来源之一。</span>
+                </article>
+
+                <article data-cycle-help-panel="fertile" hidden>
+                    <header><i class="phase-fertile"></i><div><small>周期阶段</small><h3>易孕期</h3></div></header>
+                    <p>易孕期是排卵日前后较容易受孕的一段时间，因为精子可以在体内存活数天，而卵子排出后也有一定受精时间。</p>
+                    <span>日历通常会围绕预计排卵日标出这一时间范围。</span>
+                </article>
+
+                <article data-cycle-help-panel="ovulation" hidden>
+                    <header><i class="phase-ovulation"></i><div><small>周期阶段</small><h3>排卵日</h3></div></header>
+                    <p>排卵日是成熟卵子从卵巢释放的日期，通常发生在一次月经周期的中后段。</p>
+                    <span>排卵时间并不固定，会随着周期长短和身体状态发生变化。</span>
+                </article>
+
+                <article data-cycle-help-panel="luteal" hidden>
+                    <header><i class="phase-luteal"></i><div><small>周期阶段</small><h3>黄体期</h3></div></header>
+                    <p>黄体期是排卵之后到下一次月经开始前的阶段。排卵后的卵泡会形成黄体，并分泌以孕酮为主的激素。</p>
+                    <span>如果没有怀孕，黄体逐渐退化，随后进入下一次经期。</span>
+                </article>
+
+                <article data-cycle-help-panel="observation" hidden>
+                    <header><i class="phase-observation"></i><div><small>周期阶段</small><h3>观察期</h3></div></header>
+                    <p>观察期并不是医学上的周期阶段，而是日历用来表示预测经期已经过去、但新的经期还没有记录的一段时间。</p>
+                    <span>它主要用于提醒继续记录当前周期的实际变化。</span>
+                </article>
+
+                <article data-cycle-help-panel="predicted" hidden>
+                    <header><i class="phase-predicted"></i><div><small>日历标记</small><h3>预测窗口</h3></div></header>
+                    <p>预测窗口表示根据以往周期长度和波动，估算出的下一次月经可能开始的日期范围。</p>
+                    <span>相比单独预测某一天，用一个时间范围更能反映周期本身的自然波动。</span>
+                </article>
+
+                <article data-cycle-help-panel="period-log" hidden>
+                    <header><i class="has-period-log"></i><div><small>日历标记</small><h3>经期记录</h3></div></header>
+                    <p>经期记录表示这一天保存了与月经有关的信息，例如经量、不适程度或其他身体感受。</p>
+                    <span>用于补充单纯“是否处于经期”之外的具体情况。</span>
+                </article>
+
+                <article data-cycle-help-panel="daily-log" hidden>
+                    <header><i class="has-log"></i><div><small>日历标记</small><h3>日常记录</h3></div></header>
+                    <p>日常记录表示这一天保存了心情、身体状态或其他日常内容。</p>
+                    <span>它不限定在经期内，可以记录整个周期中的变化。</span>
+                </article>
+
+                <article data-cycle-help-panel="joint" hidden>
+                    <header><i class="has-joint"></i><div><small>日历标记</small><h3>共同记录</h3></div></header>
+                    <p>共同记录表示这条经期信息由双方共同维护，而不是只属于其中一方的个人记录。</p>
+                    <span>相关的开始、结束和历史记录会在双方之间同步。</span>
+                </article>
+
+                <article data-cycle-help-panel="intimacy" hidden>
+                    <header><i class="has-intimacy">♥</i><div><small>日历标记</small><h3>亲密记录</h3></div></header>
+                    <p>亲密记录表示这一天保存了双方的亲密互动信息，用于和周期变化一起回顾。</p>
+                    <span>有助于回顾亲密互动与周期阶段、身体状态之间的变化和联系。</span>
+                </article>
+            </div>
         </section>
     </div>
 

@@ -26,9 +26,24 @@
     dialog.classList.add('is-open');
     dialog.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
-    var target = dialog.querySelector('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), textarea, button:not([data-cycle-close])');
+    var target = dialog.querySelector('[data-dialog-autofocus]')
+      || dialog.querySelector('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), textarea, button:not([data-cycle-close])');
     if (target) window.setTimeout(function () { target.focus(); }, 20);
     return dialog;
+  }
+
+  function showCycleHelp(name) {
+    var dialog = document.querySelector('[data-cycle-dialog="phase-help"]');
+    if (!dialog) return false;
+    var selectedPanel = dialog.querySelector('[data-cycle-help-panel="' + name + '"]');
+    if (!selectedPanel) return false;
+
+    dialog.querySelectorAll('[data-cycle-help-panel]').forEach(function (panel) {
+      panel.hidden = panel !== selectedPanel;
+    });
+    var select = dialog.querySelector('[data-cycle-help-select]');
+    if (select) select.value = name;
+    return true;
   }
 
   document.addEventListener('click', function (event) {
@@ -39,6 +54,10 @@
     }
     var closer = event.target.closest('[data-cycle-close]');
     if (closer) closeDialog(closer.closest('[data-cycle-dialog]'));
+  });
+
+  document.addEventListener('change', function (event) {
+    if (event.target.matches('[data-cycle-help-select]')) showCycleHelp(event.target.value);
   });
 
   document.addEventListener('keydown', function (event) {

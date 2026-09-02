@@ -176,6 +176,11 @@
 .cycle-calendar-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 19px 22px; border-bottom: 1px solid var(--line) }
 .cycle-calendar-header p, .cycle-history header p { margin: 0; color: var(--pink-dark); font: 700 9px Arial, sans-serif; letter-spacing: .2em }
 .cycle-calendar-header h2, .cycle-history header h2 { margin: 6px 0 0; color: var(--ink); font: 400 27px var(--serif) }
+.cycle-calendar-actions { display: flex; align-items: center; gap: 10px }
+.cycle-calendar-help { display: inline-flex; height: 34px; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; outline: 0; background: var(--surface); color: var(--pink-dark); font: 11px var(--sans); white-space: nowrap; cursor: pointer; transition: border-color .16s, background-color .16s, box-shadow .16s }
+.cycle-calendar-help:hover { border-color: var(--pink); background: var(--pink-softer) }
+.cycle-calendar-help:focus-visible { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+.cycle-calendar-help .icon { font-size: 13px }
 
 /* 使用背景色区分经期、卵泡期、易孕期、排卵日、黄体期、预测窗口和观察期。 */
 .cycle-calendar .calendar-day.phase-period { background: var(--phase-period-soft) }
@@ -378,6 +383,39 @@
 .cycle-dialog-actions button { flex: 1 }
 .cycle-dialog-card > .cycle-dialog-actions { margin-top: 0 }
 
+/* 名词帮助通过日历标题旁的显式入口打开，并在弹层内切换说明。 */
+.cycle-help-dialog { text-align: center }
+.cycle-help-picker { display: block; width: 100%; margin: 0 0 14px; text-align: left }
+.cycle-help-select { position: relative; display: block }
+.cycle-help-select select { width: 100%; min-height: 38px; padding: 0 38px 0 12px; border: 1px solid var(--line-strong); border-radius: 11px; outline: 0; appearance: none; background: var(--surface); color: var(--ink); font: 600 10px var(--sans); cursor: pointer; transition: border-color .16s, box-shadow .16s }
+.cycle-help-select select:hover { border-color: var(--pink) }
+.cycle-help-select select:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+.cycle-help-select > .icon { position: absolute; top: 50%; right: 12px; color: var(--faint); font-size: 13px; pointer-events: none; transform: translateY(-50%) }
+
+.cycle-help-content { min-height: 178px; text-align: left }
+.cycle-help-content article { padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--surface) 84%, var(--pink-softer)) }
+.cycle-help-content article[hidden] { display: none }
+.cycle-help-content header { display: flex; align-items: center; gap: 11px }
+.cycle-help-content header > i { display: block; width: 20px; height: 20px; flex: none; border-radius: 6px }
+.cycle-help-content header > i.phase-period { background: var(--phase-period) }
+.cycle-help-content header > i.phase-follicular { background: var(--phase-follicular) }
+.cycle-help-content header > i.phase-fertile { background: var(--phase-fertile) }
+.cycle-help-content header > i.phase-ovulation { border-radius: 50%; background: var(--phase-ovulation) }
+.cycle-help-content header > i.phase-luteal { background: var(--phase-luteal) }
+.cycle-help-content header > i.phase-observation { background: var(--phase-observation) }
+.cycle-help-content header > i.phase-predicted { border: 1px dashed var(--phase-predicted) }
+.cycle-help-content header > i.has-period-log,
+.cycle-help-content header > i.has-log,
+.cycle-help-content header > i.has-joint { width: 8px; height: 8px; margin: 6px }
+.cycle-help-content header > i.has-period-log { border-radius: 50%; background: var(--phase-period) }
+.cycle-help-content header > i.has-log { border-radius: 50%; background: var(--phase-ovulation) }
+.cycle-help-content header > i.has-joint { border-radius: 50%; background: var(--phase-luteal) }
+.cycle-help-content header > i.has-intimacy { display: grid; place-items: center; background: transparent; color: var(--pink-dark); font: normal 22px/1 Arial, sans-serif }
+.cycle-help-content header small { display: block; margin-bottom: 2px; color: var(--faint); font-size: 8px; letter-spacing: .08em }
+.cycle-help-content h3 { margin: 0; color: var(--ink); font: 400 20px var(--serif) }
+.cycle-help-content p { margin: 14px 0 0; color: var(--ink); font-size: 11px; line-height: 1.85 }
+.cycle-help-content article > span { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 9px; line-height: 1.7 }
+
 .cycle-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; text-align: left }
 .cycle-form.is-single { grid-template-columns: 1fr }
 .cycle-form .is-wide, .cycle-dialog-actions.is-wide { grid-column: 1 / -1 }
@@ -468,11 +506,15 @@
     .cycle-day-editor-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .cycle-day-editor-actions .cycle-action { width: 100%; min-width: 0 }
     .cycle-calendar-legend { gap: 10px; padding: 12px 4px 2px }
-    .cycle-calendar-legend-group { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 4px }
+    .cycle-calendar-legend-group { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px 4px }
     .cycle-calendar-legend-group.is-records { padding-top: 10px }
     .cycle-calendar-legend strong { display: flex; min-width: 0; grid-column: 1 / -1; align-items: center; gap: 8px; font-size: 8px }
     .cycle-calendar-legend strong::after { content: ""; height: 1px; flex: 1; background: var(--line) }
     .cycle-calendar-legend span { min-width: 0; gap: 4px; font-size: 8px; white-space: nowrap }
+    .cycle-calendar-actions { gap: 8px }
+    .cycle-calendar-actions .calendar-today { flex: 1 }
+    .cycle-help-content { min-height: 196px }
+    .cycle-help-content article { padding: 17px 16px }
 }
 
 @media (max-width: 420px) {
