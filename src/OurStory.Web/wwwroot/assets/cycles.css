@@ -247,7 +247,8 @@
 .cycle-agenda-log-kinds span { display: inline-flex; min-height: 20px; align-items: center; padding: 0 8px; border-radius: 999px; font-size: 8px; font-weight: 600; letter-spacing: .03em }
 .cycle-agenda-log-kinds .is-regular { background: var(--phase-ovulation-soft); color: var(--phase-ovulation) }
 .cycle-agenda-log-kinds .is-intimacy { background: var(--pink-soft); color: var(--pink-dark) }
-.cycle-agenda-intimacy-heart { flex: none; color: var(--pink-dark); font: 400 17px/1 Arial, sans-serif; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--pink) 32%, transparent)) }
+.cycle-agenda-intimacy-hearts { display: flex; max-width: 55%; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: 2px; color: var(--pink-dark) }
+.cycle-agenda-intimacy-hearts span { font: 400 15px/1 Arial, sans-serif; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--pink) 32%, transparent)) }
 .cycle-agenda-facts { display: grid; gap: 6px; margin: 0 }
 .cycle-agenda-facts > div { display: flex; gap: 10px; font-size: 10px }
 .cycle-agenda-facts dt { flex: none; width: 52px; color: var(--faint) }

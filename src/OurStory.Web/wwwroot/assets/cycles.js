@@ -247,13 +247,19 @@
       var head = element('header', 'cycle-agenda-log-head');
       var kinds = element('div', 'cycle-agenda-log-kinds');
       if (regular) kinds.append(element('span', 'is-regular', '日常记录'));
-      if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录 · ' + Math.max(1, Number(entry.intimacyCount) || 1) + ' 次'));
+      if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录'));
       head.append(kinds);
       if (entry.isIntimate) {
-        var heart = element('span', 'cycle-agenda-intimacy-heart', '♥');
-        heart.setAttribute('role', 'img');
-        heart.setAttribute('aria-label', '亲密记录 ' + Math.max(1, Number(entry.intimacyCount) || 1) + ' 次');
-        head.append(heart);
+        var count = Math.max(1, Number(entry.intimacyCount) || 1);
+        var hearts = element('span', 'cycle-agenda-intimacy-hearts');
+        hearts.setAttribute('role', 'img');
+        hearts.setAttribute('aria-label', '亲密记录 ' + count + ' 次');
+        for (var heartIndex = 0; heartIndex < count; heartIndex += 1) {
+          var heart = element('span', null, '♥');
+          heart.setAttribute('aria-hidden', 'true');
+          hearts.append(heart);
+        }
+        head.append(hearts);
       }
       log.append(head);
 
