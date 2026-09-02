@@ -7,8 +7,12 @@
     --phase-fertile-soft: color-mix(in srgb, #6f9e86 15%, transparent);
     --phase-ovulation: #4f8f9e;
     --phase-ovulation-soft: color-mix(in srgb, #4f8f9e 18%, transparent);
-    --phase-safe: #8d8aa8;
-    --phase-safe-soft: color-mix(in srgb, #8d8aa8 11%, transparent);
+    --phase-follicular: #8293b2;
+    --phase-follicular-soft: color-mix(in srgb, #8293b2 12%, transparent);
+    --phase-luteal: #aa8096;
+    --phase-luteal-soft: color-mix(in srgb, #aa8096 12%, transparent);
+    --phase-observation: #ad8450;
+    --phase-observation-soft: color-mix(in srgb, #ad8450 13%, transparent);
 
     min-height: 80vh;
     background: linear-gradient(180deg, var(--surface-soft), var(--paper) 460px);
@@ -81,7 +85,9 @@
 .cycle-phase.phase-predicted { background: var(--phase-predicted-soft); color: var(--phase-predicted) }
 .cycle-phase.phase-fertile { background: var(--phase-fertile-soft); color: var(--phase-fertile) }
 .cycle-phase.phase-ovulation { background: var(--phase-ovulation-soft); color: var(--phase-ovulation) }
-.cycle-phase.phase-safe { background: var(--phase-safe-soft); color: var(--phase-safe) }
+.cycle-phase.phase-follicular { background: var(--phase-follicular-soft); color: var(--phase-follicular) }
+.cycle-phase.phase-luteal { background: var(--phase-luteal-soft); color: var(--phase-luteal) }
+.cycle-phase.phase-observation { background: var(--phase-observation-soft); color: var(--phase-observation) }
 .cycle-phase.phase-unknown { background: var(--surface-muted); color: var(--faint) }
 
 /* 4. 主卡片 -------------------------------------------------------------- */
@@ -171,12 +177,14 @@
 .cycle-calendar-header p, .cycle-history header p { margin: 0; color: var(--pink-dark); font: 700 9px Arial, sans-serif; letter-spacing: .2em }
 .cycle-calendar-header h2, .cycle-history header h2 { margin: 6px 0 0; color: var(--ink); font: 400 27px var(--serif) }
 
-/* 使用背景色区分经期、预测、易孕期、排卵日和安全期。 */
+/* 使用背景色区分经期、卵泡期、易孕期、排卵日、黄体期、预测窗口和观察期。 */
 .cycle-calendar .calendar-day.phase-period { background: var(--phase-period-soft) }
 .cycle-calendar .calendar-day.phase-predicted { background: var(--phase-predicted-soft) }
 .cycle-calendar .calendar-day.phase-fertile { background: var(--phase-fertile-soft) }
 .cycle-calendar .calendar-day.phase-ovulation { background: var(--phase-ovulation-soft) }
-.cycle-calendar .calendar-day.phase-safe { background: var(--phase-safe-soft) }
+.cycle-calendar .calendar-day.phase-follicular { background: var(--phase-follicular-soft) }
+.cycle-calendar .calendar-day.phase-luteal { background: var(--phase-luteal-soft) }
+.cycle-calendar .calendar-day.phase-observation { background: var(--phase-observation-soft) }
 .cycle-calendar .calendar-day.is-future .calendar-day-number { color: var(--faint) }
 
 .cycle-calendar .calendar-day.phase-period .calendar-day-number { color: var(--pink-dark) }
@@ -192,6 +200,11 @@
 .cycle-day-marks { display: flex; min-height: 7px; align-items: center; gap: 3px; padding-left: 3px }
 .cycle-day-marks i { width: 4px; height: 4px; border-radius: 50% }
 .cycle-day-marks i.is-log { background: var(--phase-ovulation) }
+.cycle-day-marks i.is-joint { position: relative; width: 8px; height: 5px; border-radius: 0 }
+.cycle-day-marks i.is-joint::before,
+.cycle-day-marks i.is-joint::after { content: ""; position: absolute; top: 0; width: 5px; height: 5px; border: 1px solid var(--surface); border-radius: 50% }
+.cycle-day-marks i.is-joint::before { left: 0; background: var(--pink) }
+.cycle-day-marks i.is-joint::after { right: 0; background: var(--phase-ovulation) }
 
 .cycle-calendar-legend { display: grid; gap: 8px; padding: 14px 8px 2px; color: var(--faint); font-size: 9px }
 .cycle-calendar-legend-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px }
@@ -203,8 +216,15 @@
 .cycle-calendar-legend i.phase-predicted { border: 1px dashed var(--phase-predicted) }
 .cycle-calendar-legend i.phase-fertile { background: var(--phase-fertile) }
 .cycle-calendar-legend i.phase-ovulation { background: var(--phase-ovulation); border-radius: 50% }
-.cycle-calendar-legend i.phase-safe { background: var(--phase-safe) }
+.cycle-calendar-legend i.phase-follicular { background: var(--phase-follicular) }
+.cycle-calendar-legend i.phase-luteal { background: var(--phase-luteal) }
+.cycle-calendar-legend i.phase-observation { background: var(--phase-observation) }
 .cycle-calendar-legend i.has-log { width: 5px; height: 5px; border-radius: 50%; background: var(--phase-ovulation) }
+.cycle-calendar-legend i.has-joint { position: relative; width: 13px; height: 8px; border-radius: 0 }
+.cycle-calendar-legend i.has-joint::before,
+.cycle-calendar-legend i.has-joint::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; border: 1px solid var(--surface); border-radius: 50% }
+.cycle-calendar-legend i.has-joint::before { left: 0; background: var(--pink) }
+.cycle-calendar-legend i.has-joint::after { right: 0; background: var(--phase-ovulation) }
 .cycle-calendar-legend i.has-intimacy { display: inline-grid; width: 10px; height: 10px; place-items: center; border-radius: 0; color: var(--pink-dark); font: normal 11px/1 Arial, sans-serif }
 
 /* 7. 右侧详情 ------------------------------------------------------------
@@ -281,12 +301,16 @@
 .cycle-select select { width: 100%; min-height: 44px; padding: 0 40px 0 13px; border: 1px solid var(--line-strong); border-radius: 12px; outline: 0; appearance: none; background: var(--surface); color: var(--ink); font: 600 12px var(--sans); cursor: pointer }
 .cycle-select select:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
 .cycle-select > .icon { position: absolute; top: 50%; right: 13px; color: var(--faint); font-size: 14px; pointer-events: none; transform: translateY(-50%) }
+.cycle-number { position: relative; display: block }
+.cycle-number input { width: 100%; min-height: 44px; padding: 0 42px 0 13px; border: 1px solid var(--line-strong); border-radius: 12px; outline: 0; background: var(--surface); color: var(--ink); font: 600 12px var(--sans) }
+.cycle-number input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft) }
+.cycle-number small { position: absolute; top: 50%; right: 14px; color: var(--faint); font-size: 10px; transform: translateY(-50%); pointer-events: none }
 .cycle-condition-body { display: grid; grid-template-columns: minmax(170px, .7fr) minmax(0, 1.3fr); align-items: start; gap: 18px }
 .cycle-condition-body > .cycle-field { margin: 0 }
 .cycle-day-editor-symptoms { margin: 0; padding-top: 2px }
 .cycle-day-editor-symptoms legend { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px }
 .cycle-day-editor-symptoms legend small { font-size: 9px; font-weight: 400 }
-.cycle-intimacy-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px }
+.cycle-intimacy-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
 .cycle-intimacy-details .cycle-field { margin: 0 }
 .cycle-day-editor-note { margin: 0 }
 .cycle-day-editor-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 16px; border-top: 1px dashed var(--line) }

@@ -103,8 +103,10 @@ public sealed record CycleSummaryText(string Text, CycleSummarySource Source, Da
 /// <param name="Symptoms">当天记下的不适</param>
 /// <param name="Note">当天的补充说明</param>
 /// <param name="IsIntimate">是否记录了亲密互动</param>
+/// <param name="IntimacyCount">这条记录包含的亲密互动次数</param>
 /// <param name="IntimacyProtection">采用的安全措施</param>
 /// <param name="IntimacyOutcome">亲密互动的结束方式</param>
+/// <param name="CreatedByUserId">记录者标识，仅用于判断双方是否都参与记录</param>
 /// <param name="CreatedByName">记录者的显示名称</param>
 /// <param name="CreatedAt">站点时区下的记录时间</param>
 public sealed record CycleDayLog(
@@ -114,8 +116,10 @@ public sealed record CycleDayLog(
     CycleSymptom Symptoms,
     string Note,
     bool IsIntimate,
+    int IntimacyCount,
     CycleIntimacyProtection IntimacyProtection,
     CycleIntimacyOutcome IntimacyOutcome,
+    int CreatedByUserId,
     string CreatedByName,
     DateTime CreatedAt);
 
@@ -341,6 +345,7 @@ public sealed record CycleRecordSubmission(
 /// <param name="IsIntimate">是否记录了亲密互动</param>
 /// <param name="IntimacyProtection">采用的安全措施</param>
 /// <param name="IntimacyOutcome">亲密互动的结束方式</param>
+/// <param name="IntimacyCount">这条记录包含的亲密互动次数，默认 1 次</param>
 public sealed record CycleDaySubmission(
     DateOnly Date,
     CycleFlow Flow,
@@ -350,7 +355,8 @@ public sealed record CycleDaySubmission(
     string Note,
     bool IsIntimate = false,
     CycleIntimacyProtection IntimacyProtection = CycleIntimacyProtection.Unset,
-    CycleIntimacyOutcome IntimacyOutcome = CycleIntimacyOutcome.Unset);
+    CycleIntimacyOutcome IntimacyOutcome = CycleIntimacyOutcome.Unset,
+    int IntimacyCount = 1);
 
 /// <summary>
 /// 周期规则分析参数，独立建模以支持后续配置或其它分析实现

@@ -72,6 +72,7 @@ public sealed record CycleCalendarPayload(
 /// <param name="PeriodStart">是否为某条记录的开始日</param>
 /// <param name="PeriodEnd">是否为某条记录的结束日</param>
 /// <param name="ExpectedStart">是否为预测的下次经期开始日期</param>
+/// <param name="JointRecord">双方是否都在当天留下过补充记录</param>
 /// <param name="Record">覆盖当天的周期记录</param>
 /// <param name="Logs">当天按记录时间排列的补充记录</param>
 public sealed record CycleDayPayload(
@@ -88,6 +89,7 @@ public sealed record CycleDayPayload(
     bool PeriodStart,
     bool PeriodEnd,
     bool ExpectedStart,
+    bool JointRecord,
     CycleRecordPayload? Record,
     IReadOnlyList<CycleLogPayload> Logs) {
     /// <summary>
@@ -112,6 +114,7 @@ public sealed record CycleDayPayload(
             day.IsPeriodStart,
             day.IsPeriodEnd,
             day.IsExpectedStart,
+            day.Logs.Select(log => log.CreatedByUserId).Distinct().Skip(1).Any(),
             day.Record is null ? null : CycleRecordPayload.From(day.Record),
             [.. day.Logs.Select(CycleLogPayload.From)]);
     }
@@ -121,7 +124,9 @@ public sealed record CycleDayPayload(
         CyclePhase.Predicted => "predicted",
         CyclePhase.Fertile => "fertile",
         CyclePhase.Ovulation => "ovulation",
-        CyclePhase.Safe => "safe",
+        CyclePhase.Follicular => "follicular",
+        CyclePhase.Luteal => "luteal",
+        CyclePhase.Observation => "observation",
         _ => "unknown"
     };
 }
@@ -209,6 +214,7 @@ public sealed record CycleTagPayload(string Text, string Tone) {
 /// <param name="SymptomNames">逐项列出的不适</param>
 /// <param name="Note">当天的补充说明</param>
 /// <param name="IsIntimate">是否记录了亲密互动</param>
+/// <param name="IntimacyCount">这条记录包含的亲密互动次数</param>
 /// <param name="ProtectionName">安全措施的显示文字</param>
 /// <param name="OutcomeName">结束方式的显示文字</param>
 /// <param name="RecordedBy">记录者</param>
@@ -225,6 +231,7 @@ public sealed record CycleLogPayload(
     IReadOnlyList<string> SymptomNames,
     string Note,
     bool IsIntimate,
+    int IntimacyCount,
     string ProtectionName,
     string OutcomeName,
     string RecordedBy,
@@ -249,6 +256,7 @@ public sealed record CycleLogPayload(
             [.. log.Symptoms.Split().Select(CycleLabels.Name)],
             log.Note,
             log.IsIntimate,
+            log.IntimacyCount,
             log.IntimacyProtection.Name(),
             log.IntimacyOutcome.Name(),
             log.CreatedByName,

@@ -220,6 +220,9 @@ internal sealed class CycleService(
         var outcome = submission.IsIntimate && Enum.IsDefined(submission.IntimacyOutcome)
             ? submission.IntimacyOutcome
             : CycleIntimacyOutcome.Unset;
+        var intimacyCount = submission.IsIntimate
+            ? Math.Clamp(submission.IntimacyCount, 1, 20)
+            : 0;
         var empty = submission.Flow == CycleFlow.Unset
             && submission.Mood == CycleMood.Unset
             && submission.Pain <= 0
@@ -239,6 +242,7 @@ internal sealed class CycleService(
             Pain = Math.Clamp(submission.Pain, 0, 3),
             Symptoms = submission.Symptoms,
             IsIntimate = submission.IsIntimate,
+            IntimacyCount = intimacyCount,
             IntimacyProtection = protection,
             IntimacyOutcome = outcome,
             Note = note,

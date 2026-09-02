@@ -306,8 +306,10 @@ internal sealed class CycleProjection {
             item.Symptoms,
             item.Note,
             item.IsIntimate,
+            item.IntimacyCount,
             item.IntimacyProtection,
             item.IntimacyOutcome,
+            item.CreatedByUserId,
             Name(item.CreatedByUser),
             _clock.ToLocal(item.CreatedAt)))];
 

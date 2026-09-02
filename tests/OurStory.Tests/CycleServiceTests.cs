@@ -6,6 +6,7 @@ using OurStory.Core;
 using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Services.Cycles;
+using OurStory.Web.Infrastructure;
 using Xunit;
 
 namespace OurStory.Tests;
@@ -73,7 +74,7 @@ public sealed class CycleServiceTests {
     }
 
     [Fact]
-    public async Task 月历会分出经期易孕期排卵日和安全期() {
+    public async Task 月历会分出经期卵泡期易孕期排卵日黄体期和预测窗口() {
         await using var harness = SqliteHarness.Create();
         var (boyId, _) = await harness.SeedCoupleAsync();
         var service = Service(harness.Db);
@@ -92,10 +93,27 @@ public sealed class CycleServiceTests {
         Assert.Equal(CyclePhase.Ovulation, byDate[ovulation].Phase);
         Assert.Equal(CyclePhase.Fertile, byDate[ovulation.AddDays(-2)].Phase);
         Assert.Equal(CyclePhase.Fertile, byDate[ovulation.AddDays(1)].Phase);
-        Assert.Equal(CyclePhase.Safe, byDate[ovulation.AddDays(-8)].Phase);
+        Assert.Equal(CyclePhase.Follicular, byDate[ovulation.AddDays(-8)].Phase);
+        Assert.Equal(CyclePhase.Luteal, byDate[ovulation.AddDays(3)].Phase);
+        Assert.Equal(CyclePhase.Predicted, byDate[first.AddDays(54)].Phase);
         Assert.Equal(CyclePhase.Period, byDate[first.AddDays(30)].Phase);
         Assert.True(byDate[first.AddDays(28)].IsPeriodStart);
         Assert.True(byDate[first.AddDays(32)].IsPeriodEnd);
+    }
+
+    [Fact]
+    public async Task 超出预测窗口且仍未开始时进入观察期() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var today = TestDoubles.Clock().Today;
+        var start = today.AddDays(-40);
+
+        _ = await service.CreateAsync(boyId, Submission(start, start.AddDays(4)));
+
+        var month = await service.GetCalendarAsync(boyId, today.Year, today.Month);
+        var todayCell = Assert.Single(month.Days, day => day.Date == today);
+        Assert.Equal(CyclePhase.Observation, todayCell.Phase);
     }
 
     [Fact]
@@ -152,7 +170,8 @@ public sealed class CycleServiceTests {
             string.Empty,
             true,
             CycleIntimacyProtection.Condom,
-            CycleIntimacyOutcome.Internal))).Status);
+            CycleIntimacyOutcome.Internal,
+            3))).Status);
 
         var item = (await service.GetDashboardAsync(boyId, 1, 10, today.Year, today.Month)).History.Items[0];
         Assert.Equal(2, item.LogCount);
@@ -164,8 +183,26 @@ public sealed class CycleServiceTests {
         Assert.Equal(2, day.Logs.Count);
         Assert.Equal("喝了红糖水", day.Logs[0].Note);
         Assert.True(day.Logs[1].IsIntimate);
+        Assert.Equal(3, day.Logs[1].IntimacyCount);
         Assert.Equal(CycleIntimacyProtection.Condom, day.Logs[1].IntimacyProtection);
         Assert.Equal(CycleIntimacyOutcome.Internal, day.Logs[1].IntimacyOutcome);
+        Assert.True(CycleDayPayload.From(day).JointRecord);
+
+        var defaultCount = await service.SaveDayAsync(boyId, new CycleDaySubmission(
+            start.AddDays(1),
+            CycleFlow.Unset,
+            CycleMood.Unset,
+            0,
+            CycleSymptom.None,
+            string.Empty,
+            true,
+            CycleIntimacyProtection.Unset,
+            CycleIntimacyOutcome.Unset));
+        Assert.Equal(CycleWriteStatus.Saved, defaultCount.Status);
+        Assert.Equal(1, await harness.Db.CycleDailyLogs
+            .OrderByDescending(log => log.Id)
+            .Select(log => log.IntimacyCount)
+            .FirstAsync());
 
         // 空提交不会生成没有内容的卡片，也不会删除已有记录。
         var empty = await service.SaveDayAsync(girlId, new CycleDaySubmission(
@@ -176,7 +213,7 @@ public sealed class CycleServiceTests {
             CycleSymptom.None,
             string.Empty));
         Assert.Equal(CycleWriteStatus.Invalid, empty.Status);
-        Assert.Equal(2, await harness.Db.CycleDailyLogs.CountAsync());
+        Assert.Equal(3, await harness.Db.CycleDailyLogs.CountAsync());
     }
 
     [Fact]

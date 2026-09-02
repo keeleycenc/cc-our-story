@@ -247,12 +247,12 @@
       var head = element('header', 'cycle-agenda-log-head');
       var kinds = element('div', 'cycle-agenda-log-kinds');
       if (regular) kinds.append(element('span', 'is-regular', '日常记录'));
-      if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录'));
+      if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录 · ' + Math.max(1, Number(entry.intimacyCount) || 1) + ' 次'));
       head.append(kinds);
       if (entry.isIntimate) {
         var heart = element('span', 'cycle-agenda-intimacy-heart', '♥');
         heart.setAttribute('role', 'img');
-        heart.setAttribute('aria-label', '亲密记录');
+        heart.setAttribute('aria-label', '亲密记录 ' + Math.max(1, Number(entry.intimacyCount) || 1) + ' 次');
         head.append(heart);
       }
       log.append(head);
@@ -297,9 +297,14 @@
     var logs = day.logs || [];
     var hasRegularLog = logs.some(isRegularLog);
     var hasIntimacyLog = logs.some(function (entry) { return entry.isIntimate; });
+    var intimacyCount = logs.reduce(function (total, entry) {
+      return total + (entry.isIntimate ? Math.max(1, Number(entry.intimacyCount) || 1) : 0);
+    }, 0);
+    var hasJointRecord = day.jointRecord;
     var ariaLabel = fullDate(day.date) + ' ' + day.phaseName;
     if (hasRegularLog) ariaLabel += '，有日常记录';
-    if (hasIntimacyLog) ariaLabel += '，有亲密记录';
+    if (hasIntimacyLog) ariaLabel += '，有亲密记录 ' + intimacyCount + ' 次';
+    if (hasJointRecord) ariaLabel += '，双方共同记录';
     button.setAttribute('aria-label', ariaLabel);
     button.setAttribute('aria-selected', 'false');
     if (!day.inMonth) button.classList.add('is-outside');
@@ -337,7 +342,8 @@
 
     var marks = element('span', 'cycle-day-marks');
     marks.setAttribute('aria-hidden', 'true');
-    if (hasRegularLog) marks.append(element('i', 'is-log'));
+    if (hasJointRecord) marks.append(element('i', 'is-joint'));
+    else if (hasRegularLog) marks.append(element('i', 'is-log'));
     if (marks.childElementCount) button.append(marks);
 
     button.addEventListener('click', function () {

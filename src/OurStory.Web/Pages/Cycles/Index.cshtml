@@ -235,16 +235,19 @@
                     <div class="calendar-grid" data-calendar-grid role="grid" aria-label="花信月历"></div>
                     <div class="cycle-calendar-legend" aria-label="图例">
                         <div class="cycle-calendar-legend-group">
-                            <strong>周期背景</strong>
+                            <strong>背景</strong>
                             <span><i class="phase-period"></i>经期</span>
-                            <span><i class="phase-predicted"></i>预测窗口</span>
+                            <span><i class="phase-follicular"></i>卵泡期</span>
                             <span><i class="phase-fertile"></i>易孕期</span>
                             <span><i class="phase-ovulation"></i>排卵日</span>
-                            <span><i class="phase-safe"></i>安全期</span>
+                            <span><i class="phase-luteal"></i>黄体期</span>
+                            <span><i class="phase-predicted"></i>预测窗口</span>
+                            <span><i class="phase-observation"></i>观察期</span>
                         </div>
                         <div class="cycle-calendar-legend-group is-records">
-                            <strong>记录标记</strong>
+                            <strong>标记</strong>
                             <span><i class="has-log"></i>日常记录</span>
+                            <span><i class="has-joint" aria-hidden="true"></i>共同记录</span>
                             <span><i class="has-intimacy" aria-hidden="true">♥</i>亲密记录</span>
                         </div>
                     </div>
@@ -381,6 +384,13 @@
                             </label>
                         </header>
                         <div class="cycle-log-module-body cycle-intimacy-details" id="day-editor-intimacy" data-module-body hidden>
+                            <label class="cycle-field">
+                                <span>亲密次数</span>
+                                <span class="cycle-number">
+                                    <input type="number" name="intimacyCount" value="1" min="1" max="20" inputmode="numeric" disabled>
+                                    <small>次</small>
+                                </span>
+                            </label>
                             <label class="cycle-field">
                                 <span>安全措施</span>
                                 <span class="cycle-select">

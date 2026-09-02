@@ -192,6 +192,7 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
     /// <param name="pain">不适程度</param>
     /// <param name="symptoms">勾选的不适</param>
     /// <param name="isIntimate">是否记录亲密互动</param>
+    /// <param name="intimacyCount">亲密互动次数</param>
     /// <param name="intimacyProtection">采用的安全措施</param>
     /// <param name="intimacyOutcome">亲密互动的结束方式</param>
     /// <param name="note">补充说明</param>
@@ -204,6 +205,7 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
         int pain,
         int[]? symptoms,
         bool isIntimate,
+        int intimacyCount,
         CycleIntimacyProtection intimacyProtection,
         CycleIntimacyOutcome intimacyOutcome,
         string? note,
@@ -221,7 +223,8 @@ public sealed class IndexModel(ICycleService cycles, SiteClock clock) : PageMode
             note ?? string.Empty,
             isIntimate,
             intimacyProtection,
-            intimacyOutcome);
+            intimacyOutcome,
+            intimacyCount);
 
         return RedirectWith(await cycles.SaveDayAsync(userId, submission, cancellationToken), date.Year, date.Month);
     }

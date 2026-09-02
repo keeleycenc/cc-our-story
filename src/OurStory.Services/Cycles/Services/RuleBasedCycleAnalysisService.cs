@@ -57,8 +57,14 @@ internal sealed class RuleBasedCycleAnalysisService(CycleAnalysisOptions options
         var prediction = statistics.NextPrediction;
         if (prediction is not null
             && date >= prediction.WindowStart
-            && (date <= prediction.WindowEnd || date <= today)) {
+            && date <= prediction.WindowEnd) {
             return new CycleDayPhase(CyclePhase.Predicted, dayOfCycle);
+        }
+
+        if (prediction is not null
+            && date > prediction.WindowEnd
+            && date <= today) {
+            return new CycleDayPhase(CyclePhase.Observation, dayOfCycle);
         }
 
         var nextStart = ordered.FirstOrDefault(item => item.StartDate > date)?.StartDate
@@ -76,9 +82,15 @@ internal sealed class RuleBasedCycleAnalysisService(CycleAnalysisOptions options
             return new CycleDayPhase(CyclePhase.Ovulation, dayOfCycle);
         }
 
-        return date >= ovulation.AddDays(-options.FertileDaysBefore) && date <= ovulation.AddDays(options.FertileDaysAfter)
-            ? new CycleDayPhase(CyclePhase.Fertile, dayOfCycle)
-            : new CycleDayPhase(CyclePhase.Safe, dayOfCycle);
+        var fertileStart = ovulation.AddDays(-options.FertileDaysBefore);
+        var fertileEnd = ovulation.AddDays(options.FertileDaysAfter);
+        if (date >= fertileStart && date <= fertileEnd) {
+            return new CycleDayPhase(CyclePhase.Fertile, dayOfCycle);
+        }
+
+        return date < fertileStart
+            ? new CycleDayPhase(CyclePhase.Follicular, dayOfCycle)
+            : new CycleDayPhase(CyclePhase.Luteal, dayOfCycle);
     }
 
     public CycleAppraisal Appraise(

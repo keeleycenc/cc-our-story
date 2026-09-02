@@ -153,7 +153,9 @@ public static class CycleLabels {
         CyclePhase.Predicted => "预测窗口",
         CyclePhase.Fertile => "易孕期",
         CyclePhase.Ovulation => "排卵日",
-        CyclePhase.Safe => "安全期",
+        CyclePhase.Follicular => "卵泡期",
+        CyclePhase.Luteal => "黄体期",
+        CyclePhase.Observation => "观察期",
         _ => "待记录"
     };
 
@@ -167,7 +169,9 @@ public static class CycleLabels {
         CyclePhase.Predicted => "根据既往记录计算的下次经期参考窗口。",
         CyclePhase.Fertile => "根据平均周期推算的易孕期，仅供两个人共同参考。",
         CyclePhase.Ovulation => "根据平均周期推算的排卵日，仅供两个人共同参考。",
-        CyclePhase.Safe => "易孕期以外的参考日期，不能作为避孕依据。",
+        CyclePhase.Follicular => "经期结束后至易孕期前的卵泡期参考。",
+        CyclePhase.Luteal => "易孕期结束后至下次预测窗口前的黄体期参考。",
+        CyclePhase.Observation => "已经超过预测窗口，继续观察并等待下一次记录。",
         _ => "继续共同记录后，系统会逐步完善这一天的周期参考。"
     };
 

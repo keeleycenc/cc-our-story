@@ -52,6 +52,11 @@ public sealed class CycleDailyLog {
     public bool IsIntimate { get; set; }
 
     /// <summary>
+    /// 获取或设置这条记录包含的亲密互动次数；非亲密记录为 0
+    /// </summary>
+    public int IntimacyCount { get; set; }
+
+    /// <summary>
     /// 获取或设置亲密互动采用的安全措施
     /// </summary>
     public CycleIntimacyProtection IntimacyProtection { get; set; }

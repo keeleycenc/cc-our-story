@@ -534,9 +534,19 @@ public enum CyclePhase {
     Ovulation = 4,
 
     /// <summary>
-    /// 易孕期以外的参考日期，俗称安全期
+    /// 经期结束后、易孕期开始前的卵泡期
     /// </summary>
-    Safe = 5
+    Follicular = 5,
+
+    /// <summary>
+    /// 易孕期结束后、下次经期预测窗口前的黄体期
+    /// </summary>
+    Luteal = 6,
+
+    /// <summary>
+    /// 已超出预测窗口但尚未记录下次经期的观察期
+    /// </summary>
+    Observation = 7
 }
 
 /// <summary>
