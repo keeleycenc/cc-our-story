@@ -623,6 +623,9 @@ namespace OurStory.Data.Migrations
                     b.Property<bool>("Comments")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("Cycle")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("EmailAddress")
                         .IsRequired()
                         .HasMaxLength(320)
@@ -637,6 +640,11 @@ namespace OurStory.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("LastAnniversaryOn")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastCycleOn")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");

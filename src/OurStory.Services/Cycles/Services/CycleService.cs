@@ -7,6 +7,7 @@ using OurStory.Core.Entities;
 using OurStory.Core.Models;
 using OurStory.Core.Time;
 using OurStory.Data;
+using OurStory.Services.Notifications;
 using OurStory.Services.Settings;
 
 namespace OurStory.Services.Cycles;
@@ -18,7 +19,19 @@ internal sealed class CycleService(
     ICycleAnalysisService analysis,
     ICycleInsightService insight,
     CycleAnalysisOptions options,
-    CycleWriteCoordinator writes) : ICycleService {
+    CycleWriteCoordinator writes,
+    INotificationQueue notifications) : ICycleService {
+    /// <summary>
+    /// 获取花信如期通知的目标页面路径
+    /// </summary>
+    private const string CyclePage = "/cycles";
+
+    /// <summary>
+    /// 获取所有已定义的不适标记，用于校验非页面来源请求中的组合值
+    /// </summary>
+    private static readonly CycleSymptom KnownSymptoms =
+        CycleLabels.AllSymptoms.Aggregate(CycleSymptom.None, (all, item) => all | item);
+
     public async Task<CycleDashboard> GetDashboardAsync(
         int userId,
         int page,
@@ -129,6 +142,16 @@ internal sealed class CycleService(
         active.EndDate = clock.Today;
         Touch(active, userId);
         _ = await db.SaveChangesAsync(cancellationToken);
+
+        await NotifyAsync(
+            userId,
+            actor => new PushMessage(
+                "本次花信已结束",
+                $"{actor}已登记结束日期。本次花信自 {active.StartDate:M 月 d 日}起，共 {clock.Today.DayNumber - active.StartDate.DayNumber + 1} 天。",
+                CyclePage,
+                $"cycle-end-{active.Id}"),
+            cancellationToken);
+
         return new(CycleWriteStatus.Saved, "本次花信已完整记录，双方可以随时查看。", active.Id);
     }
 
@@ -181,6 +204,18 @@ internal sealed class CycleService(
 
         try {
             _ = await db.SaveChangesAsync(cancellationToken);
+
+            await NotifyAsync(
+                userId,
+                actor => new PushMessage(
+                    submission.EndDate is null ? "新的花信记录已开始" : "新增一条花信记录",
+                    submission.EndDate is { } end
+                        ? $"{actor}补记了 {submission.StartDate:M 月 d 日}至 {end:M 月 d 日}的花信记录。"
+                        : $"{actor}已登记 {submission.StartDate:M 月 d 日}为本次花信的开始日期。",
+                    CyclePage,
+                    $"cycle-record-{record.Id}"),
+                cancellationToken);
+
             return new(
                 CycleWriteStatus.Saved,
                 submission.EndDate is null
@@ -207,7 +242,15 @@ internal sealed class CycleService(
             return Invalid("不能补充未来日期的记录。");
         }
 
-        var note = Normalize(submission.Note, options.MaximumDayNoteLength);
+        // 这些字段将直接持久化，因此需要校验非页面来源请求中的枚举值与标记组合。
+        if (!Enum.IsDefined(submission.Flow)
+            || !Enum.IsDefined(submission.Mood)
+            || (submission.Symptoms & ~KnownSymptoms) != CycleSymptom.None) {
+            return Invalid("提交的内容不在可选范围内，请刷新页面后重试。");
+        }
+
+        // 额外保留一个字符，以准确区分达到长度上限与超过长度上限的输入。
+        var note = Normalize(submission.Note, options.MaximumDayNoteLength + 1);
         if (note.Length > options.MaximumDayNoteLength) {
             return Invalid($"这一天的补充说明不能超过 {options.MaximumDayNoteLength} 个字。");
         }
@@ -258,7 +301,29 @@ internal sealed class CycleService(
             return Conflict("这条补充暂时没有保存成功，请刷新后重试。");
         }
 
+        // 每日补充可能包含敏感信息，通知仅提示记录已更新，不展示具体内容。
+        await NotifyAsync(
+            userId,
+            actor => new PushMessage(
+                "花信记录有新补充",
+                $"{actor}补充了 {submission.Date:M 月 d 日}的花信记录。",
+                CyclePage,
+                $"cycle-day-{submission.Date:yyyy-MM-dd}"),
+            cancellationToken);
+
         return new CycleWriteResult(CycleWriteStatus.Saved, $"{submission.Date:M 月 d 日}新增了一条补充记录。");
+    }
+
+    public async Task<IReadOnlyList<CycleReminder>> GetDueRemindersAsync(
+        int userId,
+        CancellationToken cancellationToken = default) {
+        var relationshipId = await FindRelationshipAsync(userId, cancellationToken);
+        if (relationshipId is null) {
+            return [];
+        }
+
+        var facts = await FactsAsync(relationshipId.Value, cancellationToken);
+        return facts.Count == 0 ? [] : Due(facts, clock.Today);
     }
 
     public async Task<CycleNarrativeContext?> LatestNarrativeAsync(
@@ -357,6 +422,63 @@ internal sealed class CycleService(
         }
 
         return written;
+    }
+
+    private List<CycleReminder> Due(IReadOnlyList<CycleFact> facts, DateOnly today) {
+        var due = new List<CycleReminder>();
+
+        if (facts.FirstOrDefault(item => item.EndDate is null) is { } active) {
+            var days = today.DayNumber - active.StartDate.DayNumber + 1;
+            if (days > options.LongPeriodDays && days <= options.MaximumPeriodDays) {
+                due.Add(new CycleReminder(
+                    CycleReminderKind.ActiveTooLong,
+                    "请确认本次花信是否结束",
+                    $"本次花信已记录至第 {days} 天。如已结束，请补充结束日期。",
+                    $"cycle-active-{active.StartDate:yyyy-MM-dd}"));
+            }
+
+            // 当前经期尚未结束时，不生成下一周期的预测提醒。
+            return due;
+        }
+
+        if (analysis.Analyze(facts, today).NextPrediction is not { } prediction) {
+            return due;
+        }
+
+        var until = prediction.WindowStart.DayNumber - today.DayNumber;
+        if (until == options.ReminderLeadDays) {
+            due.Add(new CycleReminder(
+                CycleReminderKind.PredictionNear,
+                "花信预测窗口临近",
+                $"预计花信将在 {prediction.ExpectedStart:M 月 d 日}前后到来，并于 {until} 天后进入预测窗口。",
+                $"cycle-predict-{prediction.WindowStart:yyyy-MM-dd}"));
+        } else if (until == 0) {
+            due.Add(new CycleReminder(
+                CycleReminderKind.PredictionStart,
+                "花信预测窗口今日开始",
+                $"预计花信将在 {prediction.ExpectedStart:M 月 d 日}前后到来。如已开始，请及时登记。",
+                $"cycle-window-{prediction.WindowStart:yyyy-MM-dd}"));
+        }
+
+        return due;
+    }
+
+    private async Task NotifyAsync(
+        int userId,
+        Func<string, PushMessage> compose,
+        CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(compose);
+
+        var site = await settings.GetAsync(cancellationToken);
+        var role = await db.Users
+            .Where(user => user.Id == userId)
+            .Select(user => user.Role)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        _ = notifications.Enqueue(NotificationRequest.ToPartner(
+            NotificationTopic.Cycle,
+            userId,
+            compose(site.RoleName(role))));
     }
 
     private async Task<CycleProjection> ProjectAsync(

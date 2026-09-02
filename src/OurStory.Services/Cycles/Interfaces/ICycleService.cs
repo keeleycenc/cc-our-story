@@ -100,6 +100,19 @@ public interface ICycleService {
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 异步获取当前用户在指定日期应发送的花信如期定时提醒
+    /// </summary>
+    /// <param name="userId">当前操作用户标识，用于校验情侣关系及数据访问权限</param>
+    /// <param name="cancellationToken">取消操作令牌</param>
+    /// <returns>当前应发送的提醒集合；没有符合条件的提醒时返回空集合</returns>
+    /// <remarks>
+    /// 本方法仅计算提醒内容，发送时刻、频率与通知偏好由调用方控制。
+    /// </remarks>
+    Task<IReadOnlyList<CycleReminder>> GetDueRemindersAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步整理最新一次周期的事实上下文，供后台试写模型小结
     /// </summary>
     /// <param name="userId">当前操作用户标识，用于校验情侣关系及数据访问权限</param>

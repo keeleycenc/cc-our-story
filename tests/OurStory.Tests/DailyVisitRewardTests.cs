@@ -70,6 +70,25 @@ public class DailyVisitRewardTests {
         Assert.Equal(2, await harness.Db.HeartPointEntries.CountAsync());
     }
 
+    [Fact]
+    public async Task 重启之后当天再来一次不重复记账也不留下写入错误() {
+        var errors = new List<string>();
+        await using var harness = SqliteHarness.Create(errors: errors);
+        var (boyId, _) = await harness.SeedCoupleAsync();
+
+        var (before, beforeServices) = Build(harness);
+        await before(Request(beforeServices, Owner(boyId)));
+
+        // 模拟站点重启后内存状态被清空，并在同一天再次处理首次访问。
+        var (after, afterServices) = Build(harness);
+        await after(Request(afterServices, Owner(boyId)));
+
+        Assert.Equal(1, await harness.Db.HeartPointEntries.CountAsync());
+
+        // 当日奖励已领取属于预期分支，不应通过唯一索引冲突进行判断。
+        Assert.Empty(errors);
+    }
+
     private static (RequestDelegate Pipeline, IServiceProvider Services) Build(SqliteHarness harness) {
         var settings = new SettingsStub();
         var clock = TestDoubles.Clock();

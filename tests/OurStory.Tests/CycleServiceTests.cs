@@ -320,14 +320,202 @@ public sealed class CycleServiceTests {
         Assert.Equal(0, await harness.Db.CycleRecords.CountAsync(item => item.EndDate == null));
     }
 
+    [Fact]
+    public async Task 同一个请求键重复提交只会记下一条() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var requestKey = Guid.NewGuid().ToString();
+
+        Assert.Equal(CycleWriteStatus.Saved, (await service.StartAsync(boyId, requestKey, false)).Status);
+
+        // 重复请求应优先按幂等规则处理，而不是返回已有进行中记录的冲突结果。
+        Assert.Equal(CycleWriteStatus.AlreadyProcessed, (await service.StartAsync(boyId, requestKey, false)).Status);
+        Assert.Equal(CycleWriteStatus.AlreadyProcessed, (await service.StartAsync(girlId, requestKey, false)).Status);
+        Assert.Equal(1, await harness.Db.CycleRecords.CountAsync());
+    }
+
+    [Fact]
+    public async Task 不是请求键的字符串会被当作失效请求拒绝() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.StartAsync(boyId, "not-a-key", false)).Status);
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.StartAsync(boyId, string.Empty, false)).Status);
+        Assert.Equal(0, await harness.Db.CycleRecords.CountAsync());
+    }
+
+    [Fact]
+    public async Task 同一天提交两次一样的补充会各自留下一条() {
+        await using var harness = SqliteHarness.Create();
+        var (_, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var today = TestDoubles.Clock().Today;
+        var submission = new CycleDaySubmission(
+            today,
+            CycleFlow.Medium,
+            CycleMood.Calm,
+            1,
+            CycleSymptom.Cramps,
+            "下午好一些了");
+
+        // 每日补充按提交次数追加，同一天的相同内容应分别保留。
+        Assert.Equal(CycleWriteStatus.Saved, (await service.SaveDayAsync(girlId, submission)).Status);
+        Assert.Equal(CycleWriteStatus.Saved, (await service.SaveDayAsync(girlId, submission)).Status);
+
+        var day = Assert.Single((await service.GetCalendarAsync(girlId, today.Year, today.Month)).Days, item => item.Date == today);
+        Assert.Equal(2, day.Logs.Count);
+        Assert.All(day.Logs, log => Assert.Equal("下午好一些了", log.Note));
+    }
+
+    [Fact]
+    public async Task 超长备注会被拦下写满上限的备注原样保存() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var options = new CycleAnalysisOptions();
+        var today = TestDoubles.Clock().Today;
+        var start = today.AddDays(-6);
+
+        var tooLong = await service.CreateAsync(boyId, new CycleRecordSubmission(
+            start,
+            start.AddDays(4),
+            new string('记', options.MaximumNoteLength + 1),
+            Guid.NewGuid().ToString()));
+        Assert.Equal(CycleWriteStatus.Invalid, tooLong.Status);
+        Assert.Contains(options.MaximumNoteLength.ToString(System.Globalization.CultureInfo.InvariantCulture), tooLong.Message, StringComparison.Ordinal);
+        Assert.Equal(0, await harness.Db.CycleRecords.CountAsync());
+
+        Assert.Equal(CycleWriteStatus.Saved, (await service.CreateAsync(boyId, new CycleRecordSubmission(
+            start,
+            start.AddDays(4),
+            new string('记', options.MaximumNoteLength),
+            Guid.NewGuid().ToString()))).Status);
+        Assert.Equal(options.MaximumNoteLength, (await harness.Db.CycleRecords.SingleAsync()).Note.Length);
+    }
+
+    [Fact]
+    public async Task 超长的每日补充说明会被拦下而不是悄悄截断() {
+        await using var harness = SqliteHarness.Create();
+        var (_, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var options = new CycleAnalysisOptions();
+        var today = TestDoubles.Clock().Today;
+
+        var tooLong = await service.SaveDayAsync(girlId, Day(today, new string('记', options.MaximumDayNoteLength + 1)));
+        Assert.Equal(CycleWriteStatus.Invalid, tooLong.Status);
+        Assert.Equal(0, await harness.Db.CycleDailyLogs.CountAsync());
+
+        Assert.Equal(
+            CycleWriteStatus.Saved,
+            (await service.SaveDayAsync(girlId, Day(today, new string('记', options.MaximumDayNoteLength)))).Status);
+        Assert.Equal(options.MaximumDayNoteLength, (await harness.Db.CycleDailyLogs.SingleAsync()).Note.Length);
+    }
+
+    [Fact]
+    public async Task 越界的枚举取值不会写进每日补充() {
+        await using var harness = SqliteHarness.Create();
+        var (_, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var today = TestDoubles.Clock().Today;
+
+        foreach (var crafted in new[] {
+            new CycleDaySubmission(today, (CycleFlow)99, CycleMood.Unset, 0, CycleSymptom.None, string.Empty),
+            new CycleDaySubmission(today, CycleFlow.Unset, (CycleMood)77, 0, CycleSymptom.None, string.Empty),
+            new CycleDaySubmission(today, CycleFlow.Unset, CycleMood.Unset, 0, (CycleSymptom)(1 << 15), string.Empty)
+        }) {
+            Assert.Equal(CycleWriteStatus.Invalid, (await service.SaveDayAsync(girlId, crafted)).Status);
+        }
+
+        Assert.Equal(0, await harness.Db.CycleDailyLogs.CountAsync());
+    }
+
+    [Fact]
+    public async Task 越界的亲密取值按未填写处理次数与不适程度按上限收口() {
+        await using var harness = SqliteHarness.Create();
+        var (_, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+
+        Assert.Equal(CycleWriteStatus.Saved, (await service.SaveDayAsync(girlId, new CycleDaySubmission(
+            TestDoubles.Clock().Today,
+            CycleFlow.Unset,
+            CycleMood.Unset,
+            99,
+            CycleSymptom.None,
+            string.Empty,
+            true,
+            (CycleIntimacyProtection)9,
+            (CycleIntimacyOutcome)9,
+            999))).Status);
+
+        var log = await harness.Db.CycleDailyLogs.SingleAsync();
+        Assert.Equal(3, log.Pain);
+        Assert.Equal(20, log.IntimacyCount);
+        Assert.Equal(CycleIntimacyProtection.Unset, log.IntimacyProtection);
+        Assert.Equal(CycleIntimacyOutcome.Unset, log.IntimacyOutcome);
+    }
+
+    [Fact]
+    public async Task 结束日期早于开始或落在未来都会被拒绝() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, _) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var options = new CycleAnalysisOptions();
+        var today = TestDoubles.Clock().Today;
+        var start = today.AddDays(-20);
+
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.CreateAsync(boyId, Submission(start, start.AddDays(-1)))).Status);
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.CreateAsync(boyId, Submission(today.AddDays(-2), today.AddDays(1)))).Status);
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.CreateAsync(boyId, Submission(today.AddDays(1), null))).Status);
+        Assert.Equal(
+            CycleWriteStatus.Invalid,
+            (await service.CreateAsync(boyId, Submission(start, start.AddDays(options.MaximumPeriodDays)))).Status);
+        Assert.Equal(CycleWriteStatus.Invalid, (await service.SaveDayAsync(boyId, Day(today.AddDays(1), "明天的事还没发生"))).Status);
+
+        Assert.Equal(0, await harness.Db.CycleRecords.CountAsync());
+        Assert.Equal(0, await harness.Db.CycleDailyLogs.CountAsync());
+    }
+
+    [Fact]
+    public async Task 拖了很久的进行中记录仍然可以结束但不算进平均经期() {
+        await using var harness = SqliteHarness.Create();
+        var (boyId, girlId) = await harness.SeedCoupleAsync();
+        var service = Service(harness.Db);
+        var today = TestDoubles.Clock().Today;
+        var options = new CycleAnalysisOptions();
+
+        // 构造一条持续时间超过单次记录最长时限的进行中记录。
+        _ = await service.CreateAsync(boyId, Submission(today.AddDays(-40), null));
+
+        var ended = await service.EndAsync(girlId);
+        Assert.Equal(CycleWriteStatus.Saved, ended.Status);
+
+        var record = await harness.Db.CycleRecords.AsNoTracking().SingleAsync();
+        Assert.Equal(today, record.EndDate);
+        Assert.True(
+            record.EndDate!.Value.DayNumber - record.StartDate.DayNumber + 1 > options.MaximumPeriodDays,
+            "测试记录的持续时间应超过单次记录允许的最长时限");
+
+        // 结束日期应正常保存，但超出合理范围的持续时间不应计入平均经期。
+        var statistics = (await service.GetDashboardAsync(boyId, 1, 10, today.Year, today.Month)).Statistics;
+        Assert.Equal(1, statistics.TotalRecords);
+        Assert.Equal(1, statistics.CompletedRecords);
+        Assert.Null(statistics.AveragePeriodDays);
+    }
+
     #region 私有方法
+
+    private static CycleDaySubmission Day(DateOnly date, string note) =>
+        new(date, CycleFlow.Medium, CycleMood.Calm, 0, CycleSymptom.None, note);
 
     private static CycleRecordSubmission Submission(DateOnly start, DateOnly? end) =>
         new(start, end, string.Empty, Guid.NewGuid().ToString());
 
     private static CycleService Service(
         OurStory.Data.OurStoryDbContext db,
-        CycleWriteCoordinator? coordinator = null) {
+        CycleWriteCoordinator? coordinator = null,
+        NotificationQueueSpy? notifications = null) {
         var options = new CycleAnalysisOptions();
 
         return new CycleService(
@@ -337,7 +525,8 @@ public sealed class CycleServiceTests {
             new RuleBasedCycleAnalysisService(options),
             new CycleInsightStub(),
             options,
-            coordinator ?? new CycleWriteCoordinator());
+            coordinator ?? new CycleWriteCoordinator(),
+            notifications ?? TestDoubles.Notifications());
     }
 
     #endregion

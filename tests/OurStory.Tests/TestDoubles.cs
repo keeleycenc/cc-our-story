@@ -4,6 +4,7 @@
 
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OurStory.Core;
 using OurStory.Core.Configuration;
 using OurStory.Core.Entities;
@@ -83,14 +84,20 @@ internal sealed class SqliteHarness : IAsyncDisposable {
     /// <param name="createSchema">
     /// 返回前创建表结构。测试启动流程时传入 false，由迁移流程负责建表。
     /// </param>
-    public static SqliteHarness Create(bool createSchema = true) {
+    /// <param name="errors">
+    /// 可选的 EF Core 错误日志集合，用于验证测试流程未依赖异常完成业务判断。
+    /// </param>
+    public static SqliteHarness Create(bool createSchema = true, ICollection<string>? errors = null) {
         // 连接一关内存库就没了，所以这条连接得一直开着
         var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
 
-        var db = new OurStoryDbContext(new DbContextOptionsBuilder<OurStoryDbContext>()
-            .UseSqlite(connection)
-            .Options);
+        var options = new DbContextOptionsBuilder<OurStoryDbContext>().UseSqlite(connection);
+        if (errors is not null) {
+            _ = options.LogTo(errors.Add, LogLevel.Error);
+        }
+
+        var db = new OurStoryDbContext(options.Options);
 
         if (createSchema) {
             _ = db.Database.EnsureCreated();

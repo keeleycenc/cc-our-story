@@ -359,6 +359,15 @@ public sealed record CycleDaySubmission(
     int IntimacyCount = 1);
 
 /// <summary>
+/// 表示由花信如期服务生成并交由通知服务发送的定时提醒
+/// </summary>
+/// <param name="Kind">提醒类型</param>
+/// <param name="Title">通知标题</param>
+/// <param name="Body">通知正文</param>
+/// <param name="Tag">通知合并标签，用于避免同类提醒重复展示</param>
+public sealed record CycleReminder(CycleReminderKind Kind, string Title, string Body, string Tag);
+
+/// <summary>
 /// 周期规则分析参数，独立建模以支持后续配置或其它分析实现
 /// </summary>
 public sealed class CycleAnalysisOptions {
@@ -449,4 +458,13 @@ public sealed class CycleAnalysisOptions {
     /// 获取每日补充说明允许的最大长度
     /// </summary>
     public int MaximumDayNoteLength { get; init; } = 300;
+
+    /// <summary>
+    /// 获取预测窗口开始前的提醒提前量，单位为天
+    /// </summary>
+    /// <remarks>
+    /// 在达到指定提前量和预测窗口开始当天分别生成一次提醒，
+    /// 其余日期不重复生成临近提醒。
+    /// </remarks>
+    public int ReminderLeadDays { get; init; } = 3;
 }

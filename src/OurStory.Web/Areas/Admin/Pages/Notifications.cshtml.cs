@@ -100,6 +100,7 @@ public class NotificationsModel(
             MissYou = preferences.MissYou,
             Comments = preferences.Comments,
             Affinity = preferences.Affinity,
+            Cycle = preferences.Cycle,
             RemindAt = ToText(preferences.RemindMinutes)
         };
 
@@ -218,6 +219,7 @@ public class NotificationsModel(
                 MissYou = Input.MissYou,
                 Comments = Input.Comments,
                 Affinity = Input.Affinity,
+                Cycle = Input.Cycle,
                 RemindMinutes = ToMinutes(Input.RemindAt)
             },
             cancellationToken);
@@ -317,7 +319,12 @@ public class NotificationsModel(
         public bool Affinity { get; set; } = true;
 
         /// <summary>
-        /// 获取或设置纪念日提醒时间，形如 21:00，按站点时区理解
+        /// 获取或设置是否接收花信如期相关通知
+        /// </summary>
+        public bool Cycle { get; set; } = true;
+
+        /// <summary>
+        /// 获取或设置定时提醒时间，格式为 21:00，并按站点时区解释
         /// </summary>
         [Required(ErrorMessage = "提醒时间不能为空")]
         [RegularExpression(@"^([01]\d|2[0-3]):[0-5]\d$", ErrorMessage = "提醒时间要写成 21:00 这样")]

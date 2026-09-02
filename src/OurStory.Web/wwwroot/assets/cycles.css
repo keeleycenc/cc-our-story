@@ -199,13 +199,9 @@
 
 .cycle-day-marks { display: flex; min-height: 11px; align-items: center; gap: 3px; padding-left: 3px }
 .cycle-day-marks i { width: 4px; height: 4px; border-radius: 50% }
-.cycle-day-marks i.is-log { background: var(--phase-ovulation) }
-.cycle-day-marks i.is-joint { position: relative; width: 8px; height: 5px; border-radius: 0 }
-.cycle-day-marks i.is-joint::before,
-.cycle-day-marks i.is-joint::after { content: ""; position: absolute; top: 0; width: 5px; height: 5px; border: 1px solid var(--surface); border-radius: 50% }
-.cycle-day-marks i.is-joint::before { left: 0; background: var(--pink) }
-.cycle-day-marks i.is-joint::after { right: 0; background: var(--phase-ovulation) }
-.cycle-day-marks .cycle-day-log-count { display: grid; min-width: 11px; height: 11px; padding: 0 3px; place-items: center; border: 1px solid color-mix(in srgb, var(--pink-dark) 24%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, var(--pink-soft)); color: var(--pink-dark); font: 700 6px/1 Arial, sans-serif }
+.cycle-day-marks i.is-period-log { background: var(--phase-period) }
+.cycle-day-marks i.is-daily-log { background: var(--phase-ovulation) }
+.cycle-day-marks i.is-joint { background: var(--phase-luteal) }
 
 .cycle-calendar-legend { display: grid; gap: 8px; padding: 14px 8px 2px; color: var(--faint); font-size: 9px }
 .cycle-calendar-legend-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px }
@@ -220,14 +216,10 @@
 .cycle-calendar-legend i.phase-follicular { background: var(--phase-follicular) }
 .cycle-calendar-legend i.phase-luteal { background: var(--phase-luteal) }
 .cycle-calendar-legend i.phase-observation { background: var(--phase-observation) }
+.cycle-calendar-legend i.has-period-log { width: 5px; height: 5px; border-radius: 50%; background: var(--phase-period) }
 .cycle-calendar-legend i.has-log { width: 5px; height: 5px; border-radius: 50%; background: var(--phase-ovulation) }
-.cycle-calendar-legend i.has-joint { position: relative; width: 13px; height: 8px; border-radius: 0 }
-.cycle-calendar-legend i.has-joint::before,
-.cycle-calendar-legend i.has-joint::after { content: ""; position: absolute; top: 0; width: 8px; height: 8px; border: 1px solid var(--surface); border-radius: 50% }
-.cycle-calendar-legend i.has-joint::before { left: 0; background: var(--pink) }
-.cycle-calendar-legend i.has-joint::after { right: 0; background: var(--phase-ovulation) }
+.cycle-calendar-legend i.has-joint { width: 5px; height: 5px; border-radius: 50%; background: var(--phase-luteal) }
 .cycle-calendar-legend i.has-intimacy { display: inline-grid; width: 10px; height: 10px; place-items: center; border-radius: 0; color: var(--pink-dark); font: normal 11px/1 Arial, sans-serif }
-.cycle-calendar-legend i.has-multiple { display: inline-grid; width: 13px; height: 13px; place-items: center; border: 1px solid color-mix(in srgb, var(--pink-dark) 28%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, var(--pink-soft)); color: var(--pink-dark); font: 700 7px/1 Arial, sans-serif }
 
 /* 7. 右侧详情 ------------------------------------------------------------
    基础结构来自公共日历样式；此处定义花信阶段、操作入口与信息卡片。 */
@@ -247,7 +239,8 @@
 .cycle-agenda-log-head { display: flex; min-height: 20px; align-items: center; justify-content: space-between; gap: 10px }
 .cycle-agenda-log-kinds { display: flex; flex-wrap: wrap; gap: 5px }
 .cycle-agenda-log-kinds span { display: inline-flex; min-height: 20px; align-items: center; padding: 0 8px; border-radius: 999px; font-size: 8px; font-weight: 600; letter-spacing: .03em }
-.cycle-agenda-log-kinds .is-regular { background: var(--phase-ovulation-soft); color: var(--phase-ovulation) }
+.cycle-agenda-log-kinds .is-period { background: var(--phase-period-soft); color: var(--pink-dark) }
+.cycle-agenda-log-kinds .is-daily { background: var(--phase-ovulation-soft); color: var(--phase-ovulation) }
 .cycle-agenda-log-kinds .is-intimacy { background: var(--pink-soft); color: var(--pink-dark) }
 .cycle-agenda-intimacy-hearts { display: flex; max-width: 55%; flex: none; flex-wrap: wrap; justify-content: flex-end; gap: 2px; color: var(--pink-dark) }
 .cycle-agenda-intimacy-hearts span { font: 400 15px/1 Arial, sans-serif; filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--pink) 32%, transparent)) }
@@ -298,7 +291,9 @@
 .cycle-module-toggle em .icon { font-size: 11px }
 .cycle-log-module-body { padding: 14px 15px 15px; border-top: 1px dashed var(--line) }
 .cycle-log-module-body[hidden] { display: none }
+.cycle-period-details { display: grid; gap: 18px }
 .cycle-day-editor-basics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px }
+.cycle-period-details > .cycle-day-editor-basics { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 .cycle-day-editor-basics .cycle-field { margin: 0 }
 .cycle-select { position: relative; display: block }
 .cycle-select select { width: 100%; min-height: 44px; padding: 0 40px 0 13px; border: 1px solid var(--line-strong); border-radius: 12px; outline: 0; appearance: none; background: var(--surface); color: var(--ink); font: 600 12px var(--sans); cursor: pointer }
@@ -310,6 +305,8 @@
 .cycle-number small { position: absolute; top: 50%; right: 14px; color: var(--faint); font-size: 10px; transform: translateY(-50%); pointer-events: none }
 .cycle-condition-body { display: grid; grid-template-columns: minmax(170px, .7fr) minmax(0, 1.3fr); align-items: start; gap: 18px }
 .cycle-condition-body > .cycle-field { margin: 0 }
+.cycle-daily-details { display: grid; grid-template-columns: minmax(170px, .45fr) minmax(0, 1.55fr); align-items: start; gap: 18px }
+.cycle-daily-details > .cycle-field { margin: 0 }
 .cycle-day-editor-symptoms { margin: 0; padding-top: 2px }
 .cycle-day-editor-symptoms legend { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px }
 .cycle-day-editor-symptoms legend small { font-size: 9px; font-weight: 400 }
@@ -464,13 +461,14 @@
     .cycle-day-editor-head { align-items: start; margin-bottom: 18px }
     .cycle-day-editor-basics { grid-template-columns: 1fr }
     .cycle-condition-body { grid-template-columns: 1fr }
+    .cycle-daily-details { grid-template-columns: 1fr }
     .cycle-intimacy-details { grid-template-columns: 1fr }
     .cycle-day-editor-symptoms legend { align-items: flex-start; flex-direction: column; gap: 6px }
     .cycle-agenda > footer .cycle-action { width: 100% }
     .cycle-day-editor-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .cycle-day-editor-actions .cycle-action { width: 100%; min-width: 0 }
     .cycle-calendar-legend { gap: 10px; padding: 12px 4px 2px }
-    .cycle-calendar-legend-group { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 4px }
+    .cycle-calendar-legend-group { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 4px }
     .cycle-calendar-legend-group.is-records { padding-top: 10px }
     .cycle-calendar-legend strong { display: flex; min-width: 0; grid-column: 1 / -1; align-items: center; gap: 8px; font-size: 8px }
     .cycle-calendar-legend strong::after { content: ""; height: 1px; flex: 1; background: var(--line) }

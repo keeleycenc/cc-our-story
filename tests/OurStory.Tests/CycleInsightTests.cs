@@ -109,7 +109,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             insight,
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         var today = TestDoubles.Clock().Today;
         var first = today.AddDays(-28 * 15);
@@ -172,7 +173,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             new CycleInsightStub("模型写的那一段"),
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         var today = TestDoubles.Clock().Today;
         var first = today.AddDays(-100);
@@ -200,7 +202,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             new CycleInsightStub("模型写的那一段"),
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         var today = TestDoubles.Clock().Today;
         var first = today.AddDays(-28 * 15);
@@ -241,7 +244,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             insight,
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         var today = TestDoubles.Clock().Today;
         var start = today.AddDays(-10);
@@ -284,7 +288,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             new CycleInsightStub("模型写的那一段"),
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         _ = await service.StartAsync(boyId, Guid.NewGuid().ToString(), false);
 
@@ -304,7 +309,8 @@ public sealed class CycleInsightTests {
             new RuleBasedCycleAnalysisService(options),
             new CycleInsightStub(),
             options,
-            new CycleWriteCoordinator());
+            new CycleWriteCoordinator(),
+            TestDoubles.Notifications());
 
         var today = TestDoubles.Clock().Today;
         var first = today.AddDays(-60);

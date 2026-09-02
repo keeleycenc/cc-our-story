@@ -238,7 +238,12 @@ public enum NotificationTopic {
     /// <summary>
     /// 心有灵犀：对方完成了今日回答
     /// </summary>
-    Affinity = 7
+    Affinity = 7,
+
+    /// <summary>
+    /// 花信如期：记录动态、经期状态及预测相关提醒
+    /// </summary>
+    Cycle = 8
 }
 
 /// <summary>
@@ -572,6 +577,26 @@ public enum CycleRhythm {
     /// 晚于既往规律
     /// </summary>
     Late = 3
+}
+
+/// <summary>
+/// 表示花信如期定时提醒的类型
+/// </summary>
+public enum CycleReminderKind {
+    /// <summary>
+    /// 预测窗口即将开始
+    /// </summary>
+    PredictionNear = 0,
+
+    /// <summary>
+    /// 预测窗口于当天开始
+    /// </summary>
+    PredictionStart = 1,
+
+    /// <summary>
+    /// 进行中的经期记录已超过常规时长，需要确认结束日期
+    /// </summary>
+    ActiveTooLong = 2
 }
 
 /// <summary>

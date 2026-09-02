@@ -68,7 +68,7 @@ public class NotificationSetting {
 
     /// <summary>
     /// 获取或设置点点滴滴下面来了新留言时，要不要提醒我
-    /// </summary>w
+    /// </summary>
     public bool Comments { get; set; } = true;
 
     /// <summary>
@@ -77,10 +77,16 @@ public class NotificationSetting {
     public bool Affinity { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置纪念日提醒的时刻，从当天零点算起的分钟数，按站点时区理解
+    /// 获取或设置是否接收花信如期的记录动态与定时提醒
+    /// </summary>
+    public bool Cycle { get; set; } = true;
+
+    /// <summary>
+    /// 获取或设置定时提醒的发送时刻，以站点时区当天零点起的分钟数表示
     /// </summary>
     /// <remarks>
-    /// 只管「今天 / 明天有纪念日」这一条到点的提醒
+    /// 适用于纪念日和花信如期的定时提醒。两类提醒共用发送时刻，
+    /// 每类提醒每日最多发送一条。
     /// </remarks>
     public int RemindMinutes { get; set; } = DefaultRemindMinutes;
 
@@ -88,9 +94,17 @@ public class NotificationSetting {
     /// 获取或设置最近一次发出纪念日提醒的日期，形如 <c>2026-08-17</c>
     /// </summary>
     /// <remarks>
-    /// 定时那一头每分钟醒一次，靠这个日期确保一天只发一条；站点重启也不会重复打扰
+    /// 调度器使用该日期确保同一用户的纪念日提醒每日仅处理一次，并避免站点重启后重复发送。
     /// </remarks>
     public string LastAnniversaryOn { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 获取或设置最近一次处理花信如期定时提醒的日期，格式为 <c>2026-08-17</c>
+    /// </summary>
+    /// <remarks>
+    /// 用于确保同一用户的花信如期定时提醒每日仅处理一次。
+    /// </remarks>
+    public string LastCycleOn { get; set; } = string.Empty;
 
     /// <summary>
     /// 获取或设置最后修改时间
@@ -114,6 +128,7 @@ public class NotificationSetting {
         NotificationTopic.MissYou => Enabled && MissYou,
         NotificationTopic.Comment => Enabled && Comments,
         NotificationTopic.Affinity => Enabled && Affinity,
+        NotificationTopic.Cycle => Enabled && Cycle,
         _ => false
     };
 }

@@ -311,7 +311,12 @@ public sealed class NotificationPreferences {
     public bool Affinity { get; set; } = true;
 
     /// <summary>
-    /// 获取或设置纪念日提醒时刻，从零点算起的分钟数
+    /// 获取或设置是否接收花信如期相关通知
+    /// </summary>
+    public bool Cycle { get; set; } = true;
+
+    /// <summary>
+    /// 获取或设置定时提醒时刻，以当天零点起的分钟数表示
     /// </summary>
     public int RemindMinutes { get; set; } = NotificationSetting.DefaultRemindMinutes;
 
@@ -332,6 +337,7 @@ public sealed class NotificationPreferences {
             MissYou = setting.MissYou,
             Comments = setting.Comments,
             Affinity = setting.Affinity,
+            Cycle = setting.Cycle,
             RemindMinutes = setting.RemindMinutes
         };
     }

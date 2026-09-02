@@ -196,9 +196,13 @@
     return row;
   }
 
-  function isRegularLog(entry) {
-    return Boolean(entry.flow || entry.mood || entry.pain
-      || (entry.symptomNames && entry.symptomNames.length) || entry.note);
+  function isPeriodLog(entry) {
+    return Boolean(entry.flow || entry.pain
+      || (entry.symptomNames && entry.symptomNames.length));
+  }
+
+  function isDailyLog(entry) {
+    return Boolean(entry.mood || entry.note);
   }
 
   function renderAgenda(day) {
@@ -241,12 +245,16 @@
     var dayLogs = day.logs || [];
     dayLogs.forEach(function (entry) {
       var log = element('article', 'cycle-agenda-log');
-      var regular = isRegularLog(entry);
+      var period = isPeriodLog(entry);
+      var daily = isDailyLog(entry);
+      if (period) log.classList.add('has-period');
+      if (daily) log.classList.add('has-daily');
       if (entry.isIntimate) log.classList.add('is-intimate');
 
       var head = element('header', 'cycle-agenda-log-head');
       var kinds = element('div', 'cycle-agenda-log-kinds');
-      if (regular) kinds.append(element('span', 'is-regular', '日常记录'));
+      if (period) kinds.append(element('span', 'is-period', '经期记录'));
+      if (daily) kinds.append(element('span', 'is-daily', '日常记录'));
       if (entry.isIntimate) kinds.append(element('span', 'is-intimacy', '亲密记录'));
       head.append(kinds);
       if (entry.isIntimate) {
@@ -301,14 +309,16 @@
     button.setAttribute('role', 'gridcell');
     button.dataset.date = day.date;
     var logs = day.logs || [];
-    var hasRegularLog = logs.some(isRegularLog);
+    var hasPeriodLog = logs.some(isPeriodLog);
+    var hasDailyLog = logs.some(isDailyLog);
     var hasIntimacyLog = logs.some(function (entry) { return entry.isIntimate; });
     var intimacyCount = logs.reduce(function (total, entry) {
       return total + (entry.isIntimate ? Math.max(1, Number(entry.intimacyCount) || 1) : 0);
     }, 0);
     var hasJointRecord = day.jointRecord;
     var ariaLabel = fullDate(day.date) + ' ' + day.phaseName;
-    if (hasRegularLog) ariaLabel += '，有日常记录';
+    if (hasPeriodLog) ariaLabel += '，有经期记录';
+    if (hasDailyLog) ariaLabel += '，有日常记录';
     if (hasIntimacyLog) ariaLabel += '，有亲密记录 ' + intimacyCount + ' 次';
     if (hasJointRecord) ariaLabel += '，双方共同记录';
     if (logs.length > 1) ariaLabel += '，共 ' + logs.length + ' 条追加记录';
@@ -349,11 +359,9 @@
 
     var marks = element('span', 'cycle-day-marks');
     marks.setAttribute('aria-hidden', 'true');
+    if (hasPeriodLog) marks.append(element('i', 'is-period-log'));
+    if (hasDailyLog) marks.append(element('i', 'is-daily-log'));
     if (hasJointRecord) marks.append(element('i', 'is-joint'));
-    else if (hasRegularLog) marks.append(element('i', 'is-log'));
-    if (logs.length > 1) {
-      marks.append(element('span', 'cycle-day-log-count', logs.length > 99 ? '99+' : String(logs.length)));
-    }
     if (marks.childElementCount) button.append(marks);
 
     button.addEventListener('click', function () {

@@ -22,6 +22,7 @@ public class NotificationSettingConfiguration : IEntityTypeConfiguration<Notific
         _ = builder.Property(setting => setting.UserId).ValueGeneratedNever();
 
         _ = builder.Property(setting => setting.LastAnniversaryOn).HasMaxLength(10).IsRequired();
+        _ = builder.Property(setting => setting.LastCycleOn).HasMaxLength(10).IsRequired();
         _ = builder.Property(setting => setting.WebPushEnabled).HasDefaultValue(true);
         _ = builder.Property(setting => setting.EmailEnabled).HasDefaultValue(false);
         _ = builder.Property(setting => setting.EmailAddress).HasMaxLength(320).IsRequired();

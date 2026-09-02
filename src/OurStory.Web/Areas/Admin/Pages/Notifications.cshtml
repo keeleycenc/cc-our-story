@@ -177,10 +177,18 @@
             </span>
         </label>
 
+        <label class="notify-option">
+            <input asp-for="Input.Cycle" type="checkbox">
+            <span>
+                <strong>@Icon("calendar-days")花信如期</strong>
+                <small>接收对方新增花信记录、经期开始或结束，以及预测窗口临近和结束日期确认提醒</small>
+            </span>
+        </label>
+
         <label class="notify-option notify-time">
             <span>
-                <strong>@Icon("clock")纪念日提醒时间</strong>
-                <small>当天或次日有纪念日时，会在这个时刻提醒一次，时间以站点时区为准</small>
+                <strong>@Icon("clock")到点提醒时间</strong>
+                <small>纪念日与花信如期的定时提醒将在此时刻发送，每类提醒每日最多一条，时间以站点时区为准</small>
             </span>
         </label>
 

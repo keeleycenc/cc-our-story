@@ -176,6 +176,13 @@ internal class HeartPointService(
     #region 私有方法
 
     private async Task<bool> TryInsertAsync(HeartPointEntry entry, CancellationToken cancellationToken) {
+        var exists = await db.HeartPointEntries.AnyAsync(
+            item => item.UserId == entry.UserId && item.SourceKey == entry.SourceKey,
+            cancellationToken);
+        if (exists) {
+            return false;
+        }
+
         _ = db.HeartPointEntries.Add(entry);
 
         try {

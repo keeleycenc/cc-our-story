@@ -240,16 +240,16 @@
                             <span><i class="phase-follicular"></i>卵泡期</span>
                             <span><i class="phase-fertile"></i>易孕期</span>
                             <span><i class="phase-ovulation"></i>排卵日</span>
-                            <span><i class="phase-luteal"></i>黄体期</span>
-                            <span><i class="phase-predicted"></i>预测窗口</span>
+                            <span><i class="phase-luteal"></i>黄体期</span>                            
                             <span><i class="phase-observation"></i>观察期</span>
                         </div>
                         <div class="cycle-calendar-legend-group is-records">
                             <strong>标记</strong>
+                            <span><i class="phase-predicted"></i>预测窗口</span>
+                            <span><i class="has-period-log"></i>经期记录</span>
                             <span><i class="has-log"></i>日常记录</span>
                             <span><i class="has-joint" aria-hidden="true"></i>共同记录</span>
                             <span><i class="has-intimacy" aria-hidden="true">♥</i>亲密记录</span>
-                            <span><i class="has-multiple" aria-hidden="true">2</i>多条记录</span>
                         </div>
                     </div>
                 </div>
@@ -273,7 +273,7 @@
                 <header class="cycle-day-editor-head">
                     <span class="cycle-day-editor-icon">@Icon("list-checks")</span>
                     <div>
-                        <p>DAILY LOG</p>
+                        <p>DAY LOG</p>
                         <h3 id="day-editor-title" data-day-title>补充这一天</h3>
                         <span data-day-hint></span>
                     </div>
@@ -282,45 +282,83 @@
                 <form method="post" asp-page-handler="Day" class="cycle-form cycle-day-editor-form">
                     <input type="hidden" name="date" data-day-date value="">
 
-                    <section class="cycle-log-module is-wide" data-log-module aria-labelledby="day-editor-basics-title">
+                    <section class="cycle-log-module is-wide is-period" data-log-module aria-labelledby="day-editor-period-title">
                         <header class="cycle-log-module-head">
                             <div>
-                                <h4 id="day-editor-basics-title">基础记录</h4>
-                                <small>经量、不适程度与心情</small>
+                                <h4 id="day-editor-period-title">经期记录</h4>
+                                <small>经量、不适程度与身体状况</small>
                             </div>
                             <label class="cycle-module-toggle">
-                                <input type="checkbox" data-module-toggle aria-controls="day-editor-basics" aria-expanded="false">
+                                <input type="checkbox" data-module-toggle aria-controls="day-editor-period" aria-expanded="false">
                                 <span aria-hidden="true"><i></i></span><em>填写</em>
                             </label>
                         </header>
-                        <div class="cycle-log-module-body cycle-day-editor-basics" id="day-editor-basics" data-module-body hidden>
-                            <label class="cycle-field">
-                                <span>经量</span>
-                                <span class="cycle-select">
-                                    <select name="flow" disabled>
-                                        <option value="0">未填</option>
-                                        @foreach (var flow in CycleLabels.AllFlows)
-                                        {
-                                            <option value="@((int)flow)">@flow.Name()</option>
-                                        }
-                                    </select>
-                                    @Icon("chevron-down")
-                                </span>
-                            </label>
+                        <div class="cycle-log-module-body cycle-period-details" id="day-editor-period" data-module-body hidden>
+                            <div class="cycle-day-editor-basics">
+                                <label class="cycle-field">
+                                    <span>经量</span>
+                                    <span class="cycle-select">
+                                        <select name="flow" disabled>
+                                            <option value="0">未填</option>
+                                            @foreach (var flow in CycleLabels.AllFlows)
+                                            {
+                                                <option value="@((int)flow)">@flow.Name()</option>
+                                            }
+                                        </select>
+                                        @Icon("chevron-down")
+                                    </span>
+                                </label>
 
-                            <label class="cycle-field">
-                                <span>不适程度</span>
-                                <span class="cycle-select">
-                                    <select name="pain" disabled>
-                                        @for (var level = 0; level <= 3; level++)
-                                        {
-                                            <option value="@level">@CycleLabels.PainName(level)</option>
-                                        }
-                                    </select>
-                                    @Icon("chevron-down")
-                                </span>
-                            </label>
+                                <label class="cycle-field">
+                                    <span>不适程度</span>
+                                    <span class="cycle-select">
+                                        <select name="pain" disabled>
+                                            @for (var level = 0; level <= 3; level++)
+                                            {
+                                                <option value="@level">@CycleLabels.PainName(level)</option>
+                                            }
+                                        </select>
+                                        @Icon("chevron-down")
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="cycle-condition-body">
+                                <label class="cycle-field">
+                                    <span>主要身体状况</span>
+                                    <span class="cycle-select">
+                                        <select name="symptoms" data-primary-symptom disabled>
+                                            <option value="0">未选择</option>
+                                            @foreach (var symptom in CycleLabels.AllSymptoms)
+                                            {
+                                                <option value="@((int)symptom)">@symptom.Name()</option>
+                                            }
+                                        </select>
+                                        @Icon("chevron-down")
+                                    </span>
+                                </label>
+                                <fieldset class="cycle-choice cycle-day-editor-symptoms">
+                                    <legend>其他身体状况 <small>可多选</small></legend>
+                                    @foreach (var symptom in CycleLabels.AllSymptoms)
+                                    {
+                                        <label><input type="checkbox" name="symptoms" value="@((int)symptom)" data-secondary-symptom disabled><span>@symptom.Name()</span></label>
+                                    }
+                                </fieldset>
+                            </div>
+                        </div>
+                    </section>
 
+                    <section class="cycle-log-module is-wide is-daily" data-log-module aria-labelledby="day-editor-daily-title">
+                        <header class="cycle-log-module-head">
+                            <div>
+                                <h4 id="day-editor-daily-title">日常记录</h4>
+                                <small>记录当天心情或写下一段描述</small>
+                            </div>
+                            <label class="cycle-module-toggle">
+                                <input type="checkbox" data-module-toggle aria-controls="day-editor-daily" aria-expanded="false">
+                                <span aria-hidden="true"><i></i></span><em>填写</em>
+                            </label>
+                        </header>
+                        <div class="cycle-log-module-body cycle-daily-details" id="day-editor-daily" data-module-body hidden>
                             <label class="cycle-field">
                                 <span>心情</span>
                                 <span class="cycle-select">
@@ -334,42 +372,10 @@
                                     @Icon("chevron-down")
                                 </span>
                             </label>
-
-                        </div>
-                    </section>
-
-                    <section class="cycle-log-module is-wide" data-log-module aria-labelledby="day-editor-condition-title">
-                        <header class="cycle-log-module-head">
-                            <div>
-                                <h4 id="day-editor-condition-title">身体状况</h4>
-                                <small>选择一种主要状况，也可以补充多项</small>
-                            </div>
-                            <label class="cycle-module-toggle">
-                                <input type="checkbox" data-module-toggle aria-controls="day-editor-condition" aria-expanded="false">
-                                <span aria-hidden="true"><i></i></span><em>填写</em>
+                            <label class="cycle-field cycle-day-editor-note">
+                                <span>想记录的话</span>
+                                <textarea name="note" maxlength="300" rows="3" disabled placeholder="例如：下午休息后舒服了一些，想让你也知道"></textarea>
                             </label>
-                        </header>
-                        <div class="cycle-log-module-body cycle-condition-body" id="day-editor-condition" data-module-body hidden>
-                            <label class="cycle-field">
-                                <span>主要身体状况</span>
-                                <span class="cycle-select">
-                                    <select name="symptoms" data-primary-symptom disabled>
-                                        <option value="0">未选择</option>
-                                        @foreach (var symptom in CycleLabels.AllSymptoms)
-                                        {
-                                            <option value="@((int)symptom)">@symptom.Name()</option>
-                                        }
-                                    </select>
-                                    @Icon("chevron-down")
-                                </span>
-                            </label>
-                            <fieldset class="cycle-choice cycle-day-editor-symptoms">
-                                <legend>其他身体状况 <small>可多选</small></legend>
-                                @foreach (var symptom in CycleLabels.AllSymptoms)
-                                {
-                                    <label><input type="checkbox" name="symptoms" value="@((int)symptom)" data-secondary-symptom disabled><span>@symptom.Name()</span></label>
-                                }
-                            </fieldset>
                         </div>
                     </section>
 
@@ -421,25 +427,6 @@
                         </div>
                     </section>
 
-                    <section class="cycle-log-module is-wide" data-log-module aria-labelledby="day-editor-note-title">
-                        <header class="cycle-log-module-head">
-                            <div>
-                                <h4 id="day-editor-note-title">补充说明</h4>
-                                <small>只写一段描述也可以保存</small>
-                            </div>
-                            <label class="cycle-module-toggle">
-                                <input type="checkbox" data-module-toggle aria-controls="day-editor-note" aria-expanded="false">
-                                <span aria-hidden="true"><i></i></span><em>填写</em>
-                            </label>
-                        </header>
-                        <div class="cycle-log-module-body" id="day-editor-note" data-module-body hidden>
-                            <label class="cycle-field cycle-day-editor-note">
-                                <span>想记录的话</span>
-                                <textarea name="note" maxlength="300" rows="3" disabled placeholder="例如：下午休息后舒服了一些，想让你也知道"></textarea>
-                            </label>
-                        </div>
-                    </section>
-
                     <div class="cycle-day-editor-actions is-wide">
                         <button class="cycle-action" type="button" data-day-editor-cancel>取消</button>
                         <button class="cycle-action is-primary" type="submit">添加记录</button>
@@ -451,9 +438,9 @@
         <aside class="cycle-disclaimer">
             @Icon("circle-alert")
             <p>
-                <strong>生活参考，不是医疗判断</strong>
+                <strong>一起了解，一起安心</strong>
                 <span>
-                    平均值、预测窗口、排卵日和易孕期都由已有记录计算而来，且随着记录变化。如有异常或不适，请咨询专业医务人员或世界顶尖模型。
+                    周期信息根据已有记录进行估算，旨在帮助双方了解变化、给予照顾。它不能替代专业诊疗，也不建议作为避孕或备孕的唯一依据
                 </span>
             </p>
         </aside>
