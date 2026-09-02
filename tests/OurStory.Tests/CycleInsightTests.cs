@@ -45,7 +45,8 @@ public sealed class CycleInsightTests {
         var request = Assert.Single(client.Requests);
         Assert.Equal("花信小结", request.Endpoint.Label);
         Assert.Equal("cycle-model", request.Endpoint.Model);
-        Assert.Contains("不提供医疗诊断", request.Instructions, StringComparison.Ordinal);
+        Assert.Contains("确定诊断", request.Instructions, StringComparison.Ordinal);
+        Assert.Contains("咨询妇科", request.Instructions, StringComparison.Ordinal);
         Assert.Contains("腹痛", request.Text, StringComparison.Ordinal);
     }
 
