@@ -485,7 +485,7 @@
 
 @media (max-width: 600px) {
     .cycle-heading { padding-top: 120px }
-    .cycle-heading-actions { display: grid; width: min(100%, 340px) }
+    .cycle-heading-actions { display: grid; width: min(100%, 340px); margin: 20px auto 0 }
     .cycle-shell { width: min(100% - 22px, 1080px) }
     .cycle-status { padding: 22px 18px; border-radius: 20px }
     .cycle-ring { width: 148px; height: 148px }
