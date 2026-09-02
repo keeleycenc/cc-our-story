@@ -72,7 +72,7 @@ public sealed record CycleCalendarPayload(
 /// <param name="PeriodStart">是否为某条记录的开始日</param>
 /// <param name="PeriodEnd">是否为某条记录的结束日</param>
 /// <param name="ExpectedStart">是否为预测的下次经期开始日期</param>
-/// <param name="JointRecord">双方是否都在当天留下过补充记录</param>
+/// <param name="JointRecord">双方是否都在当天留下过任意类型的补充记录</param>
 /// <param name="Record">覆盖当天的周期记录</param>
 /// <param name="Logs">当天按记录时间排列的补充记录</param>
 public sealed record CycleDayPayload(

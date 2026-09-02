@@ -197,7 +197,7 @@
 .cycle-calendar .calendar-day.has-intimacy.phase-period .calendar-day-number,
 .cycle-calendar .calendar-day.has-intimacy.phase-ovulation .calendar-day-number { color: #fff }
 
-.cycle-day-marks { display: flex; min-height: 7px; align-items: center; gap: 3px; padding-left: 3px }
+.cycle-day-marks { display: flex; min-height: 11px; align-items: center; gap: 3px; padding-left: 3px }
 .cycle-day-marks i { width: 4px; height: 4px; border-radius: 50% }
 .cycle-day-marks i.is-log { background: var(--phase-ovulation) }
 .cycle-day-marks i.is-joint { position: relative; width: 8px; height: 5px; border-radius: 0 }
@@ -205,6 +205,7 @@
 .cycle-day-marks i.is-joint::after { content: ""; position: absolute; top: 0; width: 5px; height: 5px; border: 1px solid var(--surface); border-radius: 50% }
 .cycle-day-marks i.is-joint::before { left: 0; background: var(--pink) }
 .cycle-day-marks i.is-joint::after { right: 0; background: var(--phase-ovulation) }
+.cycle-day-marks .cycle-day-log-count { display: grid; min-width: 11px; height: 11px; padding: 0 3px; place-items: center; border: 1px solid color-mix(in srgb, var(--pink-dark) 24%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, var(--pink-soft)); color: var(--pink-dark); font: 700 6px/1 Arial, sans-serif }
 
 .cycle-calendar-legend { display: grid; gap: 8px; padding: 14px 8px 2px; color: var(--faint); font-size: 9px }
 .cycle-calendar-legend-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px }
@@ -226,6 +227,7 @@
 .cycle-calendar-legend i.has-joint::before { left: 0; background: var(--pink) }
 .cycle-calendar-legend i.has-joint::after { right: 0; background: var(--phase-ovulation) }
 .cycle-calendar-legend i.has-intimacy { display: inline-grid; width: 10px; height: 10px; place-items: center; border-radius: 0; color: var(--pink-dark); font: normal 11px/1 Arial, sans-serif }
+.cycle-calendar-legend i.has-multiple { display: inline-grid; width: 13px; height: 13px; place-items: center; border: 1px solid color-mix(in srgb, var(--pink-dark) 28%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, var(--pink-soft)); color: var(--pink-dark); font: 700 7px/1 Arial, sans-serif }
 
 /* 7. 右侧详情 ------------------------------------------------------------
    基础结构来自公共日历样式；此处定义花信阶段、操作入口与信息卡片。 */
@@ -467,6 +469,12 @@
     .cycle-agenda > footer .cycle-action { width: 100% }
     .cycle-day-editor-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) }
     .cycle-day-editor-actions .cycle-action { width: 100%; min-width: 0 }
+    .cycle-calendar-legend { gap: 10px; padding: 12px 4px 2px }
+    .cycle-calendar-legend-group { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 4px }
+    .cycle-calendar-legend-group.is-records { padding-top: 10px }
+    .cycle-calendar-legend strong { display: flex; min-width: 0; grid-column: 1 / -1; align-items: center; gap: 8px; font-size: 8px }
+    .cycle-calendar-legend strong::after { content: ""; height: 1px; flex: 1; background: var(--line) }
+    .cycle-calendar-legend span { min-width: 0; gap: 4px; font-size: 8px; white-space: nowrap }
 }
 
 @media (max-width: 420px) {

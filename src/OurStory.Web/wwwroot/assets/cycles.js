@@ -311,6 +311,7 @@
     if (hasRegularLog) ariaLabel += '，有日常记录';
     if (hasIntimacyLog) ariaLabel += '，有亲密记录 ' + intimacyCount + ' 次';
     if (hasJointRecord) ariaLabel += '，双方共同记录';
+    if (logs.length > 1) ariaLabel += '，共 ' + logs.length + ' 条追加记录';
     button.setAttribute('aria-label', ariaLabel);
     button.setAttribute('aria-selected', 'false');
     if (!day.inMonth) button.classList.add('is-outside');
@@ -350,6 +351,9 @@
     marks.setAttribute('aria-hidden', 'true');
     if (hasJointRecord) marks.append(element('i', 'is-joint'));
     else if (hasRegularLog) marks.append(element('i', 'is-log'));
+    if (logs.length > 1) {
+      marks.append(element('span', 'cycle-day-log-count', logs.length > 99 ? '99+' : String(logs.length)));
+    }
     if (marks.childElementCount) button.append(marks);
 
     button.addEventListener('click', function () {

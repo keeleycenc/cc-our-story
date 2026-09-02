@@ -163,8 +163,8 @@ public sealed class CycleServiceTests {
             "喝了红糖水"))).Status);
         Assert.Equal(CycleWriteStatus.Saved, (await service.SaveDayAsync(boyId, new CycleDaySubmission(
             start,
-            CycleFlow.Light,
-            CycleMood.Calm,
+            CycleFlow.Unset,
+            CycleMood.Unset,
             0,
             CycleSymptom.None,
             string.Empty,
