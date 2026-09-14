@@ -24,8 +24,8 @@
 
 	<!-- 所有项目共用同一套包版本，升级时只改这里 -->
 	<PropertyGroup>
-		<MicrosoftExtensionsVersion>10.0.10</MicrosoftExtensionsVersion>
-		<EntityFrameworkVersion>10.0.10</EntityFrameworkVersion>
+		<MicrosoftExtensionsVersion>10.0.11</MicrosoftExtensionsVersion>
+		<EntityFrameworkVersion>10.0.11</EntityFrameworkVersion>
 		<SQLitePCLRawVersion>3.0.5</SQLitePCLRawVersion>
 		<MarkdigVersion>1.3.2</MarkdigVersion>
 		<MailKitVersion>4.17.0</MailKitVersion>
