@@ -79,13 +79,13 @@ public sealed class CycleServiceTests {
         var (boyId, _) = await harness.SeedCoupleAsync();
         var service = Service(harness.Db);
         var today = TestDoubles.Clock().Today;
+        var displayedMonth = new DateOnly(today.Year, today.Month, 1).AddMonths(-1);
 
-        // 两条间隔 28 天的完整记录可用于推算下一次周期及排卵日。
-        var first = today.AddDays(-56);
+        var first = displayedMonth.AddDays(-28);
         _ = await service.CreateAsync(boyId, Submission(first, first.AddDays(4)));
         _ = await service.CreateAsync(boyId, Submission(first.AddDays(28), first.AddDays(32)));
 
-        var month = await service.GetCalendarAsync(boyId, first.AddDays(40).Year, first.AddDays(40).Month);
+        var month = await service.GetCalendarAsync(boyId, displayedMonth.Year, displayedMonth.Month);
         var byDate = month.Days.ToDictionary(day => day.Date);
 
         // 预计开始日期向前推算 14 天得到排卵日。
