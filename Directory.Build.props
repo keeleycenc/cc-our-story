@@ -27,7 +27,7 @@
 		<MicrosoftExtensionsVersion>10.0.12</MicrosoftExtensionsVersion>
 		<EntityFrameworkVersion>10.0.12</EntityFrameworkVersion>
 		<SQLitePCLRawVersion>3.0.5</SQLitePCLRawVersion>
-		<MarkdigVersion>1.3.2</MarkdigVersion>
+		<MarkdigVersion>1.4.0</MarkdigVersion>
 		<MailKitVersion>4.18.1</MailKitVersion>
 		<XunitVersion>2.9.3</XunitVersion>
 
