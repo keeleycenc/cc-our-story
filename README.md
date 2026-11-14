@@ -213,6 +213,10 @@ server {
 
 `X-Forwarded-For` 一定要转发：访客指纹靠它区分不同的人，缺了这个头，所有访客会被算成同一个
 
+## ☁️ 一键部署
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/CC%20Our%20Story/)
+
 ## 🔔 通知
 
 本站支持浏览器标准 Web Push 与 SMTP Email 两条通知渠道。两条渠道彼此独立，任一渠道暂时不可用都不会阻止另一条继续投递
